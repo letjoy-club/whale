@@ -1,0 +1,191 @@
+scalar Time
+
+directive @adminOnly on FIELD_DEFINITION
+directive @list on FIELD_DEFINITION
+
+type Matching @key(fields: "id") {
+  id: String!
+  topicId: Int!
+  userId: String!
+
+  areaIds: [String!]!
+  cityId: String!
+  gender: Gender!
+  state: MatchingState!
+
+  rejectedUserIds: [String!]!
+  chatGroupState: ChatGroupState!
+  inChatGroup: Boolean!
+
+  deadline: Time!
+  updatedAt: Time!
+  createdAt: Time!
+
+  # query
+  matchingResult: MatchingResult
+}
+
+enum Gender {
+  F
+  M
+
+  N
+}
+
+enum ChatGroupState {
+  "未创建"
+  Uncreated
+
+  "等待创建"
+  WaitingCreated
+
+  "创建成功"
+  Created
+
+  "创建失败"
+  Failed
+
+  "已关闭"
+  Closed
+
+  "已退出"
+  Quited
+}
+
+enum MatchingState {
+  "匹配中"
+  Matching
+
+  "匹配成功"
+  Matched
+
+  "匹配失败"
+  Failed
+
+  "匹配取消"
+  Canceled
+
+  "匹配超时"
+  Timeout
+
+  "匹配关闭"
+  Closed
+}
+
+type MatchingResult {
+  "id 只有管理员可以查看"
+  id: Int! @adminOnly
+
+  matchingIds: [String!]!
+  topicId: Int!
+  userIds: [String!]!
+  confirmStates: [MatchingResultConfirmState!]! @list
+
+  chatGroupId: String!
+  chatGroupState: ChatGroupState!
+
+  updatedAt: Time!
+  createdAt: Time!
+}
+
+enum MatchingResultConfirmState {
+  "未确认"
+  Unconfirmed
+
+  "已确认"
+  Confirmed
+
+  "已拒绝"
+  Rejected
+}
+
+type MatchingQuota @key(fields: "userId") {
+  userId: String!
+  remain: Int!
+  total: Int!
+  createdAt: Time!
+  updatedAt: Time!
+}
+
+type MatchingResultConfirmAction {
+  id: Int!
+  matchingResultId: Int!
+  userId: String!
+  confirmed: Boolean!
+  createdAt: Time!
+}
+
+input GraphQLPaginator {
+  size: Int
+  page: Int
+}
+
+input MatchingFilter {
+  createBefore: Time
+  createAfter: Time
+  topicId: Int
+  state: MatchingState
+}
+
+type Summary {
+  count: Int!
+}
+
+type Query {
+  "【匹配系统】查看匹配"
+  matching(id: String!): Matching!
+
+  "【匹配系统】匹配查询，管理端用"
+  matchings(filter: MatchingFilter, paginator: GraphQLPaginator): [Matching!]!
+
+  "【匹配系统】匹配总量，管理端用"
+  matchingsCount(filter: MatchingFilter): Summary!
+
+  "【匹配系统】用户匹配"
+  userMatchings(userId: String, filter: UserMatchingFilter, paginator: GraphQLPaginator): [Matching!]!
+
+  "【匹配系统】用户匹配数量"
+  userMatchingsCount(userId: String, filter: UserMatchingFilter): Summary!
+
+}
+
+input CreateMatchingParam {
+  topicId: Int!
+
+  areaIds: [String!]!
+  cityId: String!
+  gender: Gender!
+
+  deadline: Time
+}
+
+input UpdateMatchingParam {
+  topicId: Int
+
+  areaIds: [String!]
+  cityId: String
+  gender: Gender
+
+  deadline: Time
+}
+
+input UserMatchingFilter {
+  state: MatchingState
+}
+
+type Mutation {
+  "【匹配系统】创建匹配"
+  createMatching(userId: String, param: CreateMatchingParam!): Matching!
+
+  "【匹配系统】更新匹配，管理端使用"
+  updateMatching(matchingId: String!, param: UpdateMatchingParam!): Matching!
+
+  "【匹配系统】确认/拒绝匹配结果"
+  confirmMatchingResult(userId: String, matchingId: String!, reject: Boolean!): String
+
+  "【匹配系统】取消匹配"
+  cancelMatching(matchingId: String!): String
+
+  "【匹配系统】开始匹配，管理端使用"
+  startMatching: String
+}

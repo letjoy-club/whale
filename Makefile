@@ -1,0 +1,16 @@
+build:
+	go build -o bin/server cmd/server/main.go
+
+linux-server:
+	GOOS=linux GOARCH=amd64 go build -o bin/whale cmd/server/main.go
+
+gen:
+	go run cmd/gqlgen/main.go generate
+
+db-init:
+	go run cmd/db/main.go -init
+
+db-gen:
+	go run cmd/db/main.go
+
+.PHONY: build
