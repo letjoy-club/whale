@@ -28,7 +28,7 @@ func newMatchingResult(db *gorm.DB, opts ...gen.DOOption) matchingResult {
 	_matchingResult.ALL = field.NewAsterisk(tableName)
 	_matchingResult.ID = field.NewInt(tableName, "id")
 	_matchingResult.MatchingIDs = field.NewField(tableName, "matching_ids")
-	_matchingResult.TopicID = field.NewInt(tableName, "topic_id")
+	_matchingResult.TopicID = field.NewString(tableName, "topic_id")
 	_matchingResult.UserIDs = field.NewField(tableName, "user_ids")
 	_matchingResult.ConfirmStates = field.NewField(tableName, "confirm_states")
 	_matchingResult.ChatGroupState = field.NewString(tableName, "chat_group_state")
@@ -47,7 +47,7 @@ type matchingResult struct {
 	ALL            field.Asterisk
 	ID             field.Int
 	MatchingIDs    field.Field
-	TopicID        field.Int
+	TopicID        field.String
 	UserIDs        field.Field
 	ConfirmStates  field.Field
 	ChatGroupState field.String
@@ -72,7 +72,7 @@ func (m *matchingResult) updateTableName(table string) *matchingResult {
 	m.ALL = field.NewAsterisk(table)
 	m.ID = field.NewInt(table, "id")
 	m.MatchingIDs = field.NewField(table, "matching_ids")
-	m.TopicID = field.NewInt(table, "topic_id")
+	m.TopicID = field.NewString(table, "topic_id")
 	m.UserIDs = field.NewField(table, "user_ids")
 	m.ConfirmStates = field.NewField(table, "confirm_states")
 	m.ChatGroupState = field.NewString(table, "chat_group_state")

@@ -69,6 +69,7 @@ type ComplexityRoot struct {
 		InChatGroup     func(childComplexity int) int
 		MatchingResult  func(childComplexity int) int
 		RejectedUserIDs func(childComplexity int) int
+		Remark          func(childComplexity int) int
 		State           func(childComplexity int) int
 		TopicID         func(childComplexity int) int
 		UpdatedAt       func(childComplexity int) int
@@ -270,6 +271,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Matching.RejectedUserIDs(childComplexity), true
+
+	case "Matching.remark":
+		if e.complexity.Matching.Remark == nil {
+			break
+		}
+
+		return e.complexity.Matching.Remark(childComplexity), true
 
 	case "Matching.state":
 		if e.complexity.Matching.State == nil {
@@ -1071,6 +1079,8 @@ func (ec *executionContext) fieldContext_Entity_findMatchingByID(ctx context.Con
 				return ec.fieldContext_Matching_chatGroupState(ctx, field)
 			case "inChatGroup":
 				return ec.fieldContext_Matching_inChatGroup(ctx, field)
+			case "remark":
+				return ec.fieldContext_Matching_remark(ctx, field)
 			case "deadline":
 				return ec.fieldContext_Matching_deadline(ctx, field)
 			case "updatedAt":
@@ -1234,9 +1244,9 @@ func (ec *executionContext) _Matching_topicId(ctx context.Context, field graphql
 		}
 		return graphql.Null
 	}
-	res := resTmp.(int)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Matching_topicId(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1246,7 +1256,7 @@ func (ec *executionContext) fieldContext_Matching_topicId(ctx context.Context, f
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -1599,6 +1609,50 @@ func (ec *executionContext) fieldContext_Matching_inChatGroup(ctx context.Contex
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Matching_remark(ctx context.Context, field graphql.CollectedField, obj *models.Matching) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Matching_remark(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Remark, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Matching_remark(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Matching",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -2151,9 +2205,9 @@ func (ec *executionContext) _MatchingResult_topicId(ctx context.Context, field g
 		}
 		return graphql.Null
 	}
-	res := resTmp.(int)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_MatchingResult_topicId(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -2163,7 +2217,7 @@ func (ec *executionContext) fieldContext_MatchingResult_topicId(ctx context.Cont
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -2732,6 +2786,8 @@ func (ec *executionContext) fieldContext_Mutation_createMatching(ctx context.Con
 				return ec.fieldContext_Matching_chatGroupState(ctx, field)
 			case "inChatGroup":
 				return ec.fieldContext_Matching_inChatGroup(ctx, field)
+			case "remark":
+				return ec.fieldContext_Matching_remark(ctx, field)
 			case "deadline":
 				return ec.fieldContext_Matching_deadline(ctx, field)
 			case "updatedAt":
@@ -2817,6 +2873,8 @@ func (ec *executionContext) fieldContext_Mutation_updateMatching(ctx context.Con
 				return ec.fieldContext_Matching_chatGroupState(ctx, field)
 			case "inChatGroup":
 				return ec.fieldContext_Matching_inChatGroup(ctx, field)
+			case "remark":
+				return ec.fieldContext_Matching_remark(ctx, field)
 			case "deadline":
 				return ec.fieldContext_Matching_deadline(ctx, field)
 			case "updatedAt":
@@ -3047,6 +3105,8 @@ func (ec *executionContext) fieldContext_Query_matching(ctx context.Context, fie
 				return ec.fieldContext_Matching_chatGroupState(ctx, field)
 			case "inChatGroup":
 				return ec.fieldContext_Matching_inChatGroup(ctx, field)
+			case "remark":
+				return ec.fieldContext_Matching_remark(ctx, field)
 			case "deadline":
 				return ec.fieldContext_Matching_deadline(ctx, field)
 			case "updatedAt":
@@ -3132,6 +3192,8 @@ func (ec *executionContext) fieldContext_Query_matchings(ctx context.Context, fi
 				return ec.fieldContext_Matching_chatGroupState(ctx, field)
 			case "inChatGroup":
 				return ec.fieldContext_Matching_inChatGroup(ctx, field)
+			case "remark":
+				return ec.fieldContext_Matching_remark(ctx, field)
 			case "deadline":
 				return ec.fieldContext_Matching_deadline(ctx, field)
 			case "updatedAt":
@@ -3276,6 +3338,8 @@ func (ec *executionContext) fieldContext_Query_userMatchings(ctx context.Context
 				return ec.fieldContext_Matching_chatGroupState(ctx, field)
 			case "inChatGroup":
 				return ec.fieldContext_Matching_inChatGroup(ctx, field)
+			case "remark":
+				return ec.fieldContext_Matching_remark(ctx, field)
 			case "deadline":
 				return ec.fieldContext_Matching_deadline(ctx, field)
 			case "updatedAt":
@@ -5458,7 +5522,7 @@ func (ec *executionContext) unmarshalInputCreateMatchingParam(ctx context.Contex
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"topicId", "areaIds", "cityId", "gender", "deadline"}
+	fieldsInOrder := [...]string{"topicId", "areaIds", "cityId", "gender", "remark", "deadline"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -5469,7 +5533,7 @@ func (ec *executionContext) unmarshalInputCreateMatchingParam(ctx context.Contex
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("topicId"))
-			it.TopicID, err = ec.unmarshalNInt2int(ctx, v)
+			it.TopicID, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5494,6 +5558,14 @@ func (ec *executionContext) unmarshalInputCreateMatchingParam(ctx context.Contex
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("gender"))
 			it.Gender, err = ec.unmarshalNGender2whaleᚋpkgᚋmodelsᚐGender(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "remark":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("remark"))
+			it.Remark, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5581,7 +5653,7 @@ func (ec *executionContext) unmarshalInputMatchingFilter(ctx context.Context, ob
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("topicId"))
-			it.TopicID, err = ec.unmarshalOInt2ᚖint(ctx, v)
+			it.TopicID, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5617,7 +5689,7 @@ func (ec *executionContext) unmarshalInputUpdateMatchingParam(ctx context.Contex
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("topicId"))
-			it.TopicID, err = ec.unmarshalOInt2ᚖint(ctx, v)
+			it.TopicID, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5909,6 +5981,13 @@ func (ec *executionContext) _Matching(ctx context.Context, sel ast.SelectionSet,
 		case "inChatGroup":
 
 			out.Values[i] = ec._Matching_inChatGroup(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "remark":
+
+			out.Values[i] = ec._Matching_remark(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)

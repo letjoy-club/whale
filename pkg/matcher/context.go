@@ -8,16 +8,16 @@ import (
 )
 
 type MatchingContext struct {
-	topic2matchings map[int][]*models.Matching
+	topic2matchings map[string][]*models.Matching
 	used            map[string]bool
-	topics          []int
+	topics          []string
 }
 
-func (mc *MatchingContext) TopicMatchings(topicID int) []*models.Matching {
+func (mc *MatchingContext) TopicMatchings(topicID string) []*models.Matching {
 	return mc.topic2matchings[topicID]
 }
 
-func (mc *MatchingContext) Topics() []int {
+func (mc *MatchingContext) Topics() []string {
 	return mc.topics
 }
 
@@ -36,7 +36,7 @@ func GetMatchingContext(ctx context.Context) *MatchingContext {
 }
 
 func WithMatchingContext(ctx context.Context, matchings []*models.Matching) context.Context {
-	topicMap := make(map[int][]*models.Matching)
+	topicMap := make(map[string][]*models.Matching)
 
 	for _, matching := range matchings {
 		topicMap[matching.TopicID] = append(topicMap[matching.TopicID], matching)

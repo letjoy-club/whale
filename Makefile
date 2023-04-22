@@ -10,6 +10,9 @@ gen:
 db-init:
 	go run cmd/db/main.go -init
 
+db-init-prod:
+	go run cmd/db/main.go -init -conf conf.prod.yaml
+
 db-gen:
 	go run cmd/db/main.go
 

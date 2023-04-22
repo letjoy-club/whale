@@ -74,20 +74,40 @@ func (r *mutationResolver) CreateMatching(ctx context.Context, userID *string, p
 	if uid == "" {
 		return nil, whalecode.ErrUserIDCannotBeEmpty
 	}
+	if param.Remark == nil {
+		emptyStr := ""
+		param.Remark = &emptyStr
+	}
+	thunk := midacontext.GetLoader[loader.Loader](ctx).MatchingQuota.Load(ctx, uid)
+	quota, err := thunk()
+	if err != nil {
+		return nil, err
+	}
+	if quota.Remain <= 0 {
+		return nil, whalecode.ErrMatchingQuotaNotEnough
+	}
 	matching := &models.Matching{
 		ID:             shortid.New("m_", 8),
 		TopicID:        param.TopicID,
 		UserID:         uid,
 		State:          models.MatchingStateMatching.String(),
 		Gender:         param.Gender.String(),
+		Remark:         *param.Remark,
 		ChatGroupState: string(models.ChatGroupStateUncreated),
 	}
 	db := midacontext.GetDB(ctx)
-	err := dbquery.Use(db).Matching.WithContext(ctx).Create(matching)
-	if err != nil {
-		return nil, err
-	}
-	return matching, nil
+	err = db.Transaction(func(tx *gorm.DB) error {
+		err = dbquery.Use(tx).Matching.WithContext(ctx).Create(matching)
+		if err != nil {
+			return err
+		}
+
+		MatchingQuota := dbquery.Use(tx).MatchingQuota
+		_, err = MatchingQuota.WithContext(ctx).Where(MatchingQuota.UserID.Eq(token.String())).UpdateSimple(MatchingQuota.Remain.Add(-1))
+		return err
+	})
+	midacontext.GetLoader[loader.Loader](ctx).MatchingQuota.Clear(ctx, token.UserID())
+	return matching, err
 }
 
 // UpdateMatching is the resolver for the updateMatching field.
@@ -176,11 +196,17 @@ func (r *mutationResolver) CancelMatching(ctx context.Context, matchingID string
 	db := midacontext.GetDB(ctx)
 	err = db.Transaction(func(tx *gorm.DB) error {
 		Matching := dbquery.Use(db).Matching
+		MatchingQuota := dbquery.Use(db).MatchingQuota
 		_, err := Matching.WithContext(ctx).Where(Matching.ID.Eq(matchingID)).UpdateSimple(Matching.State.Value(string(models.MatchingStateCanceled)))
+		if err != nil {
+			return err
+		}
+		_, err = MatchingQuota.WithContext(ctx).Where(MatchingQuota.UserID.Eq(token.UserID())).UpdateSimple(MatchingQuota.Remain.Add(1))
 		return err
 	})
 	loader := midacontext.GetLoader[loader.Loader](ctx)
 	loader.Matching.Clear(ctx, matchingID)
+	loader.MatchingQuota.Clear(ctx, token.UserID())
 	return nil, err
 }
 

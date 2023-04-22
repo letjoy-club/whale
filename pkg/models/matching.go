@@ -5,7 +5,7 @@ import "time"
 type Matching struct {
 	ID string `gorm:"primaryKey"`
 
-	TopicID int      `gorm:"index"`
+	TopicID string   `gorm:"index"`
 	UserID  string   `gorm:"index;type:varchar(64)"`
 	AreaIDs []string `gorm:"serializer:json;type:json"`
 	CityID  string   `gorm:"index;type:varchar(64)"`
@@ -17,6 +17,7 @@ type Matching struct {
 	State           string `gorm:"type:varchar(64)"`
 	ChatGroupState  string `gorm:"type:varchar(64)"`
 	ResultID        int
+	Remark          string `gorm:"type:varchar(64)"`
 
 	Deadline  time.Time
 	CreatedAt time.Time `gorm:"autoCreateTime;index"`
@@ -28,7 +29,7 @@ func (Matching) IsEntity() {}
 type MatchingResult struct {
 	ID          int      `gorm:"primaryKey"`
 	MatchingIDs []string `gorm:"serializer:json;type:json"`
-	TopicID     int      `gorm:"index"`
+	TopicID     string   `gorm:"index"`
 	UserIDs     []string `gorm:"serializer:json;type:json"`
 
 	ConfirmStates  []string `gorm:"serializer:json;type:json"`

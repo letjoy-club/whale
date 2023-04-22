@@ -5,7 +5,7 @@ directive @list on FIELD_DEFINITION
 
 type Matching @key(fields: "id") {
   id: String!
-  topicId: Int!
+  topicId: String!
   userId: String!
 
   areaIds: [String!]!
@@ -16,6 +16,7 @@ type Matching @key(fields: "id") {
   rejectedUserIds: [String!]!
   chatGroupState: ChatGroupState!
   inChatGroup: Boolean!
+  remark: String!
 
   deadline: Time!
   updatedAt: Time!
@@ -77,7 +78,7 @@ type MatchingResult {
   id: Int! @adminOnly
 
   matchingIds: [String!]!
-  topicId: Int!
+  topicId: String!
   userIds: [String!]!
   confirmStates: [MatchingResultConfirmState!]! @list
 
@@ -123,7 +124,7 @@ input GraphQLPaginator {
 input MatchingFilter {
   createBefore: Time
   createAfter: Time
-  topicId: Int
+  topicId: String
   state: MatchingState
 }
 
@@ -146,21 +147,22 @@ type Query {
 
   "【匹配系统】用户匹配数量"
   userMatchingsCount(userId: String, filter: UserMatchingFilter): Summary!
-
 }
 
 input CreateMatchingParam {
-  topicId: Int!
+  topicId: String!
 
   areaIds: [String!]!
   cityId: String!
   gender: Gender!
 
+  remark: String
+
   deadline: Time
 }
 
 input UpdateMatchingParam {
-  topicId: Int
+  topicId: String
 
   areaIds: [String!]
   cityId: String

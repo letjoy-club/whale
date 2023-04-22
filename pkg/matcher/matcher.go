@@ -24,25 +24,24 @@ func (m *Matcher) Match(ctx context.Context) error {
 	}
 
 	ctx = WithMatchingContext(ctx, matchings)
-
-	return nil
+	return m.MatchTopics(ctx)
 }
 
 func (m *Matcher) MatchTopics(ctx context.Context) error {
 	mc := GetMatchingContext(ctx)
 	for _, topicID := range mc.Topics() {
 		if err := m.MatchTopic(ctx, topicID); err != nil {
-			logger.L.Error("failed to match topic", zap.Error(err), zap.Int("topic-id", topicID))
+			logger.L.Error("failed to match topic", zap.Error(err), zap.String("topic-id", topicID))
 		}
 	}
 	return nil
 }
 
-func (m *Matcher) MatchTopic(ctx context.Context, topicID int) error {
+func (m *Matcher) MatchTopic(ctx context.Context, topicID string) error {
 	return m.MatchPair(ctx, topicID)
 }
 
-func (m *Matcher) MatchPair(ctx context.Context, topicID int) error {
+func (m *Matcher) MatchPair(ctx context.Context, topicID string) error {
 	mc := GetMatchingContext(ctx)
 	matchings := mc.TopicMatchings(topicID)
 	if len(matchings) < 2 {

@@ -10,17 +10,18 @@ import (
 )
 
 type CreateMatchingParam struct {
-	TopicID  int        `json:"topicId"`
+	TopicID  string     `json:"topicId"`
 	AreaIds  []string   `json:"areaIds"`
 	CityID   string     `json:"cityId"`
 	Gender   Gender     `json:"gender"`
+	Remark   *string    `json:"remark,omitempty"`
 	Deadline *time.Time `json:"deadline,omitempty"`
 }
 
 type MatchingFilter struct {
 	CreateBefore *time.Time     `json:"createBefore,omitempty"`
 	CreateAfter  *time.Time     `json:"createAfter,omitempty"`
-	TopicID      *int           `json:"topicId,omitempty"`
+	TopicID      *string        `json:"topicId,omitempty"`
 	State        *MatchingState `json:"state,omitempty"`
 }
 
@@ -29,7 +30,7 @@ type Summary struct {
 }
 
 type UpdateMatchingParam struct {
-	TopicID  *int       `json:"topicId,omitempty"`
+	TopicID  *string    `json:"topicId,omitempty"`
 	AreaIds  []string   `json:"areaIds,omitempty"`
 	CityID   *string    `json:"cityId,omitempty"`
 	Gender   *Gender    `json:"gender,omitempty"`

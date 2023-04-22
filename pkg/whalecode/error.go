@@ -7,5 +7,6 @@ var (
 	ErrMatchingStateShouldBeMatching = midacode.NewError("MATCHING_STATE_SHOULD_BE_MATCHING", "匹配状态应该为匹配中", true)
 	ErrCannotModifyOtherMatched      = midacode.NewError("CANNOT_MODIFY_OTHER_MATCHED", "不能修改别人的匹配", true)
 
-	ErrUserIDCannotBeEmpty = midacode.NewError("USER_ID_CANNOT_BE_EMPTY", "用户 id 不能为空", true)
+	ErrUserIDCannotBeEmpty    = midacode.NewError("USER_ID_CANNOT_BE_EMPTY", "用户 id 不能为空", true)
+	ErrMatchingQuotaNotEnough = midacode.NewError("MATCHING_QUOTA_NOT_ENOUGH", "匹配次数不足", true)
 )
