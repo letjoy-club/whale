@@ -6,6 +6,7 @@ package graph
 
 import (
 	"context"
+	"fmt"
 	"whale/pkg/loader"
 	"whale/pkg/models"
 
@@ -34,6 +35,11 @@ func (r *entityResolver) FindMatchingQuotaByUserID(ctx context.Context, userID s
 	}
 	thunk := midacontext.GetLoader[loader.Loader](ctx).MatchingQuota.Load(ctx, userID)
 	return thunk()
+}
+
+// FindUserByID is the resolver for the findUserByID field.
+func (r *entityResolver) FindUserByID(ctx context.Context, id string) (*models.User, error) {
+	panic(fmt.Errorf("not implemented: FindUserByID - findUserByID"))
 }
 
 // Entity returns EntityResolver implementation.

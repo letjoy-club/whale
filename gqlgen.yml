@@ -52,6 +52,12 @@ models:
   Matching:
     model:
       - whale/pkg/models.Matching
+  MatchingOfTopic:
+    model:
+      - whale/pkg/models.Matching
+  MatchingPreview:
+    model:
+      - whale/pkg/models.Matching
   MatchingResult:
     model:
       - whale/pkg/models.MatchingResult
@@ -61,6 +67,9 @@ models:
   MatchingResultConfirmAction:
     model:
       - whale/pkg/models.MatchingResultConfirmAction
+  MatchingInvitation:
+    model:
+      - whale/pkg/models.MatchingInvitation
   GraphQLPaginator:
     model:
       - github.com/letjoy-club/mida-tool/graphqlutil.GraphQLPaginator

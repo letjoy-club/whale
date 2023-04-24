@@ -67,6 +67,10 @@ func main() {
 
 	secret := []byte(conf.Secret)
 	auth := authenticator.Authenticator{Key: secret}
+
+	adminToken, _ := auth.SignID("1000")
+	fmt.Println("Admin Token: ", adminToken)
+
 	services := midacontext.Services{
 		Hoopoe: midacontext.NewServices(conf.ServicesSetting.Hoopoe, "1000"),
 		Smew:   midacontext.NewServices(conf.ServicesSetting.Smew, "1000"),
@@ -89,10 +93,10 @@ func main() {
 
 			ctx = midacontext.WithDB(ctx, db)
 			ctx = midacontext.WithRedis(ctx, redis)
-			ctx = midacontext.WithAuthenticator(ctx, auth)
 			ctx = midacontext.WithLoader(ctx, loader)
 			ctx = midacontext.WithServices(ctx, services)
 			ctx = midacontext.WithClientToken(ctx, token)
+			ctx = midacontext.WithAuthenticator(ctx, auth)
 
 			r = r.WithContext(ctx)
 

@@ -14,9 +14,10 @@ import (
 )
 
 type Loader struct {
-	Matching       *dataloader.Loader[string, *models.Matching]
-	MatchingQuota  *dataloader.Loader[string, *models.MatchingQuota]
-	MatchingResult *dataloader.Loader[int, *models.MatchingResult]
+	Matching           *dataloader.Loader[string, *models.Matching]
+	MatchingInvitation *dataloader.Loader[string, *models.MatchingInvitation]
+	MatchingQuota      *dataloader.Loader[string, *models.MatchingQuota]
+	MatchingResult     *dataloader.Loader[int, *models.MatchingResult]
 }
 
 func NewLoader(db *gorm.DB) *Loader {
@@ -25,6 +26,12 @@ func NewLoader(db *gorm.DB) *Loader {
 			Matching := dbquery.Use(db).Matching
 			return Matching.WithContext(ctx).Where(Matching.ID.In(keys...)).Find()
 		}, func(k map[string]*models.Matching, v *models.Matching) {
+			k[v.ID] = v
+		}, time.Second*10),
+		MatchingInvitation: NewSingleLoader(db, func(ctx context.Context, keys []string) ([]*models.MatchingInvitation, error) {
+			MatchingInvitation := dbquery.Use(db).MatchingInvitation
+			return MatchingInvitation.WithContext(ctx).Where(MatchingInvitation.ID.In(keys...)).Find()
+		}, func(k map[string]*models.MatchingInvitation, v *models.MatchingInvitation) {
 			k[v.ID] = v
 		}, time.Second*10),
 		MatchingQuota: NewSingleLoader(db, func(ctx context.Context, keys []string) ([]*models.MatchingQuota, error) {
@@ -45,7 +52,7 @@ func NewLoader(db *gorm.DB) *Loader {
 				for id := range notFound {
 					toBeAdded = append(toBeAdded, &models.MatchingQuota{
 						UserID: id,
-						Remain: 0,
+						Remain: 3,
 						Total:  3,
 					})
 				}

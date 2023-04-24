@@ -55,10 +55,15 @@ func (m *Matcher) MatchPair(ctx context.Context, topicID string) error {
 			if mc.Used(matchings[j].ID) {
 				continue
 			}
+			if matchings[i].UserID == matchings[j].UserID {
+				continue
+			}
 			if _, err := NewMatchingResult(ctx, []*models.Matching{matchings[i], matchings[j]}); err != nil {
 				logger.L.Error("failed to create matching result", zap.Error(err), zap.String("matching-1", matchings[i].ID), zap.String("matching-2", matchings[j].ID))
 				return err
 			}
+			mc.Use(matchings[i].ID)
+			mc.Use(matchings[j].ID)
 		}
 	}
 	return nil
@@ -94,11 +99,10 @@ func NewMatchingResult(ctx context.Context, matchings []*models.Matching) (*mode
 		rx, err := Matching.
 			WithContext(ctx).
 			Where(Matching.ID.In(matchingIDs...), Matching.State.Eq(models.MatchingStateMatching.String())).
-			Select(Matching.ResultID, Matching.State, Matching.ChatGroupState).
+			Select(Matching.ResultID, Matching.State).
 			Updates(&models.Matching{
-				ResultID:       matchingResult.ID,
-				State:          models.MatchingStateMatched.String(),
-				ChatGroupState: string(models.ChatGroupStateUncreated),
+				ResultID: matchingResult.ID,
+				State:    models.MatchingStateMatched.String(),
 			})
 		if err != nil {
 			return err

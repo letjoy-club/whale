@@ -35,6 +35,9 @@ type MatchingResult struct {
 	ConfirmStates  []string `gorm:"serializer:json;type:json"`
 	ChatGroupState string   `gorm:"type:varchar(64)"`
 	ChatGroupID    string   `gorm:"type:varchar(64)"`
+	Closed         bool
+
+	CreatedBy string `gorm:"type:varchar(64)"`
 
 	CreatedAt time.Time `gorm:"autoCreateTime"`
 	UpdatedAt time.Time `gorm:"autoUpdateTime"`
@@ -62,3 +65,9 @@ type MatchingQuota struct {
 }
 
 func (MatchingQuota) IsEntity() {}
+
+type MatchingPreview struct {
+	UserID    string
+	Remark    string
+	CreatedAt time.Time
+}

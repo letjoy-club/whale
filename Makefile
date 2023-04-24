@@ -16,4 +16,7 @@ db-init-prod:
 db-gen:
 	go run cmd/db/main.go
 
+tools:
+	go build -o bin/auth-tool cmd/auth-tool/main.go
+
 .PHONY: build

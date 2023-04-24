@@ -6,6 +6,8 @@ package graph
 
 import (
 	"context"
+	"fmt"
+	"time"
 	"whale/pkg/dbquery"
 	"whale/pkg/loader"
 	"whale/pkg/matcher"
@@ -33,11 +35,6 @@ func (r *matchingResolver) State(ctx context.Context, obj *models.Matching) (mod
 	return models.MatchingState(obj.State), nil
 }
 
-// ChatGroupState is the resolver for the chatGroupState field.
-func (r *matchingResolver) ChatGroupState(ctx context.Context, obj *models.Matching) (models.ChatGroupState, error) {
-	return models.ChatGroupState(obj.ChatGroupState), nil
-}
-
 // MatchingResult is the resolver for the matchingResult field.
 func (r *matchingResolver) MatchingResult(ctx context.Context, obj *models.Matching) (*models.MatchingResult, error) {
 	token := midacontext.GetClientToken(ctx)
@@ -52,6 +49,55 @@ func (r *matchingResolver) MatchingResult(ctx context.Context, obj *models.Match
 	return nil, nil
 }
 
+// Topic is the resolver for the topic field.
+func (r *matchingResolver) Topic(ctx context.Context, obj *models.Matching) (*models.Topic, error) {
+	return &models.Topic{ID: obj.TopicID}, nil
+}
+
+// Area is the resolver for the area field.
+func (r *matchingResolver) Areas(ctx context.Context, obj *models.Matching) ([]*models.Area, error) {
+	return lo.Map(obj.AreaIDs, func(id string, i int) *models.Area {
+		return &models.Area{Code: id}
+	}), nil
+}
+
+// City is the resolver for the city field.
+func (r *matchingResolver) City(ctx context.Context, obj *models.Matching) (*models.Area, error) {
+	return &models.Area{Code: obj.CityID}, nil
+}
+
+// ConfirmState is the resolver for the confirmState field.
+func (r *matchingInvitationResolver) ConfirmState(ctx context.Context, obj *models.MatchingInvitation) (models.InvitationConfirmState, error) {
+	return models.InvitationConfirmState(obj.ConfirmState), nil
+}
+
+// Gender is the resolver for the gender field.
+func (r *matchingOfTopicResolver) Gender(ctx context.Context, obj *models.Matching) (models.Gender, error) {
+	return models.Gender(obj.Gender), nil
+}
+
+// User is the resolver for the user field.
+func (r *matchingOfTopicResolver) User(ctx context.Context, obj *models.Matching) (*models.User, error) {
+	return &models.User{ID: obj.UserID}, nil
+}
+
+// City is the resolver for the city field.
+func (r *matchingOfTopicResolver) City(ctx context.Context, obj *models.Matching) (*models.Area, error) {
+	return &models.Area{Code: obj.CityID}, nil
+}
+
+// AreaIds is the resolver for the areaIds field.
+func (r *matchingOfTopicResolver) Areas(ctx context.Context, obj *models.Matching) ([]*models.Area, error) {
+	return lo.Map(obj.AreaIDs, func(id string, i int) *models.Area {
+		return &models.Area{Code: id}
+	}), nil
+}
+
+// User is the resolver for the user field.
+func (r *matchingPreviewResolver) User(ctx context.Context, obj *models.Matching) (*models.User, error) {
+	return &models.User{ID: obj.UserID}, nil
+}
+
 // ConfirmStates is the resolver for the confirmStates field.
 func (r *matchingResultResolver) ConfirmStates(ctx context.Context, obj *models.MatchingResult) ([]models.MatchingResultConfirmState, error) {
 	return lo.Map(obj.ConfirmStates, func(s string, i int) models.MatchingResultConfirmState {
@@ -62,6 +108,36 @@ func (r *matchingResultResolver) ConfirmStates(ctx context.Context, obj *models.
 // ChatGroupState is the resolver for the chatGroupState field.
 func (r *matchingResultResolver) ChatGroupState(ctx context.Context, obj *models.MatchingResult) (models.ChatGroupState, error) {
 	return models.ChatGroupState(obj.ChatGroupState), nil
+}
+
+// CreatedBy is the resolver for the createdBy field.
+func (r *matchingResultResolver) CreatedBy(ctx context.Context, obj *models.MatchingResult) (models.ResultCreatedBy, error) {
+	if obj.CreatedBy == "" {
+		return models.ResultCreatedByMatching, nil
+	}
+	return models.ResultCreatedByInvitation, nil
+}
+
+// Users is the resolver for the users field.
+func (r *matchingResultResolver) Users(ctx context.Context, obj *models.MatchingResult) ([]*models.User, error) {
+	return lo.Map(obj.UserIDs, func(id string, i int) *models.User {
+		return &models.User{ID: id}
+	}), nil
+}
+
+// MatchingPreviews is the resolver for the matchingPreviews field.
+func (r *matchingResultResolver) MatchingPreviews(ctx context.Context, obj *models.MatchingResult) ([]*models.Matching, error) {
+	thunk := midacontext.GetLoader[loader.Loader](ctx).Matching.LoadMany(ctx, obj.MatchingIDs)
+	matchings, errors := thunk()
+	if len(errors) > 0 {
+		return nil, multierr.Combine(errors...)
+	}
+	return matchings, nil
+}
+
+// Topic is the resolver for the topic field.
+func (r *matchingResultResolver) Topic(ctx context.Context, obj *models.MatchingResult) (*models.Topic, error) {
+	return &models.Topic{ID: obj.TopicID}, nil
 }
 
 // CreateMatching is the resolver for the createMatching field.
@@ -86,6 +162,22 @@ func (r *mutationResolver) CreateMatching(ctx context.Context, userID *string, p
 	if quota.Remain <= 0 {
 		return nil, whalecode.ErrMatchingQuotaNotEnough
 	}
+	db := midacontext.GetDB(ctx)
+	Matching := dbquery.Use(db).Matching
+
+	_, err = Matching.WithContext(ctx).Where(
+		Matching.TopicID.Eq(param.TopicID),
+		Matching.UserID.Eq(uid),
+		Matching.State.In(
+			string(models.MatchingStateMatching),
+			string(models.MatchingStateMatched),
+		),
+	).Take()
+	// 如果有找到，或者其他数据库错误
+	if err == nil {
+		return nil, err
+	}
+
 	matching := &models.Matching{
 		ID:             shortid.New("m_", 8),
 		TopicID:        param.TopicID,
@@ -93,9 +185,12 @@ func (r *mutationResolver) CreateMatching(ctx context.Context, userID *string, p
 		State:          models.MatchingStateMatching.String(),
 		Gender:         param.Gender.String(),
 		Remark:         *param.Remark,
+		CityID:         param.CityID,
 		ChatGroupState: string(models.ChatGroupStateUncreated),
+		Deadline:       time.Now().Add(time.Hour * 24 * 7),
+		AreaIDs:        param.AreaIds,
 	}
-	db := midacontext.GetDB(ctx)
+
 	err = db.Transaction(func(tx *gorm.DB) error {
 		err = dbquery.Use(tx).Matching.WithContext(ctx).Create(matching)
 		if err != nil {
@@ -106,8 +201,177 @@ func (r *mutationResolver) CreateMatching(ctx context.Context, userID *string, p
 		_, err = MatchingQuota.WithContext(ctx).Where(MatchingQuota.UserID.Eq(token.String())).UpdateSimple(MatchingQuota.Remain.Add(-1))
 		return err
 	})
-	midacontext.GetLoader[loader.Loader](ctx).MatchingQuota.Clear(ctx, token.UserID())
+	if err == nil {
+		midacontext.GetLoader[loader.Loader](ctx).MatchingQuota.Clear(ctx, token.UserID())
+	}
 	return matching, err
+}
+
+// CreateMatchingInvitation is the resolver for the createMatchingInvitation field.
+func (r *mutationResolver) CreateMatchingInvitation(ctx context.Context, userID *string, param *models.CreateMatchingInvitationParam) (*models.MatchingInvitation, error) {
+	token := midacontext.GetClientToken(ctx)
+	if !token.IsAdmin() && !token.IsUser() {
+		return nil, midacode.ErrNotPermitted
+	}
+	uid := graphqlutil.GetID(token, userID)
+	if uid == "" {
+		return nil, whalecode.ErrUserIDCannotBeEmpty
+	}
+	thunk := midacontext.GetLoader[loader.Loader](ctx).MatchingQuota.Load(ctx, uid)
+	quota, err := thunk()
+	if err != nil {
+		return nil, err
+	}
+	if quota.Remain <= 0 {
+		return nil, whalecode.ErrMatchingQuotaNotEnough
+	}
+	db := midacontext.GetDB(ctx)
+	MatchingInvitation := dbquery.Use(db).MatchingInvitation
+
+	invitation := models.MatchingInvitation{
+		ID:               shortid.New("mi_", 8),
+		UserID:           uid,
+		InviteeID:        param.InviteeID,
+		Remark:           param.Remark,
+		TopicID:          param.TopicID,
+		CityID:           param.CityID,
+		AreaIDs:          param.AreaIds,
+		ConfirmState:     models.InvitationConfirmStateUnconfirmed.String(),
+		MatchingIds:      []string{},
+		MatchingResultId: 0,
+	}
+	err = MatchingInvitation.WithContext(ctx).Create(&invitation)
+	if err != nil {
+		return nil, err
+	}
+	MatchingQuota := dbquery.Use(db).MatchingQuota
+	_, err = MatchingQuota.WithContext(ctx).Where(MatchingQuota.UserID.Eq(uid)).UpdateSimple(MatchingQuota.Remain.Add(-1))
+	if err != nil {
+		return nil, err
+	}
+	midacontext.GetLoader[loader.Loader](ctx).MatchingQuota.Clear(ctx, uid)
+	return &invitation, nil
+}
+
+// CancelMatchingInvitation is the resolver for the cancelMatchingInvitation field.
+func (r *mutationResolver) CancelMatchingInvitation(ctx context.Context, invitationID string) (*string, error) {
+	token := midacontext.GetClientToken(ctx)
+	if !token.IsAdmin() && !token.IsUser() {
+		return nil, midacode.ErrNotPermitted
+	}
+	db := midacontext.GetDB(ctx)
+	MatchingInvitation := dbquery.Use(db).MatchingInvitation
+	matchingInvitation, err := MatchingInvitation.WithContext(ctx).Where(MatchingInvitation.ID.Eq(invitationID)).Take()
+	if err != nil {
+		return nil, midacode.ItemMayNotFound(err)
+	}
+	if token.IsUser() {
+		if token.String() != matchingInvitation.UserID {
+			return nil, midacode.ErrNotPermitted
+		}
+	}
+
+	if matchingInvitation.Closed {
+		return nil, nil
+	}
+	if matchingInvitation.ConfirmState != models.InvitationConfirmStateUnconfirmed.String() {
+		return nil, nil
+	}
+
+	_, err = MatchingInvitation.WithContext(ctx).Where(MatchingInvitation.ID.Eq(invitationID)).UpdateSimple(
+		MatchingInvitation.Closed.Value(true),
+		MatchingInvitation.ConfirmState.Value(models.InvitationConfirmStateRejected.String()),
+	)
+	if err != nil {
+		return nil, err
+	}
+	// 发起者的配对配额+1
+	MatchingQuota := dbquery.Use(db).MatchingQuota
+	_, err = MatchingQuota.WithContext(ctx).Where(MatchingQuota.UserID.Eq(matchingInvitation.UserID)).UpdateSimple(MatchingQuota.Remain.Add(1))
+	if err != nil {
+		return nil, err
+	}
+	midacontext.GetLoader[loader.Loader](ctx).MatchingQuota.Clear(ctx, matchingInvitation.UserID)
+	midacontext.GetLoader[loader.Loader](ctx).MatchingInvitation.Clear(ctx, matchingInvitation.ID)
+	return nil, nil
+}
+
+// ConfirmMatchingInvitation is the resolver for the confirmMatchingInvitation field.
+func (r *mutationResolver) ConfirmMatchingInvitation(ctx context.Context, userID *string, invitationID string, confirm bool) (*string, error) {
+	token := midacontext.GetClientToken(ctx)
+	if !token.IsAdmin() && !token.IsUser() {
+		return nil, midacode.ErrNotPermitted
+	}
+	thunk := midacontext.GetLoader[loader.Loader](ctx).MatchingInvitation.Load(ctx, invitationID)
+	invitation, err := thunk()
+	if err != nil {
+		return nil, err
+	}
+	if token.IsUser() {
+		if token.String() != invitation.InviteeID {
+			return nil, err
+		}
+	}
+
+	quotaThunk := midacontext.GetLoader[loader.Loader](ctx).MatchingQuota.Load(ctx, invitation.InviteeID)
+	quota, err := quotaThunk()
+	if err != nil {
+		return nil, err
+	}
+	if quota.Remain <= 0 {
+		return nil, whalecode.ErrMatchingQuotaNotEnough
+	}
+
+	db := midacontext.GetDB(ctx)
+	// 生成匹配和匹配结果
+	Matching := dbquery.Use(db).Matching
+	MatchingResult := dbquery.Use(db).MatchingResult
+
+	m1 := models.Matching{
+		ID:             shortid.New("m_", 8),
+		TopicID:        invitation.TopicID,
+		UserID:         invitation.UserID,
+		CityID:         invitation.CityID,
+		AreaIDs:        invitation.AreaIDs,
+		Gender:         models.GenderN.String(),
+		ChatGroupState: models.ChatGroupStateUncreated.String(),
+		Remark:         invitation.Remark,
+		Deadline:       time.Now(),
+		State:          string(models.MatchingStateMatched),
+	}
+	m2 := models.Matching{
+		ID:             shortid.New("m_", 8),
+		TopicID:        invitation.InviteeID,
+		UserID:         invitation.InviteeID,
+		CityID:         invitation.CityID,
+		AreaIDs:        invitation.AreaIDs,
+		Gender:         models.GenderN.String(),
+		ChatGroupState: models.ChatGroupStateUncreated.String(),
+		Deadline:       time.Now(),
+		State:          string(models.MatchingStateMatched),
+	}
+	result := models.MatchingResult{
+		MatchingIDs:    []string{m1.ID, m2.ID},
+		TopicID:        invitation.TopicID,
+		UserIDs:        []string{invitation.UserID, invitation.InviteeID},
+		ConfirmStates:  []string{models.InvitationConfirmStateConfirmed.String(), models.InvitationConfirmStateConfirmed.String()},
+		ChatGroupState: models.ChatGroupStateUncreated.String(),
+	}
+	err = MatchingResult.WithContext(ctx).Create(&result)
+	if err != nil {
+		return nil, err
+	}
+	m1.ResultID = result.ID
+	m2.ResultID = result.ID
+	if err := Matching.WithContext(ctx).Create(&m1, &m2); err != nil {
+		return nil, err
+	}
+	MatchingQuota := dbquery.Use(db).MatchingQuota
+	if _, err := MatchingQuota.WithContext(ctx).Where(MatchingQuota.UserID.Eq(invitation.InviteeID)).UpdateSimple(MatchingQuota.Remain.Sub(1)); err != nil {
+		return nil, err
+	}
+	err = modelutil.CheckMatchingResultAndCreateChatGroup(ctx, &result)
+	return nil, err
 }
 
 // UpdateMatching is the resolver for the updateMatching field.
@@ -171,9 +435,11 @@ func (r *mutationResolver) ConfirmMatchingResult(ctx context.Context, userID *st
 
 	db := midacontext.GetDB(ctx)
 	err = db.Transaction(func(tx *gorm.DB) error {
-		return modelutil.ConfirmMatching(ctx, tx, matchingResult, matchingID, token.String(), true)
+		return modelutil.ConfirmMatching(ctx, tx, matchingResult, matchingID, token.String(), !reject)
 	})
-	loader.Matching.Clear(ctx, matchingID)
+	if err == nil {
+		err = modelutil.CheckMatchingResultAndCreateChatGroup(ctx, matchingResult)
+	}
 	return nil, err
 }
 
@@ -206,7 +472,7 @@ func (r *mutationResolver) CancelMatching(ctx context.Context, matchingID string
 	})
 	loader := midacontext.GetLoader[loader.Loader](ctx)
 	loader.Matching.Clear(ctx, matchingID)
-	loader.MatchingQuota.Clear(ctx, token.UserID())
+	loader.MatchingQuota.Clear(ctx, matching.UserID)
 	return nil, err
 }
 
@@ -218,8 +484,13 @@ func (r *mutationResolver) StartMatching(ctx context.Context) (*string, error) {
 	}
 
 	matcher := matcher.Matcher{}
-	err := matcher.MatchTopics(ctx)
+	err := matcher.Match(ctx)
 	return nil, err
+}
+
+// CheckAndCreateChatGroup is the resolver for the checkAndCreateChatGroup field.
+func (r *mutationResolver) CheckAndCreateChatGroup(ctx context.Context, matchingID string) (*string, error) {
+	panic(fmt.Errorf("not implemented: CheckAndCreateChatGroup - checkAndCreateChatGroup"))
 }
 
 // Matching is the resolver for the matching field.
@@ -355,8 +626,167 @@ func (r *queryResolver) UserMatchingsCount(ctx context.Context, userID *string, 
 	return &models.Summary{Count: int(count)}, err
 }
 
+// PreviewMatchingsOfTopic is the resolver for the previewMatchingsOfTopic field.
+func (r *queryResolver) PreviewMatchingsOfTopic(ctx context.Context, areaID string, topicID string, limit int) ([]*models.Matching, error) {
+	db := midacontext.GetDB(ctx)
+	Matching := dbquery.Use(db).Matching
+	if limit <= 0 {
+		limit = 4
+	}
+	if limit > 8 {
+		limit = 8
+	}
+
+	ids := []string{}
+	err := Matching.WithContext(ctx).Where(
+		Matching.CityID.Eq(areaID),
+		Matching.TopicID.Eq(topicID),
+	).Limit(limit).Order(Matching.CreatedAt.Desc()).Pluck(Matching.ID, &ids)
+	if err != nil {
+		return nil, err
+	}
+	thunk := midacontext.GetLoader[loader.Loader](ctx).Matching.LoadMany(ctx, ids)
+	matchings, errors := thunk()
+	if len(errors) > 0 {
+		return nil, multierr.Combine(errors...)
+	}
+	return matchings, nil
+}
+
+// Invitations is the resolver for the invitations field.
+func (r *queryResolver) Invitations(ctx context.Context, userID *string, paginator *graphqlutil.GraphQLPaginator) ([]*models.MatchingInvitation, error) {
+	token := midacontext.GetClientToken(ctx)
+	if !token.IsUser() && !token.IsAdmin() {
+		return nil, midacode.ErrNotPermitted
+	}
+	uid := graphqlutil.GetID(token, userID)
+	if uid == "" {
+		return nil, whalecode.ErrUserIDCannotBeEmpty
+	}
+
+	db := midacontext.GetDB(ctx)
+	ids := []string{}
+	MatchingInvitation := dbquery.Use(db).MatchingInvitation
+	err := MatchingInvitation.WithContext(ctx).
+		Where(MatchingInvitation.UserID.Eq(uid)).
+		Order(MatchingInvitation.CreatedAt.Desc()).
+		Pluck(MatchingInvitation.ID, &ids)
+	if err != nil {
+		return nil, err
+	}
+	thunk := midacontext.GetLoader[loader.Loader](ctx).MatchingInvitation.LoadMany(ctx, ids)
+	invitations, errors := thunk()
+	if len(errors) > 0 {
+		return nil, multierr.Combine(errors...)
+	}
+	return invitations, nil
+}
+
+// Invitation is the resolver for the invitation field.
+func (r *queryResolver) Invitation(ctx context.Context, userID *string, id string) (*models.MatchingInvitation, error) {
+	token := midacontext.GetClientToken(ctx)
+	if !token.IsUser() && !token.IsAdmin() {
+		return nil, midacode.ErrNotPermitted
+	}
+	thunk := midacontext.GetLoader[loader.Loader](ctx).MatchingInvitation.Load(ctx, id)
+	invitation, err := thunk()
+	if err != nil {
+		return nil, err
+	}
+	if token.IsUser() {
+		if invitation.UserID != token.String() {
+			return nil, midacode.ErrNotPermitted
+		}
+	}
+	return invitation, nil
+}
+
+// InvitationsCount is the resolver for the invitationsCount field.
+func (r *queryResolver) InvitationsCount(ctx context.Context, userID *string) (*models.Summary, error) {
+	token := midacontext.GetClientToken(ctx)
+	if !token.IsUser() && !token.IsAdmin() {
+		return nil, midacode.ErrNotPermitted
+	}
+	uid := graphqlutil.GetID(token, userID)
+	if uid == "" {
+		return nil, whalecode.ErrUserIDCannotBeEmpty
+	}
+
+	db := midacontext.GetDB(ctx)
+	MatchingInvitation := dbquery.Use(db).MatchingInvitation
+	count, err := MatchingInvitation.WithContext(ctx).Where(MatchingInvitation.UserID.Eq(uid)).Count()
+	if err != nil {
+		return nil, err
+	}
+	return &models.Summary{Count: int(count)}, nil
+}
+
+// UnconfirmedInvitations is the resolver for the unconfirmedInvitations field.
+func (r *queryResolver) UnconfirmedInvitations(ctx context.Context, userID *string) ([]*models.MatchingInvitation, error) {
+	token := midacontext.GetClientToken(ctx)
+	if !token.IsUser() && !token.IsAdmin() {
+		return nil, midacode.ErrNotPermitted
+	}
+	uid := graphqlutil.GetID(token, userID)
+	if uid == "" {
+		return nil, whalecode.ErrUserIDCannotBeEmpty
+	}
+	db := midacontext.GetDB(ctx)
+	MatchingInvitation := dbquery.Use(db).MatchingInvitation
+	ids := []string{}
+	err := MatchingInvitation.WithContext(ctx).
+		Where(MatchingInvitation.InviteeID.Eq(uid)).
+		Where(MatchingInvitation.Closed.Is(false)).
+		Where(MatchingInvitation.ConfirmState.Eq(models.InvitationConfirmStateUnconfirmed.String())).
+		Order(MatchingInvitation.CreatedAt.Desc()).
+		Pluck(MatchingInvitation.ID, &ids)
+	if err != nil {
+		return nil, err
+	}
+	thunk := midacontext.GetLoader[loader.Loader](ctx).MatchingInvitation.LoadMany(ctx, ids)
+	invitaions, errors := thunk()
+	if len(errors) > 0 {
+		return nil, multierr.Combine(errors...)
+	}
+	return invitaions, nil
+}
+
+// UnconfirmedInvitationCount is the resolver for the unconfirmedInvitationCount field.
+func (r *queryResolver) UnconfirmedInvitationCount(ctx context.Context, userID *string) (*models.Summary, error) {
+	token := midacontext.GetClientToken(ctx)
+	if !token.IsUser() && !token.IsAdmin() {
+		return nil, midacode.ErrNotPermitted
+	}
+	uid := graphqlutil.GetID(token, userID)
+	if uid == "" {
+		return nil, whalecode.ErrUserIDCannotBeEmpty
+	}
+	db := midacontext.GetDB(ctx)
+	MatchingInvitation := dbquery.Use(db).MatchingInvitation
+	count, err := MatchingInvitation.WithContext(ctx).
+		Where(MatchingInvitation.InviteeID.Eq(uid)).
+		Where(MatchingInvitation.Closed.Is(false)).
+		Where(MatchingInvitation.ConfirmState.Eq(models.InvitationConfirmStateUnconfirmed.String())).
+		Count()
+	if err != nil {
+		return nil, err
+	}
+	return &models.Summary{Count: int(count)}, nil
+}
+
 // Matching returns MatchingResolver implementation.
 func (r *Resolver) Matching() MatchingResolver { return &matchingResolver{r} }
+
+// MatchingInvitation returns MatchingInvitationResolver implementation.
+func (r *Resolver) MatchingInvitation() MatchingInvitationResolver {
+	return &matchingInvitationResolver{r}
+}
+
+// MatchingOfTopic returns MatchingOfTopicResolver implementation.
+func (r *Resolver) MatchingOfTopic() MatchingOfTopicResolver { return &matchingOfTopicResolver{r} }
+
+// MatchingPreview returns MatchingPreviewResolver implementation.
+func (r *Resolver) MatchingPreview() MatchingPreviewResolver { return &matchingPreviewResolver{r} }
 
 // MatchingResult returns MatchingResultResolver implementation.
 func (r *Resolver) MatchingResult() MatchingResultResolver { return &matchingResultResolver{r} }
@@ -368,6 +798,9 @@ func (r *Resolver) Mutation() MutationResolver { return &mutationResolver{r} }
 func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 
 type matchingResolver struct{ *Resolver }
+type matchingInvitationResolver struct{ *Resolver }
+type matchingOfTopicResolver struct{ *Resolver }
+type matchingPreviewResolver struct{ *Resolver }
 type matchingResultResolver struct{ *Resolver }
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }

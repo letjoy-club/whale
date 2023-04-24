@@ -9,6 +9,20 @@ import (
 	"time"
 )
 
+type Area struct {
+	Code string `json:"code"`
+}
+
+func (Area) IsEntity() {}
+
+type CreateMatchingInvitationParam struct {
+	InviteeID string   `json:"inviteeId"`
+	Remark    string   `json:"remark"`
+	TopicID   string   `json:"topicId"`
+	CityID    string   `json:"cityId"`
+	AreaIds   []string `json:"areaIds"`
+}
+
 type CreateMatchingParam struct {
 	TopicID  string     `json:"topicId"`
 	AreaIds  []string   `json:"areaIds"`
@@ -29,13 +43,27 @@ type Summary struct {
 	Count int `json:"count"`
 }
 
+type Topic struct {
+	ID string `json:"id"`
+}
+
+func (Topic) IsEntity() {}
+
 type UpdateMatchingParam struct {
 	TopicID  *string    `json:"topicId,omitempty"`
 	AreaIds  []string   `json:"areaIds,omitempty"`
 	CityID   *string    `json:"cityId,omitempty"`
 	Gender   *Gender    `json:"gender,omitempty"`
+	Remark   *string    `json:"remark,omitempty"`
 	Deadline *time.Time `json:"deadline,omitempty"`
 }
+
+type User struct {
+	ID            string         `json:"id"`
+	MatchingQuota *MatchingQuota `json:"matchingQuota"`
+}
+
+func (User) IsEntity() {}
 
 type UserMatchingFilter struct {
 	State *MatchingState `json:"state,omitempty"`
@@ -99,8 +127,11 @@ func (e ChatGroupState) MarshalGQL(w io.Writer) {
 type Gender string
 
 const (
+	// 女
 	GenderF Gender = "F"
+	// 男
 	GenderM Gender = "M"
+	// 不限
 	GenderN Gender = "N"
 )
 
@@ -136,6 +167,49 @@ func (e *Gender) UnmarshalGQL(v interface{}) error {
 }
 
 func (e Gender) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type InvitationConfirmState string
+
+const (
+	InvitationConfirmStateConfirmed   InvitationConfirmState = "Confirmed"
+	InvitationConfirmStateRejected    InvitationConfirmState = "Rejected"
+	InvitationConfirmStateUnconfirmed InvitationConfirmState = "Unconfirmed"
+)
+
+var AllInvitationConfirmState = []InvitationConfirmState{
+	InvitationConfirmStateConfirmed,
+	InvitationConfirmStateRejected,
+	InvitationConfirmStateUnconfirmed,
+}
+
+func (e InvitationConfirmState) IsValid() bool {
+	switch e {
+	case InvitationConfirmStateConfirmed, InvitationConfirmStateRejected, InvitationConfirmStateUnconfirmed:
+		return true
+	}
+	return false
+}
+
+func (e InvitationConfirmState) String() string {
+	return string(e)
+}
+
+func (e *InvitationConfirmState) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = InvitationConfirmState(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid InvitationConfirmState", str)
+	}
+	return nil
+}
+
+func (e InvitationConfirmState) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
@@ -237,5 +311,48 @@ func (e *MatchingState) UnmarshalGQL(v interface{}) error {
 }
 
 func (e MatchingState) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type ResultCreatedBy string
+
+const (
+	// 由匹配系统创建的结果
+	ResultCreatedByMatching ResultCreatedBy = "Matching"
+	// 由邀请创建的结果
+	ResultCreatedByInvitation ResultCreatedBy = "Invitation"
+)
+
+var AllResultCreatedBy = []ResultCreatedBy{
+	ResultCreatedByMatching,
+	ResultCreatedByInvitation,
+}
+
+func (e ResultCreatedBy) IsValid() bool {
+	switch e {
+	case ResultCreatedByMatching, ResultCreatedByInvitation:
+		return true
+	}
+	return false
+}
+
+func (e ResultCreatedBy) String() string {
+	return string(e)
+}
+
+func (e *ResultCreatedBy) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = ResultCreatedBy(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid ResultCreatedBy", str)
+	}
+	return nil
+}
+
+func (e ResultCreatedBy) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
