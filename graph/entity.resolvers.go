@@ -6,7 +6,6 @@ package graph
 
 import (
 	"context"
-	"fmt"
 	"whale/pkg/loader"
 	"whale/pkg/models"
 
@@ -39,7 +38,7 @@ func (r *entityResolver) FindMatchingQuotaByUserID(ctx context.Context, userID s
 
 // FindUserByID is the resolver for the findUserByID field.
 func (r *entityResolver) FindUserByID(ctx context.Context, id string) (*models.User, error) {
-	panic(fmt.Errorf("not implemented: FindUserByID - findUserByID"))
+	return &models.User{ID: id}, nil
 }
 
 // Entity returns EntityResolver implementation.

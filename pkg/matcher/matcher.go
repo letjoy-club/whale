@@ -58,6 +58,14 @@ func (m *Matcher) MatchPair(ctx context.Context, topicID string) error {
 			if matchings[i].UserID == matchings[j].UserID {
 				continue
 			}
+			userIGender := mc.userProfiles[matchings[i].UserID].Gender.String()
+			userJGender := mc.userProfiles[matchings[j].UserID].Gender.String()
+			if matchings[i].Gender != models.GenderN.String() && matchings[i].Gender != userJGender {
+				continue
+			}
+			if matchings[j].Gender != models.GenderN.String() && matchings[j].Gender != userIGender {
+				continue
+			}
 			if _, err := NewMatchingResult(ctx, []*models.Matching{matchings[i], matchings[j]}); err != nil {
 				logger.L.Error("failed to create matching result", zap.Error(err), zap.String("matching-1", matchings[i].ID), zap.String("matching-2", matchings[j].ID))
 				return err
@@ -87,6 +95,7 @@ func NewMatchingResult(ctx context.Context, matchings []*models.Matching) (*mode
 		UserIDs:        userIDs,
 		ChatGroupState: models.ChatGroupStateUncreated.String(),
 		ConfirmStates:  states,
+		CreatedBy:      string(models.ResultCreatedByMatching),
 		TopicID:        matchings[0].TopicID,
 	}
 

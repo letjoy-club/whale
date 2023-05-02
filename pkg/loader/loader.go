@@ -4,10 +4,12 @@ import (
 	"context"
 	"time"
 	"whale/pkg/dbquery"
+	"whale/pkg/gqlient/hoopoe"
 	"whale/pkg/models"
 
 	"github.com/graph-gophers/dataloader/v7"
 	"github.com/letjoy-club/mida-tool/midacode"
+	"github.com/letjoy-club/mida-tool/midacontext"
 	"github.com/letjoy-club/mida-tool/ttlcache"
 	"github.com/samber/lo"
 	"gorm.io/gorm"
@@ -18,6 +20,8 @@ type Loader struct {
 	MatchingInvitation *dataloader.Loader[string, *models.MatchingInvitation]
 	MatchingQuota      *dataloader.Loader[string, *models.MatchingQuota]
 	MatchingResult     *dataloader.Loader[int, *models.MatchingResult]
+
+	UserProfile *dataloader.Loader[string, UserProfile]
 }
 
 func NewLoader(db *gorm.DB) *Loader {
@@ -61,15 +65,20 @@ func NewLoader(db *gorm.DB) *Loader {
 				}
 			}
 			return append(matchingQuotas, toBeAdded...), nil
-		}, func(k map[string]*models.MatchingQuota, v *models.MatchingQuota) {
-			k[v.UserID] = v
-		}, time.Second*60),
+		}, func(k map[string]*models.MatchingQuota, v *models.MatchingQuota) { k[v.UserID] = v }, time.Second*60),
 		MatchingResult: NewSingleLoader(db, func(ctx context.Context, keys []int) ([]*models.MatchingResult, error) {
 			MatchingResult := dbquery.Use(db).MatchingResult
 			return MatchingResult.WithContext(ctx).Where(MatchingResult.ID.In(keys...)).Find()
-		}, func(k map[int]*models.MatchingResult, v *models.MatchingResult) {
-			k[v.ID] = v
-		}, time.Second*100),
+		}, func(k map[int]*models.MatchingResult, v *models.MatchingResult) { k[v.ID] = v }, time.Second*100),
+		UserProfile: NewSingleLoader(db, func(ctx context.Context, keys []string) ([]UserProfile, error) {
+			ret, err := hoopoe.GetUserByIDs(ctx, midacontext.GetServices(ctx).Hoopoe, keys)
+			if err == nil {
+				return nil, err
+			}
+			return lo.Map(ret.GetUserByIds, func(u hoopoe.GetUserByIDsGetUserByIdsUser, i int) UserProfile {
+				return UserProfile{ID: u.Id, Gender: models.Gender(u.Gender)}
+			}), nil
+		}, func(k map[string]UserProfile, v UserProfile) { k[v.ID] = v }, time.Minute),
 	}
 }
 

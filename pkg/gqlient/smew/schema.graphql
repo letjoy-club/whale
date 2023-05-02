@@ -1,0 +1,247 @@
+directive @extends on OBJECT | INTERFACE
+
+directive @external on FIELD_DEFINITION
+
+directive @inaccessible on SCALAR | OBJECT | FIELD_DEFINITION | ARGUMENT_DEFINITION | INTERFACE | UNION | ENUM | ENUM_VALUE | INPUT_OBJECT | INPUT_FIELD_DEFINITION
+
+directive @key(fields: _FieldSet!, resolvable: Boolean = true) on OBJECT | INTERFACE
+
+directive @link(import: [String!], url: String!) on SCHEMA
+
+directive @override(from: String!) on FIELD_DEFINITION
+
+directive @provides(fields: _FieldSet!) on FIELD_DEFINITION
+
+directive @requires(fields: _FieldSet!) on FIELD_DEFINITION
+
+directive @shareable on OBJECT | FIELD_DEFINITION
+
+"""
+The @specifiedBy built-in directive is used within the type system definition
+language to provide a scalar specification URL for specifying the behavior of
+custom scalar types.
+"""
+directive @specifiedBy(url: String!) on SCALAR
+
+directive @tag(name: String!) on FIELD_DEFINITION | INTERFACE | OBJECT | UNION | ARGUMENT_DEFINITION | SCALAR | ENUM | ENUM_VALUE | INPUT_OBJECT | INPUT_FIELD_DEFINITION
+
+scalar _Any
+
+union _Entity = ChatGroup | Message | Topic | User
+
+scalar _FieldSet
+
+type _Service {
+  sdl: String
+}
+
+type ChatGroup {
+  """群组ID"""
+  id: String!
+
+  """群组名称"""
+  name: String!
+
+  """话题"""
+  topic: Topic
+
+  """成员ID列表"""
+  memberIds: IDList!
+
+  """群组成员"""
+  members: [User!]!
+
+  """最新消息时间"""
+  latestMessageTime: Time!
+
+  """群组是否关闭"""
+  closed: Boolean!
+
+  """成员状态"""
+  memberStatus: [GroupMember!]!
+}
+
+type Entity {
+  findChatGroupByID(id: String!): ChatGroup!
+  findMessageByID(id: Int!): Message!
+  findUserByID(id: String!): User!
+}
+
+input GraphQLPaginator {
+  page: Int!
+  size: Int!
+}
+
+type GroupMember {
+  """成员ID"""
+  memberId: String!
+
+  """是否退出群组"""
+  leaved: Boolean!
+
+  """退出时间"""
+  leavedAt: Time
+}
+
+scalar IDList
+
+scalar Map
+
+type Message {
+  """消息ID"""
+  id: Int!
+
+  """群组ID"""
+  groupId: String!
+
+  """消息发送者ID"""
+  userId: String!
+
+  """消息发送者"""
+  user: User!
+
+  """请求发起者ID，可以用来识别是否为管理员请求的"""
+  operatorId: String!
+
+  """消息序列号"""
+  msgSeq: Int!
+
+  """消息发送时间"""
+  msgTime: Time!
+
+  """在线消息，为1，否则为0"""
+  onlineOnlyFlag: Int!
+
+  """消息体"""
+  msgBody: [MsgBody!]!
+
+  """是否撤回"""
+  recalled: Boolean!
+
+  """撤回时间"""
+  recalledAt: Time
+}
+
+type MsgBody {
+  """
+  消息元素类别
+  TIMTextElem：文本消息
+  TIMLocationElem：地理位置消息
+  TIMFaceElem：表情消息
+  TIMImageElem：图像消息
+  """
+  msgType: String!
+
+  """消息元素的内容，不同的 MsgType 有不同的 MsgContent 格式"""
+  msgContent: Map!
+}
+
+type Mutation {
+  """【群组】创建群组"""
+  createGroup(
+    """匹配结果ID"""
+    resultId: Int!
+
+    """话题ID"""
+    topicId: String!
+
+    """成员ID"""
+    memberIds: [String!]!
+  ): String!
+  groupMemberLeave(
+    """群组ID"""
+    groupId: String!
+
+    """退出成员ID"""
+    userId: String!
+  ): String
+
+  """【群组】解散群组"""
+  destroyGroup(
+    """群组ID"""
+    groupId: String!
+  ): String
+}
+
+type Query {
+  """【用户】是否在线"""
+  isOnline(
+    """用户ID"""
+    userId: String!
+  ): Boolean!
+
+  """【群组】群组详情查询"""
+  chatGroup(
+    """群组ID"""
+    groupId: String!
+  ): ChatGroup!
+
+  """【群组】群组列表查询"""
+  chatGroups(
+    """用户ID，管理端使用"""
+    userId: String
+
+    """翻页器"""
+    paginator: GraphQLPaginator
+  ): [ChatGroup!]
+
+  """【消息】群组消息查询"""
+  groupMessage(
+    """群组ID"""
+    groupId: String!
+
+    """上次返回最小Seq，不上送则返回最新的消息"""
+    lastSeq: Int
+
+    """返回消息数量，默认20条，最大50条"""
+    size: Int
+  ): [Message!]!
+
+  """【消息】消息搜索-群组"""
+  searchGroup(
+    """关键词"""
+    keyword: String!
+  ): [SearchGroupResult!]
+
+  """【消息】消息搜索-消息"""
+  searchMessage(
+    """群组ID"""
+    groupId: String!
+
+    """关键词"""
+    keyword: String!
+  ): [Message!]
+  _entities(representations: [_Any!]!): [_Entity]!
+  _service: _Service!
+}
+
+type SearchGroupResult {
+  """群组信息"""
+  group: ChatGroup!
+
+  """消息数量"""
+  messageNum: Int!
+}
+
+type Summary {
+  count: Int!
+}
+
+scalar Time
+
+type Topic {
+  """话题ID"""
+  id: String!
+}
+
+type User {
+  """用户ID"""
+  id: String!
+
+  """是否在线"""
+  online: Boolean!
+
+  """IM登录密码"""
+  userSig: String!
+}
+

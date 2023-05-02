@@ -1,0 +1,1071 @@
+directive @extends on OBJECT | INTERFACE
+
+directive @external on FIELD_DEFINITION
+
+directive @goModel(model: String, models: [String!]) on OBJECT | INPUT_OBJECT | SCALAR | ENUM | INTERFACE | UNION
+
+directive @inaccessible on SCALAR | OBJECT | FIELD_DEFINITION | ARGUMENT_DEFINITION | INTERFACE | UNION | ENUM | ENUM_VALUE | INPUT_OBJECT | INPUT_FIELD_DEFINITION
+
+directive @key(fields: _FieldSet!, resolvable: Boolean = true) on OBJECT | INTERFACE
+
+directive @link(import: [String!], url: String!) on SCHEMA
+
+directive @override(from: String!) on FIELD_DEFINITION
+
+directive @provides(fields: _FieldSet!) on FIELD_DEFINITION
+
+directive @requires(fields: _FieldSet!) on FIELD_DEFINITION
+
+directive @shareable on OBJECT | FIELD_DEFINITION
+
+"""
+The @specifiedBy built-in directive is used within the type system definition
+language to provide a scalar specification URL for specifying the behavior of
+custom scalar types.
+"""
+directive @specifiedBy(url: String!) on SCALAR
+
+directive @tag(name: String!) on FIELD_DEFINITION | INTERFACE | OBJECT | UNION | ARGUMENT_DEFINITION | SCALAR | ENUM | ENUM_VALUE | INPUT_OBJECT | INPUT_FIELD_DEFINITION
+
+scalar _Any
+
+union _Entity = Area | Tag | Topic | User
+
+scalar _FieldSet
+
+type _Service {
+  sdl: String
+}
+
+input AddTopicCategoryParam {
+  """类别名"""
+  name: String!
+
+  """可见地区"""
+  visibleArea: AreaIDList
+
+  """话题颜色"""
+  defaultColor: String
+
+  """是否可用"""
+  enable: Boolean!
+}
+
+input AddTopicParam {
+  """话题名"""
+  name: String!
+
+  """类别"""
+  categoryId: Int
+
+  """话题颜色"""
+  color: String
+
+  """可见地区"""
+  visibleArea: AreaIDList
+
+  """封面URL"""
+  frontCover: String
+
+  """是否可用"""
+  enable: Boolean!
+}
+
+type Area {
+  """地区代码"""
+  code: AreaCode!
+
+  """上级地区代码"""
+  parentCode: AreaCode!
+
+  """名称"""
+  name: String!
+
+  """完整名称"""
+  fullName: String!
+
+  """层级"""
+  depth: Int!
+
+  """是否开通业务"""
+  enabled: Boolean!
+
+  """下级地区"""
+  children: [Area!]!
+
+  """上级地区"""
+  parent: Area!
+}
+
+scalar AreaCode
+
+input AreaFilter {
+  """地区名称，支持模糊查询"""
+  name: String
+
+  """地区层级，0-省/1-市/2-县"""
+  depth: Int
+
+  """是否开通业务"""
+  enabled: Boolean
+}
+
+scalar AreaIDList
+
+type Entity {
+  findAreaByCode(code: AreaCode!): Area!
+  findTagByID(id: String!): Tag!
+  findTopicByID(id: String!): Topic!
+  findUserByID(id: String!): User!
+}
+
+type ErrorDesc {
+  code: String!
+  cn: String!
+}
+
+input GraphQLPaginator {
+  page: Int!
+  size: Int!
+}
+
+scalar IDList
+
+type imageUploadUrl {
+  """上传地址，使用 put 方法直接发送二进制文件即可，url 有效时长 5min"""
+  uploadUrl: String!
+
+  """若上传成功后，即可通过该地址访问"""
+  cdnUrl: String!
+
+  """文件名，无后缀"""
+  name: String!
+}
+
+type Inviter {
+  """邀请人ID"""
+  id: String!
+
+  """邀请人昵称"""
+  nickname: String!
+
+  """邀请渠道"""
+  channel: String
+
+  """邀请时间"""
+  invitedAt: Time!
+}
+
+type LoginResult {
+  """登录token，后续请求放入Header中"""
+  token: String!
+
+  """是否新注册用户"""
+  isNew: Boolean!
+}
+
+scalar Map
+
+type Mutation {
+  """
+  【通用】图片上传COS链接生成，返回一个上传的 url，使用上传方式：axios.put("<url>", file), file 为二进制文件
+  """
+  genImageUploadUrl(
+    """userId 非必填，除了管理端操作时需要设置该值"""
+    userId: String
+  ): imageUploadUrl!
+
+  """获取小程序邀请二维码"""
+  getInvitationMiniAppCode(
+    """用户ID"""
+    userId: String!
+  ): String
+
+  """【地区】上线"""
+  enableArea(
+    """地区代码"""
+    code: AreaCode!
+
+    """下级地区代码，为空时全部下级地区开通"""
+    childCodes: AreaIDList
+  ): String
+
+  """【地区】下线"""
+  disableArea(
+    """地区代码，所有的下级地区全部下线"""
+    code: AreaCode!
+  ): String
+
+  """【地区】逆地址解析"""
+  geocoderReverse(
+    """纬度"""
+    latitude: String!
+
+    """经度"""
+    longitude: String!
+  ): Area!
+
+  """【地区】刷新地区信息Redis缓存"""
+  refreshAreaCache: String
+
+  """关注"""
+  follow(
+    """被关注人的ID"""
+    userId: String!
+
+    """匹配结果ID"""
+    matchingResultId: Int!
+  ): String
+
+  """取消关注"""
+  cancelFollow(
+    """被关注人的ID"""
+    userId: String!
+  ): String
+
+  """【标签】新增用户标签"""
+  addUserTag(
+    """标签ID"""
+    tagId: String!
+
+    """被打标签的人，为空时表示给自己打标签"""
+    userId: String
+  ): String
+
+  """【标签】移除用户标签"""
+  removeUserTag(
+    """标签ID"""
+    tagId: String!
+
+    """被打标签的人，为空时表示移除自己的标签"""
+    userId: String
+  ): String
+
+  """【标签】用户更新个人标签"""
+  updatePersonalTag(
+    """个人所有标签ID列表"""
+    tagIds: [String!]!
+  ): String
+
+  """【标签】新增标签"""
+  addTag(
+    """标签名"""
+    name: String!
+
+    """标签类别"""
+    categoryId: Int!
+
+    """情绪属性"""
+    sentiment: Sentiment
+
+    """样式ID"""
+    styleId: Int
+  ): String
+
+  """【标签】设置标签可用状态"""
+  tagSetSentiment(
+    """标签ID"""
+    tagId: String!
+
+    """情绪属性"""
+    sentiment: Sentiment
+  ): String
+
+  """【标签】设置标签样式"""
+  tagSetStyle(
+    """标签ID"""
+    tagId: String!
+
+    """样式ID"""
+    styleId: Int
+  ): String
+
+  """【标签】删除标签"""
+  removeTag(
+    """标签ID"""
+    tagId: String!
+  ): String
+
+  """【标签】新增标签样式"""
+  addTagStyle(
+    """样式名称"""
+    name: String!
+
+    """标签字体颜色"""
+    fontColor: String
+
+    """标签背景颜色"""
+    backgroundColor: String
+
+    """背景图片URL"""
+    backgroundImage: String
+
+    """是否可用"""
+    enable: Boolean!
+  ): String
+
+  """【标签】修改标签样式字体颜色"""
+  tagStyleSetFontColor(
+    """标签样式ID"""
+    id: Int!
+
+    """标签字体颜色"""
+    fontColor: String!
+  ): String
+
+  """【标签】修改标签样式背景颜色"""
+  tagStyleSetBackgroundColor(
+    """标签样式ID"""
+    id: Int!
+
+    """标签背景颜色"""
+    backgroundColor: String!
+  ): String
+
+  """【标签】修改标签样式背景图片"""
+  tagStyleSetBackgroundImage(
+    """标签样式ID"""
+    id: Int!
+
+    """标签背景图片URL"""
+    backgroundImage: String!
+  ): String
+
+  """【标签】将标签样式设为可用"""
+  enableTagStyle(
+    """标签样式ID"""
+    id: Int!
+  ): String
+
+  """【标签】将标签样式设为不可用"""
+  disableTagStyle(
+    """标签样式ID"""
+    id: Int!
+  ): String
+
+  """【标签】移除标签样式"""
+  removeTagStyle(
+    """标签样式ID"""
+    id: Int!
+  ): String
+
+  """【标签】新增标签类别"""
+  addTagCategory(
+    """标签类别名称"""
+    name: String!
+
+    """标签类别作用域：personal-个人/topic-话题"""
+    scope: String!
+
+    """对应的scope的ID，如话题ID，scope为personal时，无需上送"""
+    entityId: String
+
+    """默认样式ID"""
+    defaultStyleId: Int
+  ): String
+
+  """【标签】标签类别设置默认样式"""
+  tagCategorySetDefaultStyle(
+    """标签类别ID"""
+    id: Int!
+
+    """默认样式ID"""
+    defaultStyleId: Int
+  ): String
+  removeTagCategory(
+    """标签类别ID"""
+    id: Int!
+  ): String
+
+  """【话题】添加话题"""
+  addTopic(param: AddTopicParam): String
+
+  """【话题】添加话题类别"""
+  addTopicCategory(param: AddTopicCategoryParam): String
+
+  """【话题】修改话题封面"""
+  topicSetFrontCover(
+    """话题ID"""
+    id: String!
+
+    """封面URL"""
+    frontCover: String!
+  ): String
+
+  """【话题】修改话题可见地区"""
+  topicSetVisibleArea(
+    """话题ID"""
+    id: String!
+
+    """可见地区"""
+    visibleArea: AreaIDList
+  ): String
+
+  """【话题】修改话题颜色"""
+  topicSetColor(
+    """话题ID"""
+    id: String!
+
+    """话题颜色"""
+    color: String!
+  ): String
+
+  """【话题】将话题设为可用"""
+  enableTopic(
+    """话题ID"""
+    id: String!
+  ): String
+
+  """【话题】将话题设为不可用"""
+  disableTopic(
+    """话题ID"""
+    id: String!
+  ): String
+
+  """【话题】修改话题类别可见地区"""
+  topicCategorySetVisibleArea(
+    """话题类别ID"""
+    id: Int!
+
+    """可见地区"""
+    visibleArea: AreaIDList
+  ): String
+
+  """【话题】修改话题类别默认颜色"""
+  topicCategorySetDefaultColor(
+    """话题类别ID"""
+    id: Int!
+
+    """话题类别默认颜色"""
+    defaultColor: String!
+  ): String
+
+  """【话题】将话题类别设为可用"""
+  enableTopicCategory(
+    """话题类别ID"""
+    id: Int!
+
+    """是否启用该类别下的所有话题"""
+    enableTopic: Boolean!
+  ): String
+
+  """【话题】将话题类别设为不可用：此时关联的话题也全部变得不可用"""
+  disableTopicCategory(
+    """话题类别ID"""
+    id: Int!
+  ): String
+
+  """【话题】删除话题类别"""
+  removeTopicCategory(
+    """话题类别ID"""
+    id: Int!
+  ): String
+
+  """【话题】刷新话题信息Redis缓存"""
+  refreshTopicCache: String
+
+  """【用户】小程序登录"""
+  miniAppLogin(
+    """小程序登录code"""
+    code: String!
+
+    """邀请人，非必填"""
+    inviterId: String
+
+    """邀请渠道：miniapp——小程序转发；QR——二维码"""
+    channel: String
+  ): LoginResult!
+
+  """【用户】修改用户信息"""
+  userSetProfile(
+    """用户ID，管理端请求时必填"""
+    userId: String
+
+    """手机号"""
+    phone: String
+
+    """性别，M-男性/F-女性"""
+    gender: String
+
+    """生日，格式yyyyMMdd"""
+    birthday: String
+
+    """备注"""
+    remark: String
+  ): String
+
+  """【用户】修改用户昵称"""
+  userSetNickname(
+    """用户ID，管理端请求时必填"""
+    userId: String
+
+    """昵称，最长20个字符"""
+    nickname: String!
+  ): String
+
+  """【用户】修改用户头像"""
+  userSetAvatar(
+    """用户ID，管理端请求时必填"""
+    userId: String
+
+    """头像url"""
+    avatarUrl: String!
+  ): String
+
+  """【用户】修改用户封面背景"""
+  userSetBackground(
+    """用户ID，管理端请求时必填"""
+    userId: String
+
+    """封面背景url"""
+    backgroundUrl: String!
+  ): String
+
+  """【用户】昵称修改审核，管理端使用"""
+  userNicknameAudit(
+    """审核记录ID"""
+    id: Int!
+
+    """审核结果"""
+    passed: Boolean!
+  ): String
+
+  """【用户】头像和封面背景图片审核，管理端使用"""
+  userImageAudit(
+    """审核记录ID"""
+    id: Int!
+
+    """审核结果"""
+    passed: Boolean!
+  ): String
+
+  """【用户】点赞"""
+  userLike(
+    """用户ID"""
+    userId: String!
+  ): String
+
+  """【用户】取消点赞"""
+  userLikeCancel(
+    """用户ID"""
+    userId: String!
+  ): String
+
+  """【用户】踩"""
+  userDislike(
+    """用户ID"""
+    userId: String!
+  ): String
+
+  """【用户】取消踩"""
+  userDislikeCancel(
+    """用户ID"""
+    userId: String!
+  ): String
+
+  """【用户】用户举报"""
+  userReport(
+    """匹配结果ID"""
+    matchingResultId: Int!
+
+    """被举报人用户ID"""
+    userId: String!
+
+    """举报原因"""
+    reason: [String!]!
+  ): String
+
+  """【用户】用户封禁"""
+  blockUser(
+    """用户ID"""
+    userId: String!
+
+    """封禁时长(小时)"""
+    blockDuration: Int!
+  ): String
+
+  """【用户】用户解封"""
+  unblockUser(
+    """用户ID"""
+    userId: String!
+  ): String
+}
+
+type Query {
+  """【通用】健康检查"""
+  healthCheck: String!
+
+  """【通用】根据地区代码查询地区信息"""
+  area(
+    """地区代码"""
+    code: AreaCode!
+  ): Area!
+
+  """【通用】地区列表查询"""
+  areas(filter: AreaFilter): [Area!]!
+
+  """用户对他人的关注情况"""
+  userFollowState(
+    """被关注人的Id"""
+    userId: String!
+
+    """关注人的Id，管理端必填"""
+    followerId: String
+  ): UserFollow!
+
+  """他关注的人数"""
+  followingNum(
+    """用户ID，客户端使用无需上传"""
+    userId: String
+  ): Summary!
+
+  """关注他的人数"""
+  followerNum(
+    """用户ID，管理端使用时必填"""
+    userId: String
+  ): Summary!
+
+  """关注列表"""
+  followings(
+    """用户ID，管理端使用时必填"""
+    userId: String
+
+    """分页器"""
+    paginator: GraphQLPaginator
+  ): [User!]
+
+  """被关注列表"""
+  followers(
+    """用户ID，管理端使用时必填"""
+    userId: String
+
+    """分页器"""
+    paginator: GraphQLPaginator
+  ): [User!]
+
+  """【标签】标签详情"""
+  tag(
+    """标签ID"""
+    id: String!
+  ): Tag!
+
+  """【标签】标签列表查询，管理端使用"""
+  tags(
+    """筛选器"""
+    filter: TagFilter
+
+    """分页器"""
+    paginator: GraphQLPaginator
+  ): [Tag!]
+
+  """【标签】标签类别详情"""
+  tagCategory(
+    """标签类别ID"""
+    id: Int!
+  ): TagCategory!
+
+  """【标签】标签类别列表查询，管理端使用"""
+  tagCategories(
+    """筛选器"""
+    filter: TagCategoryFilter
+
+    """分页器"""
+    paginator: GraphQLPaginator
+  ): [TagCategory!]
+
+  """【标签】标签样式详情"""
+  tagStyle(
+    """标签样式ID"""
+    id: Int!
+  ): TagStyle!
+
+  """【标签】标签样式列表查询，管理端使用"""
+  tagStyles(
+    """标签样式名称，支持模糊搜索"""
+    name: String
+
+    """分页器"""
+    paginator: GraphQLPaginator
+  ): [TagStyle!]
+
+  """【标签】个人标签类别查询"""
+  personalTagCategories: [TagCategory!]
+
+  """【标签】个人自我评价标签按分类查询"""
+  personalTags(
+    """标签分类ID"""
+    categoryId: Int!
+  ): [Tag!]
+
+  """【标签】我的标签-自己对自己打的标签"""
+  myTags: [Tag!]
+
+  """【话题】评价时备选话题类别"""
+  evaluateTagCategories(
+    """话题ID"""
+    topicId: String!
+  ): [TagCategory!]
+
+  """【标签】评价他们标签-按类别查询"""
+  evaluateTags(
+    """标签分类ID"""
+    categoryId: Int!
+  ): [Tag!]
+
+  """【标签】用户标签-自己对他人打的标签"""
+  userTags(
+    """用户ID"""
+    userId: String!
+  ): [Tag!]
+
+  """【标签】个人主页标签"""
+  homePageTags(
+    """用户ID"""
+    userId: String!
+  ): [Tag!]
+
+  """【话题】类别查询"""
+  topicCategory(
+    """类别ID"""
+    id: Int!
+  ): TopicCategory!
+
+  """【话题】类别列表查询"""
+  topicCategories(
+    """地区"""
+    area: AreaCode
+
+    """是否可用，管理端可用，其他情况默认为TRUE"""
+    enable: Boolean
+  ): [TopicCategory!]!
+
+  """【话题】话题查询"""
+  topic(
+    """话题ID"""
+    id: String!
+  ): Topic!
+
+  """【话题】列表查询"""
+  topics(
+    """查询条件"""
+    filter: TopicFilter
+
+    """分页"""
+    paginator: GraphQLPaginator
+  ): [Topic!]!
+
+  """【话题】热门话题"""
+  hotTopic(
+    """地区"""
+    area: AreaCode
+  ): [Topic!]!
+
+  """【用户】获取用户信息"""
+  user(
+    """用户ID"""
+    id: String!
+  ): User!
+
+  """【用户】根据ID批量获取"""
+  getUserByIds(
+    """用户ID列表"""
+    ids: [String!]!
+  ): [User!]!
+
+  """【用户】 我的信息"""
+  myProfile: User!
+
+  """【用户】用户搜索，管理端功能"""
+  users(filter: UserFilter, paginator: GraphQLPaginator): [User!]!
+
+  """【用户】用户搜索结果数量，管理端功能"""
+  usersCount(filter: UserFilter): Summary!
+
+  """【用户】待审核昵称列表查询"""
+  nicknameReviews(paginator: GraphQLPaginator): [UserNicknameReview!]!
+
+  """【用户】待审核图片列表查询"""
+  imageReviews(paginator: GraphQLPaginator): [UserImageReview!]!
+
+  """【点赞】查看对其他用户的点赞情况"""
+  userLikeState(
+    """用户ID"""
+    userId: String!
+
+    """点赞人ID，管理端必填"""
+    operatorId: String
+  ): UserLike
+
+  """获取用户黑名单列表"""
+  userBlacklist(
+    """用户ID，管理端必填"""
+    userId: String
+  ): [String!]
+  _entities(representations: [_Any!]!): [_Entity]!
+  _service: _Service!
+}
+
+enum Sentiment {
+  """正面的"""
+  positive
+
+  """负面的"""
+  negative
+
+  """中性的"""
+  neutral
+}
+
+type Summary {
+  count: Int!
+}
+
+type Tag {
+  """标签ID"""
+  id: String!
+
+  """标签名"""
+  name: String!
+
+  """标签类别"""
+  category: TagCategory!
+
+  """情绪"""
+  sentiment: Sentiment
+
+  """标签样式"""
+  style: TagStyle
+}
+
+type TagCategory {
+  """标签类别ID"""
+  id: Int!
+
+  """类别名称"""
+  name: String!
+
+  """作用域：personal-个人标签/topic-话题标签"""
+  scope: String!
+
+  """对应的实体ID，当scope不是personal时必填，如话题ID"""
+  entityId: String
+
+  """类别的标签默认样式"""
+  defaultStyle: TagStyle
+}
+
+input TagCategoryFilter {
+  """标签类别名称，支持模糊搜索"""
+  name: String
+
+  """类别范围"""
+  scope: String
+
+  """话题ID"""
+  entityId: String
+}
+
+input TagFilter {
+  """标签名称，支持模糊搜索"""
+  name: String
+
+  """类别ID"""
+  categoryId: Int
+
+  """情绪类别"""
+  sentiment: Sentiment
+}
+
+type TagStyle {
+  """样式ID"""
+  id: Int!
+
+  """样式名"""
+  name: String!
+
+  """字体颜色"""
+  fontColor: String!
+
+  """背景颜色"""
+  backgroundColor: String!
+
+  """背景图片"""
+  backgroundImage: String!
+
+  """可用状态"""
+  enable: Boolean!
+}
+
+scalar Time
+
+type Topic {
+  """话题ID"""
+  id: String!
+
+  """名称"""
+  name: String!
+
+  """封面图片URL"""
+  frontCover: String
+
+  """可见地区，列表为空表示全区域可见"""
+  visibleArea: AreaIDList
+
+  """话题颜色"""
+  color: String
+
+  """是否可用"""
+  enable: Boolean!
+
+  """参与人数"""
+  matchingNum: Int!
+
+  """热门话题参与用户，临时使用"""
+  userIds: [String!]!
+}
+
+type TopicCategory {
+  """类别ID"""
+  id: Int!
+
+  """名称"""
+  name: String!
+
+  """可见地区，列表为空表示全区域可见"""
+  visibleArea: AreaIDList
+
+  """话题颜色"""
+  defaultColor: String
+
+  """是否可用"""
+  enable: Boolean!
+}
+
+input TopicFilter {
+  """话题名，支持模糊查询"""
+  name: String
+
+  """是否可用，管理端可用，其他情况默认为TRUE"""
+  enable: Boolean
+}
+
+type User {
+  """用户ID"""
+  id: String!
+
+  """昵称"""
+  nickname: String
+
+  """头像URL"""
+  avatar: String
+
+  """封面背景URL"""
+  background: String
+
+  """性别：男——M；女——F"""
+  gender: String
+
+  """生日"""
+  birthday: String
+
+  """注册时间"""
+  createdAt: Time!
+
+  """微信openID"""
+  openId: String!
+
+  """年龄"""
+  age: Int
+
+  """待审核昵称"""
+  nicknameInReviewing: String
+
+  """待审核头像URL"""
+  avatarInReviewing: String
+
+  """待审核封面背景URL"""
+  backgroundInReviewing: String
+
+  """邀请人信息"""
+  inviter: Inviter
+
+  """点赞人数"""
+  likeNum: Int!
+
+  """踩人数"""
+  dislikeNum: Int!
+
+  """关注他的人数"""
+  followerNum: Int!
+
+  """他关注的人数"""
+  followingNum: Int!
+
+  """是否封禁"""
+  blocked: Boolean!
+
+  """用户标签"""
+  tags: [Tag!]
+}
+
+input UserFilter {
+  """昵称，支持模糊查询"""
+  nickname: String
+
+  """性别"""
+  gender: String
+
+  """用户ID"""
+  id: String
+
+  """注册时间（最早）"""
+  createAfter: Time
+
+  """注册时间（最晚）"""
+  createBefore: Time
+}
+
+type UserFollow {
+  """被关注人的Id"""
+  userId: String!
+
+  """关注人的Id"""
+  followerId: String!
+
+  """是否关注"""
+  enable: Boolean!
+}
+
+type UserImageReview {
+  """待审核记录ID"""
+  id: Int!
+
+  """用户ID"""
+  userId: String!
+
+  """图片类型"""
+  field: String!
+
+  """URL"""
+  url: String!
+}
+
+type UserLike {
+  """是否点赞"""
+  like: Boolean!
+
+  """是否踩"""
+  dislike: Boolean!
+}
+
+type UserNicknameReview {
+  """待审核记录ID"""
+  id: Int!
+
+  """用户ID"""
+  userId: String!
+
+  """昵称"""
+  nickname: String!
+}
+

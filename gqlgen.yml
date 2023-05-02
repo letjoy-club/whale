@@ -73,3 +73,7 @@ models:
   GraphQLPaginator:
     model:
       - github.com/letjoy-club/mida-tool/graphqlutil.GraphQLPaginator
+  User:
+    fields:
+      matchingQuota:
+        resolver: true

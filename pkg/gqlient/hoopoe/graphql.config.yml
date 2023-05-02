@@ -1,0 +1,8 @@
+schema: schema.graphql
+extensions:
+  endpoints:
+    Default GraphQL Endpoint:
+      url: http://localhost:11011/hoopoe/v2/query
+      headers:
+        user-agent: JS GraphQL
+      introspect: false

@@ -19,4 +19,10 @@ db-gen:
 tools:
 	go build -o bin/auth-tool cmd/auth-tool/main.go
 
+smew-genqlient:
+	cd pkg/gqlient/smew && make schema && make gen
+
+hoopoe-genqlient:
+	cd pkg/gqlient/hoopoe && make schema && make gen
+
 .PHONY: build

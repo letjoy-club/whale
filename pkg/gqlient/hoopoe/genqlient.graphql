@@ -1,0 +1,20 @@
+query GetUserByIDs($ids: [String!]!) {
+  getUserByIds(ids: $ids) {
+    id
+    gender
+  }
+}
+
+query GetTopic($id: String!) {
+  topic(id: $id) {
+    id
+  }
+}
+
+query GetArea($id: AreaCode!) {
+  area(code: $id) {
+    code
+    name
+    depth
+  }
+}

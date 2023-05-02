@@ -54,17 +54,18 @@ type Matching @key(fields: "id") {
   gender: Gender!
   state: MatchingState!
 
-  rejectedUserIds: [String!]!
+  rejectedUserIds: [String!]! @adminOnly
   inChatGroup: Boolean!
   remark: String!
 
-  deadline: Time!
-  updatedAt: Time!
+  deadline: Time! @adminOnly
+  updatedAt: Time! @adminOnly
   createdAt: Time!
 
   # query
   matchingResult: MatchingResult
 
+  user: User!
   topic: Topic!
   areas: [Area!]!
   city: Area!
@@ -131,10 +132,10 @@ type MatchingResult {
   chatGroupId: String!
   chatGroupState: ChatGroupState!
 
-  updatedAt: Time!
+  updatedAt: Time! @adminOnly
   createdAt: Time!
   closed: Boolean!
-  createdBy: ResultCreatedBy!
+  createdBy: ResultCreatedBy! @adminOnly
 
   # query
   users: [User!]!
@@ -157,8 +158,8 @@ type MatchingQuota @key(fields: "userId") {
   userId: String!
   remain: Int!
   total: Int!
-  createdAt: Time!
-  updatedAt: Time!
+  createdAt: Time! @adminOnly
+  updatedAt: Time! @adminOnly
 }
 
 type MatchingResultConfirmAction {
@@ -197,14 +198,24 @@ type MatchingInvitation {
   inviteeId: String!
   topicId: String!
   remark: String!
+  cityId: String!
+  areaIds: [String!]!
 
   matchingResultId: Int! @adminOnly
   matchingIds: [String!]!
 
   confirmState: InvitationConfirmState!
-  confirmedAt: Time
+  confirmedAt: Time @adminOnly
   createdAt: Time!
-  updatedAt: Time!
+  updatedAt: Time! @adminOnly
+
+  # query
+  invitee: User!
+  topic: Topic!
+  areas: [Area!]!
+  city: Area!
+  user: User!
+  matchingResult: MatchingResult
 }
 
 type Query {
@@ -224,7 +235,7 @@ type Query {
   userMatchingsCount(userId: String, filter: UserMatchingFilter): Summary!
 
   "【匹配系统】预览话题下的用匹配"
-  previewMatchingsOfTopic(areaId: String!, topicId: String!, limit: Int!): [Matching!]!
+  previewMatchingsOfTopic(cityId: String!, topicId: String!, limit: Int): [MatchingOfTopic!]!
 
   "【匹配系统】我的邀请"
   invitations(userId: String, paginator: GraphQLPaginator): [MatchingInvitation!]!
@@ -282,7 +293,7 @@ type Mutation {
   createMatching(userId: String, param: CreateMatchingParam!): Matching!
 
   "【匹配系统】邀请用户进行活动"
-  createMatchingInvitation(userId: String, param: CreateMatchingInvitationParam): MatchingInvitation!
+  createMatchingInvitation(userId: String, param: CreateMatchingInvitationParam!): MatchingInvitation!
 
   "【匹配系统】取消邀请"
   cancelMatchingInvitation(invitationId: String!): String

@@ -2,12 +2,17 @@ package modelutil
 
 import (
 	"context"
+	"time"
 	"whale/pkg/dbquery"
+	"whale/pkg/gqlient/hoopoe"
+	"whale/pkg/gqlient/smew"
 	"whale/pkg/loader"
 	"whale/pkg/models"
 	"whale/pkg/whalecode"
 
+	"github.com/letjoy-club/mida-tool/midacode"
 	"github.com/letjoy-club/mida-tool/midacontext"
+	"github.com/letjoy-club/mida-tool/shortid"
 	"github.com/samber/lo"
 	"gorm.io/gorm"
 )
@@ -84,26 +89,20 @@ func CheckMatchingResultAndCreateChatGroup(ctx context.Context, m *models.Matchi
 		return nil
 	}
 
-	var mut struct {
-		CreateGroup string `graphql:"createGroup(resultId: $resultId, topicId: $topicId, memberIds: $memberIds)"`
-	}
-	if err := midacontext.GetServices(ctx).Smew.Mutate(ctx, &mut, map[string]interface{}{
-		"resultId":  m.ID,
-		"topicId":   m.TopicID,
-		"memberIds": m.UserIDs,
-	}); err != nil {
+	resp, err := smew.CreateChatGroup(ctx, midacontext.GetServices(ctx).Smew, m.ID, m.TopicID, m.UserIDs)
+	if err != nil {
 		return err
 	}
-
+	groupID := resp.CreateGroup
 	db := midacontext.GetDB(ctx)
-	err := db.Transaction(func(db *gorm.DB) error {
+	err = db.Transaction(func(db *gorm.DB) error {
 		Matching := dbquery.Use(db).Matching
 		MatchingResult := dbquery.Use(db).MatchingResult
 		_, err := MatchingResult.WithContext(ctx).
 			Where(MatchingResult.ID).
 			UpdateSimple(
 				MatchingResult.ChatGroupState.Value(models.ChatGroupStateCreated.String()),
-				MatchingResult.ChatGroupID.Value(mut.CreateGroup),
+				MatchingResult.ChatGroupID.Value(groupID),
 			)
 		if err != nil {
 			return err
@@ -117,4 +116,118 @@ func CheckMatchingResultAndCreateChatGroup(ctx context.Context, m *models.Matchi
 		return err
 	})
 	return err
+}
+
+func CreateMatching(ctx context.Context, uid string, param models.CreateMatchingParam) (*models.Matching, error) {
+	thunk := midacontext.GetLoader[loader.Loader](ctx).MatchingQuota.Load(ctx, uid)
+	quota, err := thunk()
+	if err != nil {
+		return nil, err
+	}
+	if quota.Remain <= 0 {
+		return nil, whalecode.ErrMatchingQuotaNotEnough
+	}
+
+	_, err = hoopoe.GetTopic(ctx, midacontext.GetServices(ctx).Hoopoe, param.TopicID)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = hoopoe.GetArea(ctx, midacontext.GetServices(ctx).Hoopoe, param.CityID)
+	if err != nil {
+		return nil, err
+	}
+
+	db := midacontext.GetDB(ctx)
+	Matching := dbquery.Use(db).Matching
+
+	_, err = Matching.WithContext(ctx).Where(
+		Matching.TopicID.Eq(param.TopicID),
+		Matching.UserID.Eq(uid),
+		Matching.State.In(
+			string(models.MatchingStateMatching),
+			string(models.MatchingStateMatched),
+		),
+	).Take()
+	// 如果有找到，或者其他数据库错误
+	notFoundErr := midacode.ItemCustomNotFound(err, midacode.ErrItemNotFound)
+	if notFoundErr != midacode.ErrItemNotFound {
+		return nil, whalecode.ErrTopicIsAlreadyInMatching
+	}
+
+	matching := &models.Matching{
+		ID:             shortid.New("m_", 8),
+		TopicID:        param.TopicID,
+		UserID:         uid,
+		State:          models.MatchingStateMatching.String(),
+		Gender:         param.Gender.String(),
+		Remark:         *param.Remark,
+		CityID:         param.CityID,
+		ChatGroupState: string(models.ChatGroupStateUncreated),
+		Deadline:       time.Now().Add(time.Hour * 24 * 7),
+		AreaIDs:        param.AreaIds,
+	}
+
+	err = db.Transaction(func(tx *gorm.DB) error {
+		err = dbquery.Use(tx).Matching.WithContext(ctx).Create(matching)
+		if err != nil {
+			return err
+		}
+
+		MatchingQuota := dbquery.Use(tx).MatchingQuota
+		_, err = MatchingQuota.WithContext(ctx).Where(MatchingQuota.UserID.Eq(uid)).UpdateSimple(MatchingQuota.Remain.Add(-1))
+		return err
+	})
+	if err == nil {
+		midacontext.GetLoader[loader.Loader](ctx).MatchingQuota.Clear(ctx, uid)
+	}
+	return matching, err
+}
+
+func CreateMatchingInvitation(ctx context.Context, uid string, param models.CreateMatchingInvitationParam) (*models.MatchingInvitation, error) {
+	thunk := midacontext.GetLoader[loader.Loader](ctx).MatchingQuota.Load(ctx, uid)
+	quota, err := thunk()
+	if err != nil {
+		return nil, err
+	}
+	if quota.Remain <= 0 {
+		return nil, whalecode.ErrMatchingQuotaNotEnough
+	}
+
+	_, err = hoopoe.GetTopic(ctx, midacontext.GetServices(ctx).Hoopoe, param.TopicID)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = hoopoe.GetArea(ctx, midacontext.GetServices(ctx).Hoopoe, param.CityID)
+	if err != nil {
+		return nil, err
+	}
+
+	db := midacontext.GetDB(ctx)
+	MatchingInvitation := dbquery.Use(db).MatchingInvitation
+
+	invitation := models.MatchingInvitation{
+		ID:               shortid.New("mi_", 8),
+		UserID:           uid,
+		InviteeID:        param.InviteeID,
+		Remark:           param.Remark,
+		TopicID:          param.TopicID,
+		CityID:           param.CityID,
+		AreaIDs:          param.AreaIds,
+		ConfirmState:     models.InvitationConfirmStateUnconfirmed.String(),
+		MatchingIds:      []string{},
+		MatchingResultId: 0,
+	}
+	err = MatchingInvitation.WithContext(ctx).Create(&invitation)
+	if err != nil {
+		return nil, err
+	}
+	MatchingQuota := dbquery.Use(db).MatchingQuota
+	_, err = MatchingQuota.WithContext(ctx).Where(MatchingQuota.UserID.Eq(uid)).UpdateSimple(MatchingQuota.Remain.Add(-1))
+	if err != nil {
+		return nil, err
+	}
+	midacontext.GetLoader[loader.Loader](ctx).MatchingQuota.Clear(ctx, uid)
+	return &invitation, nil
 }

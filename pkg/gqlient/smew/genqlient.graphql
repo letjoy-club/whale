@@ -1,0 +1,3 @@
+mutation CreateChatGroup($resultId: Int!, $topicId: String!, $memberIds: [String!]!) {
+  createGroup(resultId: $resultId, topicId: $topicId, memberIds: $memberIds)
+}

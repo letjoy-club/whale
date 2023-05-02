@@ -1,6 +1,10 @@
 package models
 
-import "time"
+import (
+	"time"
+
+	"gorm.io/gorm"
+)
 
 type Matching struct {
 	ID string `gorm:"primaryKey"`
@@ -22,6 +26,13 @@ type Matching struct {
 	Deadline  time.Time
 	CreatedAt time.Time `gorm:"autoCreateTime;index"`
 	UpdatedAt time.Time `gorm:"autoUpdateTime"`
+}
+
+func (m *Matching) BeforeFind(db *gorm.DB) error {
+	if m.RejectedUserIDs == nil {
+		m.RejectedUserIDs = []string{}
+	}
+	return nil
 }
 
 func (Matching) IsEntity() {}

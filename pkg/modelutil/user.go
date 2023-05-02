@@ -2,35 +2,23 @@ package modelutil
 
 import (
 	"context"
+	"whale/pkg/gqlient/hoopoe"
 
 	"github.com/letjoy-club/mida-tool/midacontext"
 )
 
-type UserAndGender struct {
-	ID     string
-	Gender string
-}
-
-func QueryUserByIDs(ctx context.Context, ids []string) (map[string]UserAndGender, error) {
-	var q struct {
-		User []struct {
-			ID     string
-			Gender string
-		} `graphql:"userByIDs(ids: $ids)"`
-	}
+func QueryUserByIDs(ctx context.Context, ids []string) (map[string]hoopoe.GetUserByIDsGetUserByIdsUser, error) {
 
 	services := midacontext.GetServices(ctx)
 
-	err := services.Hoopoe.Query(context.Background(), &q, map[string]interface{}{
-		"ids": ids,
-	})
+	resp, err := hoopoe.GetUserByIDs(ctx, services.Hoopoe, ids)
 	if err != nil {
 		return nil, err
 	}
-	m := map[string]UserAndGender{}
-	for _, user := range q.User {
-		m[user.ID] = UserAndGender{
-			ID:     user.ID,
+	m := map[string]hoopoe.GetUserByIDsGetUserByIdsUser{}
+	for _, user := range resp.GetGetUserByIds() {
+		m[user.Id] = hoopoe.GetUserByIDsGetUserByIdsUser{
+			Id:     user.Id,
 			Gender: user.Gender,
 		}
 	}
