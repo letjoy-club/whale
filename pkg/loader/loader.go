@@ -22,6 +22,7 @@ type Loader struct {
 	MatchingResult     *dataloader.Loader[int, *models.MatchingResult]
 
 	UserProfile *dataloader.Loader[string, UserProfile]
+	HotTopics   *dataloader.Loader[string, []*models.HotTopic]
 }
 
 func NewLoader(db *gorm.DB) *Loader {
@@ -72,7 +73,7 @@ func NewLoader(db *gorm.DB) *Loader {
 		}, func(k map[int]*models.MatchingResult, v *models.MatchingResult) { k[v.ID] = v }, time.Second*100),
 		UserProfile: NewSingleLoader(db, func(ctx context.Context, keys []string) ([]UserProfile, error) {
 			ret, err := hoopoe.GetUserByIDs(ctx, midacontext.GetServices(ctx).Hoopoe, keys)
-			if err == nil {
+			if err != nil {
 				return nil, err
 			}
 			return lo.Map(ret.GetUserByIds, func(u hoopoe.GetUserByIDsGetUserByIdsUser, i int) UserProfile {

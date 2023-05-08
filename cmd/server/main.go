@@ -10,12 +10,14 @@ import (
 	"net/http"
 	"whale/graph"
 	"whale/pkg/loader"
+	"whale/pkg/restfulserver"
 	"whale/pkg/whaleconf"
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 	"github.com/letjoy-club/mida-tool/authenticator"
 	"github.com/letjoy-club/mida-tool/midacode"
 	"github.com/letjoy-club/mida-tool/midacontext"
@@ -43,6 +45,16 @@ func main() {
 	}
 
 	srv := handler.NewDefaultServer(graph.NewExecutableSchema(gqlConf))
+	srv.AroundOperations(func(ctx context.Context, next graphql.OperationHandler) graphql.ResponseHandler {
+		oc := graphql.GetOperationContext(ctx)
+		fmt.Printf("RawQuery: %s\n", oc.RawQuery)
+		return next(ctx)
+		// return graphql.ResponseHandler(func(ctx context.Context) *graphql.Response {
+		// 	return &graphql.Response{
+		// 		Errors: gqlerror.List{&gqlerror.Error{Message: "DEEP_QUERY"}},
+		// 	}
+		// })
+	})
 	srv.SetErrorPresenter(func(ctx context.Context, e error) *gqlerror.Error {
 		var ok bool
 		var midaErr midacode.Error2
@@ -104,9 +116,21 @@ func main() {
 		})
 	})
 
-	r.Handle("/whale/v2/query", srv)
-	r.Handle("/whale/v2", playground.Handler("GraphQL playground", "/whale/v2/query"))
+	r.Use(middleware.Logger)
+
+	r.Route("/whale/", func(r chi.Router) {
+		r.Route("/v2", func(r chi.Router) {
+			r.Handle("/query", srv)
+			r.Handle("/", playground.Handler("GraphQL playground", "/whale/v2/query"))
+		})
+		r.Route("/v1", func(r chi.Router) {
+			restfulserver.Mount(r)
+		})
+	})
 
 	log.Printf("connect to http://localhost:%d/whale/v2 for GraphQL playground", *port)
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", *port), r))
+}
+
+func queryDepth() {
 }

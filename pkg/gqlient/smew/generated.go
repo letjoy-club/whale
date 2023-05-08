@@ -17,6 +17,14 @@ type CreateChatGroupResponse struct {
 // GetCreateGroup returns CreateChatGroupResponse.CreateGroup, and is useful for accessing the field via an interface.
 func (v *CreateChatGroupResponse) GetCreateGroup() string { return v.CreateGroup }
 
+// GroupMemberLeaveResponse is returned by GroupMemberLeave on success.
+type GroupMemberLeaveResponse struct {
+	GroupMemberLeave string `json:"groupMemberLeave"`
+}
+
+// GetGroupMemberLeave returns GroupMemberLeaveResponse.GroupMemberLeave, and is useful for accessing the field via an interface.
+func (v *GroupMemberLeaveResponse) GetGroupMemberLeave() string { return v.GroupMemberLeave }
+
 // __CreateChatGroupInput is used internally by genqlient
 type __CreateChatGroupInput struct {
 	ResultId  int      `json:"resultId"`
@@ -32,6 +40,18 @@ func (v *__CreateChatGroupInput) GetTopicId() string { return v.TopicId }
 
 // GetMemberIds returns __CreateChatGroupInput.MemberIds, and is useful for accessing the field via an interface.
 func (v *__CreateChatGroupInput) GetMemberIds() []string { return v.MemberIds }
+
+// __GroupMemberLeaveInput is used internally by genqlient
+type __GroupMemberLeaveInput struct {
+	GroupId string `json:"groupId"`
+	UserId  string `json:"userId"`
+}
+
+// GetGroupId returns __GroupMemberLeaveInput.GroupId, and is useful for accessing the field via an interface.
+func (v *__GroupMemberLeaveInput) GetGroupId() string { return v.GroupId }
+
+// GetUserId returns __GroupMemberLeaveInput.UserId, and is useful for accessing the field via an interface.
+func (v *__GroupMemberLeaveInput) GetUserId() string { return v.UserId }
 
 func CreateChatGroup(
 	ctx context.Context,
@@ -56,6 +76,38 @@ mutation CreateChatGroup ($resultId: Int!, $topicId: String!, $memberIds: [Strin
 	var err error
 
 	var data CreateChatGroupResponse
+	resp := &graphql.Response{Data: &data}
+
+	err = client.MakeRequest(
+		ctx,
+		req,
+		resp,
+	)
+
+	return &data, err
+}
+
+func GroupMemberLeave(
+	ctx context.Context,
+	client graphql.Client,
+	groupId string,
+	userId string,
+) (*GroupMemberLeaveResponse, error) {
+	req := &graphql.Request{
+		OpName: "GroupMemberLeave",
+		Query: `
+mutation GroupMemberLeave ($groupId: String!, $userId: String!) {
+	groupMemberLeave(groupId: $groupId, userId: $userId)
+}
+`,
+		Variables: &__GroupMemberLeaveInput{
+			GroupId: groupId,
+			UserId:  userId,
+		},
+	}
+	var err error
+
+	var data GroupMemberLeaveResponse
 	resp := &graphql.Response{Data: &data}
 
 	err = client.MakeRequest(

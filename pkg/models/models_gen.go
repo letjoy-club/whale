@@ -15,6 +15,12 @@ type Area struct {
 
 func (Area) IsEntity() {}
 
+type ChatGroup struct {
+	ID string `json:"id"`
+}
+
+func (ChatGroup) IsEntity() {}
+
 type CreateMatchingInvitationParam struct {
 	InviteeID string   `json:"inviteeId"`
 	Remark    string   `json:"remark"`
@@ -39,12 +45,27 @@ type MatchingFilter struct {
 	State        *MatchingState `json:"state,omitempty"`
 }
 
+type ReviewMatchingParam struct {
+	ToUserID string `json:"toUserId"`
+	Score    int    `json:"score"`
+	Comment  string `json:"comment"`
+}
+
+type SimpleAvatarUser struct {
+	Avatar   string `json:"avatar"`
+	Nickname string `json:"nickname"`
+}
+
 type Summary struct {
 	Count int `json:"count"`
 }
 
 type Topic struct {
 	ID string `json:"id"`
+	// 匹配中用户
+	RecentUsers []*SimpleAvatarUser `json:"recentUsers"`
+	// 话题下的匹配数量
+	MatchingNum int `json:"matchingNum"`
 }
 
 func (Topic) IsEntity() {}
@@ -56,6 +77,11 @@ type UpdateMatchingParam struct {
 	Gender   *Gender    `json:"gender,omitempty"`
 	Remark   *string    `json:"remark,omitempty"`
 	Deadline *time.Time `json:"deadline,omitempty"`
+}
+
+type UpdateMatchingQuotaParam struct {
+	Total  *int `json:"total,omitempty"`
+	Remain *int `json:"remain,omitempty"`
 }
 
 type User struct {

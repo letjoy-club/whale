@@ -1,3 +1,7 @@
 mutation CreateChatGroup($resultId: Int!, $topicId: String!, $memberIds: [String!]!) {
   createGroup(resultId: $resultId, topicId: $topicId, memberIds: $memberIds)
 }
+
+mutation GroupMemberLeave($groupId: String!, $userId: String!) {
+  groupMemberLeave(groupId: $groupId, userId: $userId)
+}

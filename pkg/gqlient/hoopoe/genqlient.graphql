@@ -5,6 +5,13 @@ query GetUserByIDs($ids: [String!]!) {
   }
 }
 
+query GetAvatarByIDs($ids: [String!]!) {
+  getUserByIds(ids: $ids) {
+    nickname
+    avatar
+  }
+}
+
 query GetTopic($id: String!) {
   topic(id: $id) {
     id

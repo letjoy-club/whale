@@ -55,23 +55,14 @@ func (m *Matcher) MatchPair(ctx context.Context, topicID string) error {
 			if mc.Used(matchings[j].ID) {
 				continue
 			}
-			if matchings[i].UserID == matchings[j].UserID {
-				continue
+			if _, matched := Matched(ctx, matchings[i], matchings[j]); matched {
+				if _, err := NewMatchingResult(ctx, []*models.Matching{matchings[i], matchings[j]}); err != nil {
+					logger.L.Error("failed to create matching result", zap.Error(err), zap.String("matching-1", matchings[i].ID), zap.String("matching-2", matchings[j].ID))
+					return err
+				}
+				mc.Use(matchings[i].ID)
+				mc.Use(matchings[j].ID)
 			}
-			userIGender := mc.userProfiles[matchings[i].UserID].Gender.String()
-			userJGender := mc.userProfiles[matchings[j].UserID].Gender.String()
-			if matchings[i].Gender != models.GenderN.String() && matchings[i].Gender != userJGender {
-				continue
-			}
-			if matchings[j].Gender != models.GenderN.String() && matchings[j].Gender != userIGender {
-				continue
-			}
-			if _, err := NewMatchingResult(ctx, []*models.Matching{matchings[i], matchings[j]}); err != nil {
-				logger.L.Error("failed to create matching result", zap.Error(err), zap.String("matching-1", matchings[i].ID), zap.String("matching-2", matchings[j].ID))
-				return err
-			}
-			mc.Use(matchings[i].ID)
-			mc.Use(matchings[j].ID)
 		}
 	}
 	return nil

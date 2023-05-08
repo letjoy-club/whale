@@ -36,6 +36,31 @@ type GetAreaResponse struct {
 // GetArea returns GetAreaResponse.Area, and is useful for accessing the field via an interface.
 func (v *GetAreaResponse) GetArea() GetAreaArea { return v.Area }
 
+// GetAvatarByIDsGetUserByIdsUser includes the requested fields of the GraphQL type User.
+type GetAvatarByIDsGetUserByIdsUser struct {
+	// 昵称
+	Nickname string `json:"nickname"`
+	// 头像URL
+	Avatar string `json:"avatar"`
+}
+
+// GetNickname returns GetAvatarByIDsGetUserByIdsUser.Nickname, and is useful for accessing the field via an interface.
+func (v *GetAvatarByIDsGetUserByIdsUser) GetNickname() string { return v.Nickname }
+
+// GetAvatar returns GetAvatarByIDsGetUserByIdsUser.Avatar, and is useful for accessing the field via an interface.
+func (v *GetAvatarByIDsGetUserByIdsUser) GetAvatar() string { return v.Avatar }
+
+// GetAvatarByIDsResponse is returned by GetAvatarByIDs on success.
+type GetAvatarByIDsResponse struct {
+	// 【用户】根据ID批量获取
+	GetUserByIds []GetAvatarByIDsGetUserByIdsUser `json:"getUserByIds"`
+}
+
+// GetGetUserByIds returns GetAvatarByIDsResponse.GetUserByIds, and is useful for accessing the field via an interface.
+func (v *GetAvatarByIDsResponse) GetGetUserByIds() []GetAvatarByIDsGetUserByIdsUser {
+	return v.GetUserByIds
+}
+
 // GetTopicResponse is returned by GetTopic on success.
 type GetTopicResponse struct {
 	// 【话题】话题查询
@@ -87,6 +112,14 @@ type __GetAreaInput struct {
 // GetId returns __GetAreaInput.Id, and is useful for accessing the field via an interface.
 func (v *__GetAreaInput) GetId() string { return v.Id }
 
+// __GetAvatarByIDsInput is used internally by genqlient
+type __GetAvatarByIDsInput struct {
+	Ids []string `json:"ids"`
+}
+
+// GetIds returns __GetAvatarByIDsInput.Ids, and is useful for accessing the field via an interface.
+func (v *__GetAvatarByIDsInput) GetIds() []string { return v.Ids }
+
 // __GetTopicInput is used internally by genqlient
 type __GetTopicInput struct {
 	Id string `json:"id"`
@@ -126,6 +159,39 @@ query GetArea ($id: AreaCode!) {
 	var err error
 
 	var data GetAreaResponse
+	resp := &graphql.Response{Data: &data}
+
+	err = client.MakeRequest(
+		ctx,
+		req,
+		resp,
+	)
+
+	return &data, err
+}
+
+func GetAvatarByIDs(
+	ctx context.Context,
+	client graphql.Client,
+	ids []string,
+) (*GetAvatarByIDsResponse, error) {
+	req := &graphql.Request{
+		OpName: "GetAvatarByIDs",
+		Query: `
+query GetAvatarByIDs ($ids: [String!]!) {
+	getUserByIds(ids: $ids) {
+		nickname
+		avatar
+	}
+}
+`,
+		Variables: &__GetAvatarByIDsInput{
+			Ids: ids,
+		},
+	}
+	var err error
+
+	var data GetAvatarByIDsResponse
 	resp := &graphql.Response{Data: &data}
 
 	err = client.MakeRequest(

@@ -10,10 +10,25 @@ extend type User @key(fields: "id") {
 
 extend type Topic @key(fields: "id") {
   id: String! @external
+
+  # query
+  "匹配中用户"
+  recentUsers(cityId: String): [SimpleAvatarUser!]!
+  "话题下的匹配数量"
+  matchingNum(cityId: String): Int!
 }
 
 extend type Area @key(fields: "code") {
   code: AreaCode! @external
+}
+
+extend type ChatGroup @key(fields: "id") {
+  id: String! @external
+}
+
+type SimpleAvatarUser {
+  avatar: String!
+  nickname: String!
 }
 
 type MatchingOfTopic {
@@ -141,6 +156,7 @@ type MatchingResult {
   users: [User!]!
   matchingPreviews: [MatchingPreview!]!
   topic: Topic!
+  chatGroup: ChatGroup
 }
 
 enum MatchingResultConfirmState {
@@ -180,6 +196,8 @@ input MatchingFilter {
   createAfter: Time
   topicId: String
   state: MatchingState
+  "通用关键词，u_ 开头搜用户, t_ 开头搜话题, m_ 开头搜匹配, 6 个数字搜地区"
+  keyword: String
 }
 
 type Summary {
@@ -218,9 +236,39 @@ type MatchingInvitation {
   matchingResult: MatchingResult
 }
 
+type HotTopicsInArea {
+  cityId: String!
+  updatedAt: Time!
+
+  # query
+  topicMetrics: [TopicMetrics!]!
+}
+
+type TopicMetrics {
+  id: String!
+  matched: Int!
+  matching: Int!
+
+  # query
+  heat: Int!
+  topic: Topic!
+}
+
 type Query {
+  "【匹配系统】内部专有"
+  chatGroupByResultId(resultId: Int!): ChatGroup!
+
+  "【匹配系统】话题排行榜"
+  hotTopicsInArea(cityId: String = "310100"): HotTopicsInArea!
+
   "【匹配系统】查看匹配"
   matching(id: String!): Matching!
+
+  "【匹配系统】查看匹配配额"
+  userMatchingQuota(userId: String!): MatchingQuota!
+
+  "【匹配系统】使用 chatgroupId 查匹配结果"
+  matchingResultByChatGroupId("用户 id 不用传，只在管理端使用" userId: String, chatGroupId: String!): MatchingResult!
 
   "【匹配系统】匹配查询，管理端用"
   matchings(filter: MatchingFilter, paginator: GraphQLPaginator): [Matching!]!
@@ -288,6 +336,17 @@ input CreateMatchingInvitationParam {
   areaIds: [String!]!
 }
 
+input ReviewMatchingParam {
+  toUserId: String!
+  score: Int!
+  comment: String!
+}
+
+input UpdateMatchingQuotaParam {
+  total: Int
+  remain: Int
+}
+
 type Mutation {
   "【匹配系统】创建匹配"
   createMatching(userId: String, param: CreateMatchingParam!): Matching!
@@ -304,6 +363,9 @@ type Mutation {
   "【匹配系统】更新匹配，管理端使用"
   updateMatching(matchingId: String!, param: UpdateMatchingParam!): Matching!
 
+  "【匹配系统】更新匹配配额，管理端使用"
+  updateMatchingQuota(userId: String!, param: UpdateMatchingQuotaParam!): String!
+
   "【匹配系统】确认/拒绝匹配结果"
   confirmMatchingResult(userId: String, matchingId: String!, reject: Boolean!): String
 
@@ -313,6 +375,15 @@ type Mutation {
   "【匹配系统】开始匹配，管理端使用"
   startMatching: String
 
-  "【匹配系统】尝试创建聊天室"
+  "【匹配系统】尝试创建聊天室，管理端使用"
   checkAndCreateChatGroup(matchingId: String!): String
+
+  "【匹配系统】分析话题热度，管理端使用"
+  refreshTopicMetrics: String
+
+  "【匹配系统】完成匹配，退出聊天"
+  finishMatching(matchingId: String!): String
+
+  "【匹配系统】打分"
+  reviewMatching(matchingId: String!, param: ReviewMatchingParam!): String
 }

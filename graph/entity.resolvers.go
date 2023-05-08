@@ -36,6 +36,11 @@ func (r *entityResolver) FindMatchingQuotaByUserID(ctx context.Context, userID s
 	return thunk()
 }
 
+// FindTopicByID is the resolver for the findTopicByID field.
+func (r *entityResolver) FindTopicByID(ctx context.Context, id string) (*models.Topic, error) {
+	return &models.Topic{ID: id}, nil
+}
+
 // FindUserByID is the resolver for the findUserByID field.
 func (r *entityResolver) FindUserByID(ctx context.Context, id string) (*models.User, error) {
 	return &models.User{ID: id}, nil

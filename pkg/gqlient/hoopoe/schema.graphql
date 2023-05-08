@@ -977,15 +977,6 @@ type User {
   """年龄"""
   age: Int
 
-  """待审核昵称"""
-  nicknameInReviewing: String
-
-  """待审核头像URL"""
-  avatarInReviewing: String
-
-  """待审核封面背景URL"""
-  backgroundInReviewing: String
-
   """邀请人信息"""
   inviter: Inviter
 

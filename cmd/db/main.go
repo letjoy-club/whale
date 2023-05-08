@@ -21,7 +21,17 @@ func main() {
 	})
 
 	fmt.Println("Generating schema code")
-	m := []interface{}{&models.Matching{}, &models.MatchingResult{}, &models.MatchingResultConfirmAction{}, &models.MatchingQuota{}, &models.MatchingInvitation{}}
+	m := []interface{}{
+		// &models.HotTopic{},
+		&models.HotTopicsInArea{},
+		&models.MatchingReview{},
+
+		&models.MatchingInvitation{},
+		&models.MatchingQuota{},
+		&models.MatchingResultConfirmAction{},
+		&models.MatchingResult{},
+		&models.Matching{},
+	}
 
 	g.ApplyBasic(m...)
 	g.Execute()

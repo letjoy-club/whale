@@ -18,22 +18,26 @@ import (
 func Use(db *gorm.DB, opts ...gen.DOOption) *Query {
 	return &Query{
 		db:                          db,
+		HotTopicsInArea:             newHotTopicsInArea(db, opts...),
 		Matching:                    newMatching(db, opts...),
 		MatchingInvitation:          newMatchingInvitation(db, opts...),
 		MatchingQuota:               newMatchingQuota(db, opts...),
 		MatchingResult:              newMatchingResult(db, opts...),
 		MatchingResultConfirmAction: newMatchingResultConfirmAction(db, opts...),
+		MatchingReview:              newMatchingReview(db, opts...),
 	}
 }
 
 type Query struct {
 	db *gorm.DB
 
+	HotTopicsInArea             hotTopicsInArea
 	Matching                    matching
 	MatchingInvitation          matchingInvitation
 	MatchingQuota               matchingQuota
 	MatchingResult              matchingResult
 	MatchingResultConfirmAction matchingResultConfirmAction
+	MatchingReview              matchingReview
 }
 
 func (q *Query) Available() bool { return q.db != nil }
@@ -41,11 +45,13 @@ func (q *Query) Available() bool { return q.db != nil }
 func (q *Query) clone(db *gorm.DB) *Query {
 	return &Query{
 		db:                          db,
+		HotTopicsInArea:             q.HotTopicsInArea.clone(db),
 		Matching:                    q.Matching.clone(db),
 		MatchingInvitation:          q.MatchingInvitation.clone(db),
 		MatchingQuota:               q.MatchingQuota.clone(db),
 		MatchingResult:              q.MatchingResult.clone(db),
 		MatchingResultConfirmAction: q.MatchingResultConfirmAction.clone(db),
+		MatchingReview:              q.MatchingReview.clone(db),
 	}
 }
 
@@ -60,29 +66,35 @@ func (q *Query) WriteDB() *Query {
 func (q *Query) ReplaceDB(db *gorm.DB) *Query {
 	return &Query{
 		db:                          db,
+		HotTopicsInArea:             q.HotTopicsInArea.replaceDB(db),
 		Matching:                    q.Matching.replaceDB(db),
 		MatchingInvitation:          q.MatchingInvitation.replaceDB(db),
 		MatchingQuota:               q.MatchingQuota.replaceDB(db),
 		MatchingResult:              q.MatchingResult.replaceDB(db),
 		MatchingResultConfirmAction: q.MatchingResultConfirmAction.replaceDB(db),
+		MatchingReview:              q.MatchingReview.replaceDB(db),
 	}
 }
 
 type queryCtx struct {
+	HotTopicsInArea             IHotTopicsInAreaDo
 	Matching                    IMatchingDo
 	MatchingInvitation          IMatchingInvitationDo
 	MatchingQuota               IMatchingQuotaDo
 	MatchingResult              IMatchingResultDo
 	MatchingResultConfirmAction IMatchingResultConfirmActionDo
+	MatchingReview              IMatchingReviewDo
 }
 
 func (q *Query) WithContext(ctx context.Context) *queryCtx {
 	return &queryCtx{
+		HotTopicsInArea:             q.HotTopicsInArea.WithContext(ctx),
 		Matching:                    q.Matching.WithContext(ctx),
 		MatchingInvitation:          q.MatchingInvitation.WithContext(ctx),
 		MatchingQuota:               q.MatchingQuota.WithContext(ctx),
 		MatchingResult:              q.MatchingResult.WithContext(ctx),
 		MatchingResultConfirmAction: q.MatchingResultConfirmAction.WithContext(ctx),
+		MatchingReview:              q.MatchingReview.WithContext(ctx),
 	}
 }
 

@@ -120,6 +120,26 @@ func (ec *executionContext) __resolve_entities(ctx context.Context, representati
 				list[idx[i]] = entity
 				return nil
 			}
+		case "Topic":
+			resolverName, err := entityResolverNameForTopic(ctx, rep)
+			if err != nil {
+				return fmt.Errorf(`finding resolver for Entity "Topic": %w`, err)
+			}
+			switch resolverName {
+
+			case "findTopicByID":
+				id0, err := ec.unmarshalNString2string(ctx, rep["id"])
+				if err != nil {
+					return fmt.Errorf(`unmarshalling param 0 for findTopicByID(): %w`, err)
+				}
+				entity, err := ec.resolvers.Entity().FindTopicByID(ctx, id0)
+				if err != nil {
+					return fmt.Errorf(`resolving Entity "Topic": %w`, err)
+				}
+
+				list[idx[i]] = entity
+				return nil
+			}
 		case "User":
 			resolverName, err := entityResolverNameForUser(ctx, rep)
 			if err != nil {
@@ -241,6 +261,23 @@ func entityResolverNameForMatchingQuota(ctx context.Context, rep map[string]inte
 		return "findMatchingQuotaByUserID", nil
 	}
 	return "", fmt.Errorf("%w for MatchingQuota", ErrTypeNotFound)
+}
+
+func entityResolverNameForTopic(ctx context.Context, rep map[string]interface{}) (string, error) {
+	for {
+		var (
+			m   map[string]interface{}
+			val interface{}
+			ok  bool
+		)
+		_ = val
+		m = rep
+		if _, ok = m["id"]; !ok {
+			break
+		}
+		return "findTopicByID", nil
+	}
+	return "", fmt.Errorf("%w for Topic", ErrTypeNotFound)
 }
 
 func entityResolverNameForUser(ctx context.Context, rep map[string]interface{}) (string, error) {

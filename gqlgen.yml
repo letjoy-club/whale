@@ -77,3 +77,15 @@ models:
     fields:
       matchingQuota:
         resolver: true
+  Topic:
+    fields:
+      matchingNum:
+        resolver: true
+      recentUsers:
+        resolver: true
+  HotTopicsInArea:
+    model:
+      - whale/pkg/models.HotTopicsInArea
+  TopicMetrics:
+    model:
+      - whale/pkg/models.TopicMetrics

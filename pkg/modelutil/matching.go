@@ -231,3 +231,71 @@ func CreateMatchingInvitation(ctx context.Context, uid string, param models.Crea
 	midacontext.GetLoader[loader.Loader](ctx).MatchingQuota.Clear(ctx, uid)
 	return &invitation, nil
 }
+
+func FinishMatching(ctx context.Context, matchingID string, uid string) error {
+	matchingThunk := midacontext.GetLoader[loader.Loader](ctx).Matching.Load(ctx, matchingID)
+	matching, err := matchingThunk()
+	if err != nil {
+		return err
+	}
+	if uid != "" {
+		if matching.UserID != "" {
+			return midacode.ErrNotPermitted
+		}
+	}
+
+	if matching.State != models.MatchingStateMatched.String() {
+		return midacode.ErrStateMayHaveChanged
+	}
+
+	matchingResultThunk := midacontext.GetLoader[loader.Loader](ctx).MatchingResult.Load(ctx, matching.ResultID)
+	matchingResult, err := matchingResultThunk()
+	if err != nil {
+		return err
+	}
+
+	_, err = smew.GroupMemberLeave(ctx, midacontext.GetServices(ctx).Smew, matchingResult.ChatGroupID, matching.UserID)
+	if err != nil {
+		return err
+	}
+
+	db := midacontext.GetDB(ctx)
+	Matching := dbquery.Use(db).Matching
+	MatchingQuota := dbquery.Use(db).MatchingQuota
+	MatchingResult := dbquery.Use(db).MatchingResult
+
+	ret, err := Matching.WithContext(ctx).
+		Where(Matching.ID.Eq(matchingID)).
+		Where(Matching.State.Eq(models.MatchingStateMatched.String())).
+		UpdateSimple(
+			Matching.State.Value(models.MatchingStateClosed.String()),
+			Matching.InChatGroup.Value(false),
+		)
+
+	if err != nil {
+		return err
+	}
+
+	if ret.RowsAffected != 1 {
+		return midacode.ErrStateMayHaveChanged
+	}
+
+	_, err = MatchingQuota.
+		WithContext(ctx).
+		Where(MatchingQuota.UserID.Eq(matching.UserID)).
+		UpdateSimple(MatchingQuota.Remain.Add(1))
+	if err != nil {
+		return err
+	}
+
+	MatchingResult.WithContext(ctx).Where().UpdateSimple(
+		MatchingResult.ChatGroupState.Value(models.ChatGroupStateClosed.String()),
+	)
+
+	for _, matching := range matchingResult.MatchingIDs {
+		midacontext.GetLoader[loader.Loader](ctx).Matching.Clear(ctx, matching)
+	}
+	midacontext.GetLoader[loader.Loader](ctx).MatchingResult.Clear(ctx, matching.ResultID)
+	midacontext.GetLoader[loader.Loader](ctx).MatchingQuota.Clear(ctx, matching.UserID)
+	return nil
+}

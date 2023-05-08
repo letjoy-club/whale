@@ -28,6 +28,22 @@ type Matching struct {
 	UpdatedAt time.Time `gorm:"autoUpdateTime"`
 }
 
+type MatchingReview struct {
+	ID int `gorm:"primaryKey"`
+
+	MatchingResultID int
+	MatchingID       string `gorm:"index:from_matching_user;type:varchar(64)"`
+	UserID           string `gorm:"index:from_matching_user;type:varchar(64)"`
+
+	ToMatchingID string `gorm:"index:to_matching_user;type:varchar(64)"`
+	ToUserID     string `gorm:"index:to_matching_user;type:varchar(64)"`
+	TopicID      string `gorm:"type:varchar(64)"`
+
+	Score      int
+	Comment    string    `gorm:"type:varchar(1024)"`
+	CreateTime time.Time `gorm:"autoCreateTime"`
+}
+
 func (m *Matching) BeforeFind(db *gorm.DB) error {
 	if m.RejectedUserIDs == nil {
 		m.RejectedUserIDs = []string{}
