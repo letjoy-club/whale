@@ -8,6 +8,7 @@ import (
 	"whale/pkg/models"
 	"whale/pkg/whalecode"
 
+	"github.com/letjoy-club/mida-tool/dbutil"
 	"github.com/letjoy-club/mida-tool/midacontext"
 	"github.com/letjoy-club/mida-tool/shortid"
 )
@@ -22,7 +23,7 @@ func AcceptMatchingInvitation(ctx context.Context, invitation *models.MatchingIn
 		return whalecode.ErrMatchingQuotaNotEnough
 	}
 
-	db := midacontext.GetDB(ctx)
+	db := dbutil.GetDB(ctx)
 	// 生成匹配和匹配结果
 	Matching := dbquery.Use(db).Matching
 	MatchingResult := dbquery.Use(db).MatchingResult
@@ -95,7 +96,7 @@ func AcceptMatchingInvitation(ctx context.Context, invitation *models.MatchingIn
 }
 
 func RejectMatchingInvitation(ctx context.Context, invitation *models.MatchingInvitation) error {
-	db := midacontext.GetDB(ctx)
+	db := dbutil.GetDB(ctx)
 
 	MatchingInvitation := dbquery.Use(db).MatchingInvitation
 	_, err := MatchingInvitation.WithContext(ctx).Where(MatchingInvitation.ID.Eq(invitation.ID)).UpdateSimple(

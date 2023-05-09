@@ -23,6 +23,9 @@ type Matching struct {
 	ResultID        int
 	Remark          string `gorm:"type:varchar(64)"`
 
+	FinishedAt *time.Time
+	MatchedAt  *time.Time
+
 	Deadline  time.Time
 	CreatedAt time.Time `gorm:"autoCreateTime;index"`
 	UpdatedAt time.Time `gorm:"autoUpdateTime"`
@@ -62,12 +65,15 @@ type MatchingResult struct {
 	ConfirmStates  []string `gorm:"serializer:json;type:json"`
 	ChatGroupState string   `gorm:"type:varchar(64)"`
 	ChatGroupID    string   `gorm:"type:varchar(64)"`
-	Closed         bool
+
+	Closed bool
 
 	CreatedBy string `gorm:"type:varchar(64)"`
 
-	CreatedAt time.Time `gorm:"autoCreateTime"`
-	UpdatedAt time.Time `gorm:"autoUpdateTime"`
+	// 结束时间，由第一个用户的结束时间来决定
+	FinishedAt *time.Time
+	CreatedAt  time.Time `gorm:"autoCreateTime"`
+	UpdatedAt  time.Time `gorm:"autoUpdateTime"`
 }
 
 func (MatchingResult) IsEntity() {}

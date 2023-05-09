@@ -19,8 +19,10 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/letjoy-club/mida-tool/authenticator"
+	"github.com/letjoy-club/mida-tool/dbutil"
 	"github.com/letjoy-club/mida-tool/midacode"
 	"github.com/letjoy-club/mida-tool/midacontext"
+	"github.com/letjoy-club/mida-tool/redisutil"
 	"github.com/vektah/gqlparser/v2/gqlerror"
 )
 
@@ -103,8 +105,8 @@ func main() {
 				return
 			}
 
-			ctx = midacontext.WithDB(ctx, db)
-			ctx = midacontext.WithRedis(ctx, redis)
+			ctx = dbutil.WithDB(ctx, db)
+			ctx = redisutil.WithRedis(ctx, redis)
 			ctx = midacontext.WithLoader(ctx, loader)
 			ctx = midacontext.WithServices(ctx, services)
 			ctx = midacontext.WithClientToken(ctx, token)

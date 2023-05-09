@@ -6,15 +6,17 @@ import (
 	"sort"
 	"time"
 	"whale/pkg/dbquery"
+	"whale/pkg/loader"
 	"whale/pkg/models"
 
+	"github.com/letjoy-club/mida-tool/dbutil"
 	"github.com/letjoy-club/mida-tool/midacontext"
 	"github.com/samber/lo"
 	"gorm.io/gorm/clause"
 )
 
 func RefreshHotTopic(ctx context.Context, before time.Time) error {
-	db := midacontext.GetDB(ctx)
+	db := dbutil.GetDB(ctx)
 
 	Matching := dbquery.Use(db).Matching
 
@@ -57,7 +59,7 @@ func topicMetrics(matchings []*models.Matching) []models.TopicMetrics {
 		tm.ID = m.TopicID
 		if m.State == string(models.MatchingStateMatching) {
 			tm.Matching++
-		} else if m.State == string(models.MatchingStateMatched) || m.State == string(models.MatchingStateClosed) {
+		} else if m.State == string(models.MatchingStateMatched) || m.State == string(models.MatchingStateFinished) {
 			tm.Matched++
 		}
 		topicMetrics[m.TopicID] = tm
@@ -67,4 +69,18 @@ func topicMetrics(matchings []*models.Matching) []models.TopicMetrics {
 		return tms[i].Total() > tms[j].Total()
 	})
 	return tms
+}
+
+func HotTopicsInArea(ctx context.Context, cityID string) (*models.HotTopicsInArea, error) {
+	thunk := midacontext.GetLoader[loader.Loader](ctx).HotTopics.Load(ctx, cityID)
+	topics, _ := thunk()
+	if topics != nil {
+		return &models.HotTopicsInArea{
+			CityID:       cityID,
+			TopicMetrics: []models.TopicMetrics{},
+			CreatedAt:    time.Now(),
+			UpdatedAt:    time.Now(),
+		}, nil
+	}
+	return topics, nil
 }

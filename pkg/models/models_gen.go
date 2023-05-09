@@ -15,6 +15,12 @@ type Area struct {
 
 func (Area) IsEntity() {}
 
+type CalendarEvent struct {
+	TopicID    string    `json:"topicId"`
+	MatchedAt  time.Time `json:"matchedAt"`
+	FinishedAt time.Time `json:"finishedAt"`
+}
+
 type ChatGroup struct {
 	ID string `json:"id"`
 }
@@ -43,6 +49,8 @@ type MatchingFilter struct {
 	CreateAfter  *time.Time     `json:"createAfter,omitempty"`
 	TopicID      *string        `json:"topicId,omitempty"`
 	State        *MatchingState `json:"state,omitempty"`
+	// 通用关键词，u_ 开头搜用户, t_ 开头搜话题, m_ 开头搜匹配, 6 个数字搜地区
+	Keyword *string `json:"keyword,omitempty"`
 }
 
 type ReviewMatchingParam struct {
@@ -91,8 +99,20 @@ type User struct {
 
 func (User) IsEntity() {}
 
+type UserMatchingCalenderParam struct {
+	Before      time.Time `json:"before"`
+	After       time.Time `json:"after"`
+	OtherUserID *string   `json:"otherUserId,omitempty"`
+}
+
 type UserMatchingFilter struct {
 	State *MatchingState `json:"state,omitempty"`
+}
+
+type UserMatchingInTheDayParam struct {
+	// 日期格式 20060102
+	DayStr      string  `json:"dayStr"`
+	OtherUserID *string `json:"otherUserId,omitempty"`
 }
 
 type ChatGroupState string
@@ -299,7 +319,7 @@ const (
 	// 匹配超时
 	MatchingStateTimeout MatchingState = "Timeout"
 	// 匹配关闭
-	MatchingStateClosed MatchingState = "Closed"
+	MatchingStateFinished MatchingState = "Finished"
 )
 
 var AllMatchingState = []MatchingState{
@@ -308,12 +328,12 @@ var AllMatchingState = []MatchingState{
 	MatchingStateFailed,
 	MatchingStateCanceled,
 	MatchingStateTimeout,
-	MatchingStateClosed,
+	MatchingStateFinished,
 }
 
 func (e MatchingState) IsValid() bool {
 	switch e {
-	case MatchingStateMatching, MatchingStateMatched, MatchingStateFailed, MatchingStateCanceled, MatchingStateTimeout, MatchingStateClosed:
+	case MatchingStateMatching, MatchingStateMatched, MatchingStateFailed, MatchingStateCanceled, MatchingStateTimeout, MatchingStateFinished:
 		return true
 	}
 	return false

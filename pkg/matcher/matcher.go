@@ -2,12 +2,13 @@ package matcher
 
 import (
 	"context"
+	"time"
 	"whale/pkg/dbquery"
 	"whale/pkg/models"
 
+	"github.com/letjoy-club/mida-tool/dbutil"
 	"github.com/letjoy-club/mida-tool/logger"
 	"github.com/letjoy-club/mida-tool/midacode"
-	"github.com/letjoy-club/mida-tool/midacontext"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
@@ -16,7 +17,7 @@ type Matcher struct {
 }
 
 func (m *Matcher) Match(ctx context.Context) error {
-	db := midacontext.GetDB(ctx)
+	db := dbutil.GetDB(ctx)
 	Matching := dbquery.Use(db).Matching
 	matchings, err := Matching.WithContext(ctx).Where(Matching.State.Eq(string(models.MatchingStateMatching))).Find()
 	if err != nil {
@@ -69,7 +70,7 @@ func (m *Matcher) MatchPair(ctx context.Context, topicID string) error {
 }
 
 func NewMatchingResult(ctx context.Context, matchings []*models.Matching) (*models.MatchingResult, error) {
-	db := midacontext.GetDB(ctx)
+	db := dbutil.GetDB(ctx)
 	MatchingResult := dbquery.Use(db).MatchingResult
 
 	userIDs := make([]string, len(matchings))
@@ -96,13 +97,15 @@ func NewMatchingResult(ctx context.Context, matchings []*models.Matching) (*mode
 			return err
 		}
 		Matching := dbquery.Use(tx).Matching
+		matched := time.Now()
 		rx, err := Matching.
 			WithContext(ctx).
 			Where(Matching.ID.In(matchingIDs...), Matching.State.Eq(models.MatchingStateMatching.String())).
-			Select(Matching.ResultID, Matching.State).
+			Select(Matching.ResultID, Matching.State, Matching.MatchedAt).
 			Updates(&models.Matching{
-				ResultID: matchingResult.ID,
-				State:    models.MatchingStateMatched.String(),
+				ResultID:  matchingResult.ID,
+				State:     models.MatchingStateMatched.String(),
+				MatchedAt: &matched,
 			})
 		if err != nil {
 			return err

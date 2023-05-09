@@ -10,6 +10,7 @@ import (
 	"whale/pkg/models"
 	"whale/pkg/whalecode"
 
+	"github.com/letjoy-club/mida-tool/dbutil"
 	"github.com/letjoy-club/mida-tool/midacode"
 	"github.com/letjoy-club/mida-tool/midacontext"
 	"github.com/letjoy-club/mida-tool/shortid"
@@ -68,11 +69,14 @@ func ConfirmMatching(ctx context.Context, db *gorm.DB, matchingResult *models.Ma
 			return err
 		}
 		if matchingResult.Closed {
+			// 如果有人拒绝匹配
 			Matching := dbquery.Use(db).Matching
 			_, err = Matching.WithContext(ctx).
-				Where(Matching.ResultID.Eq(matchingResult.ID)).
+				Where(Matching.ID.In(matchingResult.MatchingIDs...)).
 				UpdateSimple(
+					// 回到匹配状态
 					Matching.State.Value(string(models.MatchingStateMatching)),
+					Matching.MatchedAt.Null(),
 					Matching.ResultID.Value(0),
 				)
 			if err != nil {
@@ -94,7 +98,7 @@ func CheckMatchingResultAndCreateChatGroup(ctx context.Context, m *models.Matchi
 		return err
 	}
 	groupID := resp.CreateGroup
-	db := midacontext.GetDB(ctx)
+	db := dbutil.GetDB(ctx)
 	err = db.Transaction(func(db *gorm.DB) error {
 		Matching := dbquery.Use(db).Matching
 		MatchingResult := dbquery.Use(db).MatchingResult
@@ -138,7 +142,7 @@ func CreateMatching(ctx context.Context, uid string, param models.CreateMatching
 		return nil, err
 	}
 
-	db := midacontext.GetDB(ctx)
+	db := dbutil.GetDB(ctx)
 	Matching := dbquery.Use(db).Matching
 
 	_, err = Matching.WithContext(ctx).Where(
@@ -204,7 +208,7 @@ func CreateMatchingInvitation(ctx context.Context, uid string, param models.Crea
 		return nil, err
 	}
 
-	db := midacontext.GetDB(ctx)
+	db := dbutil.GetDB(ctx)
 	MatchingInvitation := dbquery.Use(db).MatchingInvitation
 
 	invitation := models.MatchingInvitation{
@@ -259,7 +263,7 @@ func FinishMatching(ctx context.Context, matchingID string, uid string) error {
 		return err
 	}
 
-	db := midacontext.GetDB(ctx)
+	db := dbutil.GetDB(ctx)
 	Matching := dbquery.Use(db).Matching
 	MatchingQuota := dbquery.Use(db).MatchingQuota
 	MatchingResult := dbquery.Use(db).MatchingResult
@@ -268,8 +272,9 @@ func FinishMatching(ctx context.Context, matchingID string, uid string) error {
 		Where(Matching.ID.Eq(matchingID)).
 		Where(Matching.State.Eq(models.MatchingStateMatched.String())).
 		UpdateSimple(
-			Matching.State.Value(models.MatchingStateClosed.String()),
+			Matching.State.Value(models.MatchingStateFinished.String()),
 			Matching.InChatGroup.Value(false),
+			Matching.FinishedAt.Value(time.Now()),
 		)
 
 	if err != nil {

@@ -38,6 +38,8 @@ func newMatching(db *gorm.DB, opts ...gen.DOOption) matching {
 	_matching.ChatGroupState = field.NewString(tableName, "chat_group_state")
 	_matching.ResultID = field.NewInt(tableName, "result_id")
 	_matching.Remark = field.NewString(tableName, "remark")
+	_matching.FinishedAt = field.NewTime(tableName, "finished_at")
+	_matching.MatchedAt = field.NewTime(tableName, "matched_at")
 	_matching.Deadline = field.NewTime(tableName, "deadline")
 	_matching.CreatedAt = field.NewTime(tableName, "created_at")
 	_matching.UpdatedAt = field.NewTime(tableName, "updated_at")
@@ -63,6 +65,8 @@ type matching struct {
 	ChatGroupState  field.String
 	ResultID        field.Int
 	Remark          field.String
+	FinishedAt      field.Time
+	MatchedAt       field.Time
 	Deadline        field.Time
 	CreatedAt       field.Time
 	UpdatedAt       field.Time
@@ -94,6 +98,8 @@ func (m *matching) updateTableName(table string) *matching {
 	m.ChatGroupState = field.NewString(table, "chat_group_state")
 	m.ResultID = field.NewInt(table, "result_id")
 	m.Remark = field.NewString(table, "remark")
+	m.FinishedAt = field.NewTime(table, "finished_at")
+	m.MatchedAt = field.NewTime(table, "matched_at")
 	m.Deadline = field.NewTime(table, "deadline")
 	m.CreatedAt = field.NewTime(table, "created_at")
 	m.UpdatedAt = field.NewTime(table, "updated_at")
@@ -119,7 +125,7 @@ func (m *matching) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 }
 
 func (m *matching) fillFieldMap() {
-	m.fieldMap = make(map[string]field.Expr, 15)
+	m.fieldMap = make(map[string]field.Expr, 17)
 	m.fieldMap["id"] = m.ID
 	m.fieldMap["topic_id"] = m.TopicID
 	m.fieldMap["user_id"] = m.UserID
@@ -132,6 +138,8 @@ func (m *matching) fillFieldMap() {
 	m.fieldMap["chat_group_state"] = m.ChatGroupState
 	m.fieldMap["result_id"] = m.ResultID
 	m.fieldMap["remark"] = m.Remark
+	m.fieldMap["finished_at"] = m.FinishedAt
+	m.fieldMap["matched_at"] = m.MatchedAt
 	m.fieldMap["deadline"] = m.Deadline
 	m.fieldMap["created_at"] = m.CreatedAt
 	m.fieldMap["updated_at"] = m.UpdatedAt

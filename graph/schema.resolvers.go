@@ -16,6 +16,7 @@ import (
 	"whale/pkg/modelutil"
 	"whale/pkg/whalecode"
 
+	"github.com/letjoy-club/mida-tool/dbutil"
 	"github.com/letjoy-club/mida-tool/graphqlutil"
 	"github.com/letjoy-club/mida-tool/midacode"
 	"github.com/letjoy-club/mida-tool/midacontext"
@@ -225,7 +226,7 @@ func (r *mutationResolver) CancelMatchingInvitation(ctx context.Context, invitat
 	if !token.IsAdmin() && !token.IsUser() {
 		return nil, midacode.ErrNotPermitted
 	}
-	db := midacontext.GetDB(ctx)
+	db := dbutil.GetDB(ctx)
 	MatchingInvitation := dbquery.Use(db).MatchingInvitation
 	matchingInvitation, err := MatchingInvitation.WithContext(ctx).Where(MatchingInvitation.ID.Eq(invitationID)).Take()
 	if err != nil {
@@ -291,7 +292,7 @@ func (r *mutationResolver) UpdateMatching(ctx context.Context, matchingID string
 	if !token.IsAdmin() {
 		return nil, midacode.ErrNotPermitted
 	}
-	db := midacontext.GetDB(ctx)
+	db := dbutil.GetDB(ctx)
 	Matching := dbquery.Use(db).Matching
 	fields := []field.AssignExpr{}
 	if param.AreaIds != nil {
@@ -324,7 +325,7 @@ func (r *mutationResolver) UpdateMatchingQuota(ctx context.Context, userID strin
 	if !token.IsAdmin() {
 		return "", midacode.ErrNotPermitted
 	}
-	db := midacontext.GetDB(ctx)
+	db := dbutil.GetDB(ctx)
 	MatchingQuota := dbquery.Use(db).MatchingQuota
 
 	fields := []field.AssignExpr{}
@@ -378,7 +379,7 @@ func (r *mutationResolver) ConfirmMatchingResult(ctx context.Context, userID *st
 		return nil, err
 	}
 
-	db := midacontext.GetDB(ctx)
+	db := dbutil.GetDB(ctx)
 	err = db.Transaction(func(tx *gorm.DB) error {
 		return modelutil.ConfirmMatching(ctx, tx, matchingResult, matchingID, token.String(), !reject)
 	})
@@ -404,13 +405,16 @@ func (r *mutationResolver) CancelMatching(ctx context.Context, matchingID string
 		return nil, whalecode.ErrMatchingStateShouldBeMatching
 	}
 
-	db := midacontext.GetDB(ctx)
+	db := dbutil.GetDB(ctx)
 	err = db.Transaction(func(tx *gorm.DB) error {
 		Matching := dbquery.Use(db).Matching
 		MatchingQuota := dbquery.Use(db).MatchingQuota
 		_, err := Matching.WithContext(ctx).
 			Where(Matching.ID.Eq(matchingID)).
-			UpdateSimple(Matching.State.Value(models.MatchingStateCanceled.String()))
+			UpdateSimple(
+				Matching.State.Value(models.MatchingStateCanceled.String()),
+				Matching.MatchedAt.Null(),
+			)
 		if err != nil {
 			return err
 		}
@@ -492,7 +496,7 @@ func (r *mutationResolver) ReviewMatching(ctx context.Context, matchingID string
 		return nil, err
 	}
 
-	db := midacontext.GetDB(ctx)
+	db := dbutil.GetDB(ctx)
 	MatchingReview := dbquery.Use(db).MatchingReview
 	_, err = MatchingReview.WithContext(ctx).Where(MatchingReview.MatchingID.Eq(matchingID)).Take()
 	if err == nil {
@@ -534,7 +538,7 @@ func (r *queryResolver) ChatGroupByResultID(ctx context.Context, resultID int) (
 
 // HotTopics is the resolver for the hotTopics field.
 func (r *queryResolver) HotTopicsInArea(ctx context.Context, cityID *string) (*models.HotTopicsInArea, error) {
-	db := midacontext.GetDB(ctx)
+	db := dbutil.GetDB(ctx)
 	HotTopicsInArea := dbquery.Use(db).HotTopicsInArea
 
 	query := HotTopicsInArea.WithContext(ctx)
@@ -552,6 +556,8 @@ func (r *queryResolver) HotTopicsInArea(ctx context.Context, cityID *string) (*m
 			CreatedAt:    time.Now(),
 			UpdatedAt:    time.Now(),
 		}, nil
+	}
+	if len(hotTopic.TopicMetrics) <= 0 {
 	}
 	return hotTopic, nil
 }
@@ -577,6 +583,95 @@ func (r *queryResolver) UserMatchingQuota(ctx context.Context, userID string) (*
 	return thunk()
 }
 
+// UserMatchingCalendar is the resolver for the userMatchingCalendar field.
+func (r *queryResolver) UserMatchingCalendar(ctx context.Context, userID *string, param models.UserMatchingCalenderParam) ([]*models.CalendarEvent, error) {
+	token := midacontext.GetClientToken(ctx)
+	if !token.IsUser() && !token.IsAdmin() {
+		return nil, midacode.ErrNotPermitted
+	}
+	uid := graphqlutil.GetID(token, userID)
+	if uid == "" {
+		return nil, whalecode.ErrUserIDCannotBeEmpty
+	}
+	if param.Before.Sub(param.After) > 64*24*time.Hour {
+		return nil, whalecode.ErrQueryDurationTooLong
+	}
+	db := dbutil.GetDB(ctx)
+	MatchingResult := dbquery.Use(db).MatchingResult
+	matchingResultIDs := []int{}
+	query := MatchingResult.WithContext(ctx).
+		Where(
+			dbutil.RawCond(dbutil.Contains(MatchingResult.UserIDs.ColumnName().String(), uid)),
+			MatchingResult.Closed.Is(false),
+			MatchingResult.FinishedAt.Between(param.After, param.Before),
+		)
+	if param.OtherUserID != nil {
+		query = query.Where(dbutil.RawCond(dbutil.Contains(MatchingResult.UserIDs.ColumnName().String(), *param.OtherUserID)))
+	}
+
+	err := query.Limit(100).Pluck(MatchingResult.ID, &matchingResultIDs)
+	if err != nil {
+		return nil, err
+	}
+	thunk := midacontext.GetLoader[loader.Loader](ctx).MatchingResult.LoadMany(ctx, matchingResultIDs)
+	matchingResults, errors := thunk()
+	if len(errors) > 0 {
+		return nil, multierr.Combine(errors...)
+	}
+	return lo.Map(matchingResults, func(m *models.MatchingResult, i int) *models.CalendarEvent {
+		now := time.Now()
+		if m.FinishedAt == nil {
+			m.FinishedAt = &now
+		}
+		return &models.CalendarEvent{
+			TopicID:    m.TopicID,
+			MatchedAt:  m.CreatedAt,
+			FinishedAt: *m.FinishedAt,
+		}
+	}), nil
+}
+
+// UserMatchingsInTheDay is the resolver for the userMatchingsInTheDay field.
+func (r *queryResolver) UserMatchingsInTheDay(ctx context.Context, userID *string, param models.UserMatchingInTheDayParam) ([]*models.MatchingResult, error) {
+	token := midacontext.GetClientToken(ctx)
+	if !token.IsUser() && !token.IsAdmin() {
+		return nil, midacode.ErrNotPermitted
+	}
+	uid := graphqlutil.GetID(token, userID)
+	if uid == "" {
+		return nil, whalecode.ErrUserIDCannotBeEmpty
+	}
+	t, err := time.Parse("20060102", param.DayStr)
+	if err != nil {
+		return nil, err
+	}
+
+	db := dbutil.GetDB(ctx)
+	MatchingResult := dbquery.Use(db).MatchingResult
+	matchingResultIDs := []int{}
+	query := MatchingResult.WithContext(ctx).
+		Where(
+			dbutil.RawCond(dbutil.Contains(MatchingResult.UserIDs.ColumnName().String(), uid)),
+			MatchingResult.Closed.Is(false),
+			MatchingResult.FinishedAt.Between(t, t.Add(time.Hour*24)),
+		)
+	if param.OtherUserID != nil {
+		query = query.Where(dbutil.RawCond(dbutil.Contains(MatchingResult.UserIDs.ColumnName().String(), *param.OtherUserID)))
+	}
+
+	err = query.Limit(100).Pluck(MatchingResult.ID, &matchingResultIDs)
+	if err != nil {
+		return nil, err
+	}
+	thunk := midacontext.GetLoader[loader.Loader](ctx).MatchingResult.LoadMany(ctx, matchingResultIDs)
+
+	matchingResults, errors := thunk()
+	if len(errors) > 0 {
+		return nil, multierr.Combine(errors...)
+	}
+	return matchingResults, nil
+}
+
 // MatchingResultByChatGroupID is the resolver for the matchingResultByChatGroupId field.
 func (r *queryResolver) MatchingResultByChatGroupID(ctx context.Context, userID *string, chatGroupID string) (*models.MatchingResult, error) {
 	token := midacontext.GetClientToken(ctx)
@@ -588,7 +683,7 @@ func (r *queryResolver) MatchingResultByChatGroupID(ctx context.Context, userID 
 		return nil, whalecode.ErrUserIDCannotBeEmpty
 	}
 
-	db := midacontext.GetDB(ctx)
+	db := dbutil.GetDB(ctx)
 	MatchingResult := dbquery.Use(db).MatchingResult
 	result, err := MatchingResult.WithContext(ctx).Where(MatchingResult.ChatGroupID.Eq(chatGroupID)).Take()
 	if err != nil {
@@ -610,7 +705,7 @@ func (r *queryResolver) Matchings(ctx context.Context, filter *models.MatchingFi
 
 	pager := graphqlutil.GetPager(paginator)
 
-	db := midacontext.GetDB(ctx)
+	db := dbutil.GetDB(ctx)
 	Matching := dbquery.Use(db).Matching
 
 	query := Matching.WithContext(ctx)
@@ -648,7 +743,7 @@ func (r *queryResolver) MatchingsCount(ctx context.Context, filter *models.Match
 		return nil, midacode.ErrNotPermitted
 	}
 
-	db := midacontext.GetDB(ctx)
+	db := dbutil.GetDB(ctx)
 	Matching := dbquery.Use(db).Matching
 
 	query := Matching.WithContext(ctx)
@@ -684,7 +779,7 @@ func (r *queryResolver) UserMatchings(ctx context.Context, userID *string, filte
 		return nil, whalecode.ErrUserIDCannotBeEmpty
 	}
 
-	db := midacontext.GetDB(ctx)
+	db := dbutil.GetDB(ctx)
 	Matching := dbquery.Use(db).Matching
 
 	query := Matching.WithContext(ctx).Where(Matching.UserID.Eq(uid))
@@ -718,7 +813,7 @@ func (r *queryResolver) UserMatchingsCount(ctx context.Context, userID *string, 
 		return nil, whalecode.ErrUserIDCannotBeEmpty
 	}
 
-	db := midacontext.GetDB(ctx)
+	db := dbutil.GetDB(ctx)
 	Matching := dbquery.Use(db).Matching
 
 	query := Matching.WithContext(ctx).Where(Matching.UserID.Eq(uid))
@@ -733,7 +828,7 @@ func (r *queryResolver) UserMatchingsCount(ctx context.Context, userID *string, 
 
 // PreviewMatchingsOfTopic is the resolver for the previewMatchingsOfTopic field.
 func (r *queryResolver) PreviewMatchingsOfTopic(ctx context.Context, cityID string, topicID string, limit *int) ([]*models.Matching, error) {
-	db := midacontext.GetDB(ctx)
+	db := dbutil.GetDB(ctx)
 	Matching := dbquery.Use(db).Matching
 
 	n := 4
@@ -775,7 +870,7 @@ func (r *queryResolver) Invitations(ctx context.Context, userID *string, paginat
 		return nil, whalecode.ErrUserIDCannotBeEmpty
 	}
 
-	db := midacontext.GetDB(ctx)
+	db := dbutil.GetDB(ctx)
 	ids := []string{}
 	MatchingInvitation := dbquery.Use(db).MatchingInvitation
 	err := MatchingInvitation.WithContext(ctx).
@@ -825,7 +920,7 @@ func (r *queryResolver) InvitationsCount(ctx context.Context, userID *string) (*
 		return nil, whalecode.ErrUserIDCannotBeEmpty
 	}
 
-	db := midacontext.GetDB(ctx)
+	db := dbutil.GetDB(ctx)
 	MatchingInvitation := dbquery.Use(db).MatchingInvitation
 	count, err := MatchingInvitation.WithContext(ctx).Where(MatchingInvitation.UserID.Eq(uid)).Count()
 	if err != nil {
@@ -844,7 +939,7 @@ func (r *queryResolver) UnconfirmedInvitations(ctx context.Context, userID *stri
 	if uid == "" {
 		return nil, whalecode.ErrUserIDCannotBeEmpty
 	}
-	db := midacontext.GetDB(ctx)
+	db := dbutil.GetDB(ctx)
 	MatchingInvitation := dbquery.Use(db).MatchingInvitation
 	ids := []string{}
 	err := MatchingInvitation.WithContext(ctx).
@@ -874,7 +969,7 @@ func (r *queryResolver) UnconfirmedInvitationCount(ctx context.Context, userID *
 	if uid == "" {
 		return nil, whalecode.ErrUserIDCannotBeEmpty
 	}
-	db := midacontext.GetDB(ctx)
+	db := dbutil.GetDB(ctx)
 	MatchingInvitation := dbquery.Use(db).MatchingInvitation
 	count, err := MatchingInvitation.WithContext(ctx).
 		Where(MatchingInvitation.InviteeID.Eq(uid)).
@@ -889,24 +984,25 @@ func (r *queryResolver) UnconfirmedInvitationCount(ctx context.Context, userID *
 
 // RecentUsers is the resolver for the recentUsers field.
 func (r *topicResolver) RecentUsers(ctx context.Context, obj *models.Topic, cityID *string) ([]*models.SimpleAvatarUser, error) {
-	db := midacontext.GetDB(ctx)
+	db := dbutil.GetDB(ctx)
 	Matching := dbquery.Use(db).Matching
 
 	userIDs := []string{}
 	if cityID != nil {
 		err := Matching.WithContext(ctx).
+			Distinct(Matching.UserID).
 			Where(Matching.TopicID.Eq(obj.ID), Matching.CityID.Eq(*cityID)).
-			Group(Matching.UserID).Limit(5).
-			Order(Matching.CreatedAt.Desc()).Pluck(Matching.UserID, &userIDs)
+			Limit(5).
+			Pluck(Matching.UserID, &userIDs)
 		if err != nil {
 			return nil, err
 		}
 	}
 	if len(userIDs) == 0 {
 		err := Matching.WithContext(ctx).
+			Distinct(Matching.UserID).
 			Where(Matching.TopicID.Eq(obj.ID)).
-			Group(Matching.UserID).Limit(5).
-			Order(Matching.CreatedAt.Desc()).
+			Limit(5).
 			Pluck(Matching.UserID, &userIDs)
 		if err != nil {
 			return nil, err
@@ -930,7 +1026,7 @@ func (r *topicResolver) RecentUsers(ctx context.Context, obj *models.Topic, city
 
 // MatchingNum is the resolver for the matchingNum field.
 func (r *topicResolver) MatchingNum(ctx context.Context, obj *models.Topic, cityID *string) (int, error) {
-	db := midacontext.GetDB(ctx)
+	db := dbutil.GetDB(ctx)
 	Matching := dbquery.Use(db).Matching
 	query := Matching.WithContext(ctx).Where(
 		Matching.TopicID.Eq(obj.ID),
@@ -1010,3 +1106,36 @@ type queryResolver struct{ *Resolver }
 type topicResolver struct{ *Resolver }
 type topicMetricsResolver struct{ *Resolver }
 type userResolver struct{ *Resolver }
+
+// !!! WARNING !!!
+// The code below was going to be deleted when updating resolvers. It has been copied here so you have
+// one last chance to move it out of harms way if you want. There are two reasons this happens:
+//   - When renaming or deleting a resolver the old code will be put in here. You can safely delete
+//     it when you're done.
+//   - You have helper methods in this file. Move them out to keep these resolver files clean.
+func (r *queryResolver) MyMatchingResultWithOther(ctx context.Context, userID *string, otherID string) ([]*models.MatchingResult, error) {
+	token := midacontext.GetClientToken(ctx)
+	if !token.IsUser() && !token.IsAdmin() {
+		return nil, midacode.ErrNotPermitted
+	}
+	uid := graphqlutil.GetID(token, userID)
+	if uid == "" {
+		return nil, whalecode.ErrUserIDCannotBeEmpty
+	}
+	db := dbutil.GetDB(ctx)
+	MatchingResult := dbquery.Use(db).MatchingResult
+	matchingResults, err := MatchingResult.WithContext(ctx).Where(
+		dbutil.RawCond(dbutil.Contains(MatchingResult.UserIDs.ColumnName().String(), uid)),
+		dbutil.RawCond(dbutil.Contains(MatchingResult.UserIDs.ColumnName().String(), otherID)),
+		MatchingResult.Closed.Is(false),
+		MatchingResult.FinishedAt.IsNotNull(),
+	).
+		Order(MatchingResult.ID.Desc()).
+		Limit(30).
+		Find()
+	if err != nil {
+		return nil, err
+	}
+
+	return matchingResults, nil
+}

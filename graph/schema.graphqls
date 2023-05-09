@@ -132,7 +132,7 @@ enum MatchingState {
   Timeout
 
   "匹配关闭"
-  Closed
+  Finished
 }
 
 type MatchingResult {
@@ -149,7 +149,11 @@ type MatchingResult {
 
   updatedAt: Time! @adminOnly
   createdAt: Time!
+
+  "是否关闭，如果有任何用户退出匹配，即 MatchingResult 视为关闭"
   closed: Boolean!
+  "完成时间，取第一个用户标记匹配已完成的时间"
+  finishedAt: Time
   createdBy: ResultCreatedBy! @adminOnly
 
   # query
@@ -254,6 +258,24 @@ type TopicMetrics {
   topic: Topic!
 }
 
+input UserMatchingCalenderParam {
+  before: Time!
+  after: Time!
+  otherUserId: String
+}
+
+input UserMatchingInTheDayParam {
+  "日期格式 20060102"
+  dayStr: String!
+  otherUserId: String
+}
+
+type CalendarEvent {
+  topicId: String!
+  matchedAt: Time!
+  finishedAt: Time!
+}
+
 type Query {
   "【匹配系统】内部专有"
   chatGroupByResultId(resultId: Int!): ChatGroup!
@@ -267,7 +289,18 @@ type Query {
   "【匹配系统】查看匹配配额"
   userMatchingQuota(userId: String!): MatchingQuota!
 
-  "【匹配系统】使用 chatgroupId 查匹配结果"
+  "【匹配系统】查看匹配活动日历，最多返回 100 个结果"
+  userMatchingCalendar(
+    "用户 id 不需要传"
+    userId: String
+    "时间段，最长返回 64 天（最多满足两个月需求）"
+    param: UserMatchingCalenderParam!
+  ): [CalendarEvent!]!
+
+  "【匹配系统】查看当天的活动日历"
+  userMatchingsInTheDay("用户 id 不需要传" userId: String, param: UserMatchingInTheDayParam!): [MatchingResult!]!
+
+  "【匹配系统】使用 chatGroupId 查匹配结果"
   matchingResultByChatGroupId("用户 id 不用传，只在管理端使用" userId: String, chatGroupId: String!): MatchingResult!
 
   "【匹配系统】匹配查询，管理端用"

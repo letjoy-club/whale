@@ -22,7 +22,7 @@ type Loader struct {
 	MatchingResult     *dataloader.Loader[int, *models.MatchingResult]
 
 	UserProfile *dataloader.Loader[string, UserProfile]
-	HotTopics   *dataloader.Loader[string, []*models.HotTopic]
+	HotTopics   *dataloader.Loader[string, *models.HotTopicsInArea]
 }
 
 func NewLoader(db *gorm.DB) *Loader {
@@ -80,6 +80,11 @@ func NewLoader(db *gorm.DB) *Loader {
 				return UserProfile{ID: u.Id, Gender: models.Gender(u.Gender)}
 			}), nil
 		}, func(k map[string]UserProfile, v UserProfile) { k[v.ID] = v }, time.Minute),
+		HotTopics: NewSingleLoader(db, func(ctx context.Context, keys []string) ([]*models.HotTopicsInArea, error) {
+			HotTopicsInArea := dbquery.Use(db).HotTopicsInArea
+			topics, err := HotTopicsInArea.WithContext(ctx).Where(HotTopicsInArea.CityID.In(keys...)).Find()
+			return topics, err
+		}, func(k map[string]*models.HotTopicsInArea, v *models.HotTopicsInArea) { k[v.CityID] = v }, time.Second*60),
 	}
 }
 
