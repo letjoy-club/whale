@@ -81,6 +81,8 @@ models:
     fields:
       matchingNum:
         resolver: true
+      fuzzyMatchingNum:
+        resolver: true
       recentUsers:
         resolver: true
   HotTopicsInArea:

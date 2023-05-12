@@ -16,9 +16,10 @@ type Area struct {
 func (Area) IsEntity() {}
 
 type CalendarEvent struct {
-	TopicID    string    `json:"topicId"`
-	MatchedAt  time.Time `json:"matchedAt"`
-	FinishedAt time.Time `json:"finishedAt"`
+	TopicID            string     `json:"topicId"`
+	MatchedAt          time.Time  `json:"matchedAt"`
+	FinishedAt         time.Time  `json:"finishedAt"`
+	ChatGroupCreatedAt *time.Time `json:"chatGroupCreatedAt,omitempty"`
 }
 
 type ChatGroup struct {
@@ -74,6 +75,8 @@ type Topic struct {
 	RecentUsers []*SimpleAvatarUser `json:"recentUsers"`
 	// 话题下的匹配数量
 	MatchingNum int `json:"matchingNum"`
+	// 话题下的大致匹配数量，一般以数量级给出，9+, 99+, 999+
+	FuzzyMatchingNum int `json:"fuzzyMatchingNum"`
 }
 
 func (Topic) IsEntity() {}

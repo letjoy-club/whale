@@ -71,9 +71,11 @@ type MatchingResult struct {
 	CreatedBy string `gorm:"type:varchar(64)"`
 
 	// 结束时间，由第一个用户的结束时间来决定
-	FinishedAt *time.Time
-	CreatedAt  time.Time `gorm:"autoCreateTime"`
-	UpdatedAt  time.Time `gorm:"autoUpdateTime"`
+	FinishedAt         *time.Time `gorm:"index"`
+	ChatGroupCreatedAt *time.Time `gorm:"index"`
+
+	CreatedAt time.Time `gorm:"autoCreateTime"`
+	UpdatedAt time.Time `gorm:"autoUpdateTime"`
 }
 
 func (MatchingResult) IsEntity() {}

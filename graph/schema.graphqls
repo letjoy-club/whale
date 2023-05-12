@@ -16,6 +16,9 @@ extend type Topic @key(fields: "id") {
   recentUsers(cityId: String): [SimpleAvatarUser!]!
   "话题下的匹配数量"
   matchingNum(cityId: String): Int!
+
+  "话题下的大致匹配数量，一般以数量级给出，9+, 99+, 999+"
+  fuzzyMatchingNum(cityId: String): Int!
 }
 
 extend type Area @key(fields: "code") {
@@ -274,6 +277,7 @@ type CalendarEvent {
   topicId: String!
   matchedAt: Time!
   finishedAt: Time!
+  chatGroupCreatedAt: Time
 }
 
 type Query {

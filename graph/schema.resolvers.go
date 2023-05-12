@@ -7,6 +7,7 @@ package graph
 import (
 	"context"
 	"fmt"
+	"math"
 	"time"
 	"whale/pkg/dbquery"
 	"whale/pkg/gqlient/hoopoe"
@@ -557,8 +558,6 @@ func (r *queryResolver) HotTopicsInArea(ctx context.Context, cityID *string) (*m
 			UpdatedAt:    time.Now(),
 		}, nil
 	}
-	if len(hotTopic.TopicMetrics) <= 0 {
-	}
 	return hotTopic, nil
 }
 
@@ -596,14 +595,17 @@ func (r *queryResolver) UserMatchingCalendar(ctx context.Context, userID *string
 	if param.Before.Sub(param.After) > 64*24*time.Hour {
 		return nil, whalecode.ErrQueryDurationTooLong
 	}
-	db := dbutil.GetDB(ctx)
+	db := dbutil.GetDB(ctx).Debug()
 	MatchingResult := dbquery.Use(db).MatchingResult
 	matchingResultIDs := []int{}
 	query := MatchingResult.WithContext(ctx).
 		Where(
 			dbutil.RawCond(dbutil.Contains(MatchingResult.UserIDs.ColumnName().String(), uid)),
 			MatchingResult.Closed.Is(false),
-			MatchingResult.FinishedAt.Between(param.After, param.Before),
+			MatchingResult.WithContext(ctx).Or(
+				MatchingResult.FinishedAt.Between(param.After, param.Before.Add(-time.Second)),
+				MatchingResult.ChatGroupCreatedAt.Between(param.After, param.Before.Add(-time.Second)),
+			),
 		)
 	if param.OtherUserID != nil {
 		query = query.Where(dbutil.RawCond(dbutil.Contains(MatchingResult.UserIDs.ColumnName().String(), *param.OtherUserID)))
@@ -624,9 +626,10 @@ func (r *queryResolver) UserMatchingCalendar(ctx context.Context, userID *string
 			m.FinishedAt = &now
 		}
 		return &models.CalendarEvent{
-			TopicID:    m.TopicID,
-			MatchedAt:  m.CreatedAt,
-			FinishedAt: *m.FinishedAt,
+			TopicID:            m.TopicID,
+			MatchedAt:          m.CreatedAt,
+			FinishedAt:         *m.FinishedAt,
+			ChatGroupCreatedAt: m.ChatGroupCreatedAt,
 		}
 	}), nil
 }
@@ -653,7 +656,10 @@ func (r *queryResolver) UserMatchingsInTheDay(ctx context.Context, userID *strin
 		Where(
 			dbutil.RawCond(dbutil.Contains(MatchingResult.UserIDs.ColumnName().String(), uid)),
 			MatchingResult.Closed.Is(false),
-			MatchingResult.FinishedAt.Between(t, t.Add(time.Hour*24)),
+			MatchingResult.WithContext(ctx).Or(
+				MatchingResult.FinishedAt.Between(t, t.Add(time.Hour*24-time.Second)),
+				MatchingResult.ChatGroupCreatedAt.Between(t, t.Add(time.Hour*24-time.Second)),
+			),
 		)
 	if param.OtherUserID != nil {
 		query = query.Where(dbutil.RawCond(dbutil.Contains(MatchingResult.UserIDs.ColumnName().String(), *param.OtherUserID)))
@@ -1039,6 +1045,31 @@ func (r *topicResolver) MatchingNum(ctx context.Context, obj *models.Topic, city
 	return int(count), err
 }
 
+// FuzzyMatchingNum is the resolver for the fuzzyMatchingNum field.
+func (r *topicResolver) FuzzyMatchingNum(ctx context.Context, obj *models.Topic, cityID *string) (int, error) {
+	db := dbutil.GetDB(ctx)
+	Matching := dbquery.Use(db).Matching
+	query := Matching.WithContext(ctx).Where(
+		Matching.TopicID.Eq(obj.ID),
+		Matching.State.In(string(models.MatchingStateMatching), string(models.MatchingStateMatched)),
+	)
+	if cityID != nil {
+		query = query.Where(Matching.CityID.Eq(*cityID))
+	}
+	count, err := query.Count()
+	if err != nil {
+		return 0, err
+	}
+	if count <= 9 {
+		return 9, nil
+	}
+	newCount := int(math.Sqrt(float64(count)) * 33)
+	if newCount >= 1000 {
+		return 999, nil
+	}
+	return newCount, nil
+}
+
 // Heat is the resolver for the heat field.
 func (r *topicMetricsResolver) Heat(ctx context.Context, obj *models.TopicMetrics) (int, error) {
 	return obj.Matched*5 + obj.Matching*13, nil
@@ -1106,36 +1137,3 @@ type queryResolver struct{ *Resolver }
 type topicResolver struct{ *Resolver }
 type topicMetricsResolver struct{ *Resolver }
 type userResolver struct{ *Resolver }
-
-// !!! WARNING !!!
-// The code below was going to be deleted when updating resolvers. It has been copied here so you have
-// one last chance to move it out of harms way if you want. There are two reasons this happens:
-//   - When renaming or deleting a resolver the old code will be put in here. You can safely delete
-//     it when you're done.
-//   - You have helper methods in this file. Move them out to keep these resolver files clean.
-func (r *queryResolver) MyMatchingResultWithOther(ctx context.Context, userID *string, otherID string) ([]*models.MatchingResult, error) {
-	token := midacontext.GetClientToken(ctx)
-	if !token.IsUser() && !token.IsAdmin() {
-		return nil, midacode.ErrNotPermitted
-	}
-	uid := graphqlutil.GetID(token, userID)
-	if uid == "" {
-		return nil, whalecode.ErrUserIDCannotBeEmpty
-	}
-	db := dbutil.GetDB(ctx)
-	MatchingResult := dbquery.Use(db).MatchingResult
-	matchingResults, err := MatchingResult.WithContext(ctx).Where(
-		dbutil.RawCond(dbutil.Contains(MatchingResult.UserIDs.ColumnName().String(), uid)),
-		dbutil.RawCond(dbutil.Contains(MatchingResult.UserIDs.ColumnName().String(), otherID)),
-		MatchingResult.Closed.Is(false),
-		MatchingResult.FinishedAt.IsNotNull(),
-	).
-		Order(MatchingResult.ID.Desc()).
-		Limit(30).
-		Find()
-	if err != nil {
-		return nil, err
-	}
-
-	return matchingResults, nil
-}

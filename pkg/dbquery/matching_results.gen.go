@@ -36,6 +36,7 @@ func newMatchingResult(db *gorm.DB, opts ...gen.DOOption) matchingResult {
 	_matchingResult.Closed = field.NewBool(tableName, "closed")
 	_matchingResult.CreatedBy = field.NewString(tableName, "created_by")
 	_matchingResult.FinishedAt = field.NewTime(tableName, "finished_at")
+	_matchingResult.ChatGroupCreatedAt = field.NewTime(tableName, "chat_group_created_at")
 	_matchingResult.CreatedAt = field.NewTime(tableName, "created_at")
 	_matchingResult.UpdatedAt = field.NewTime(tableName, "updated_at")
 
@@ -47,19 +48,20 @@ func newMatchingResult(db *gorm.DB, opts ...gen.DOOption) matchingResult {
 type matchingResult struct {
 	matchingResultDo matchingResultDo
 
-	ALL            field.Asterisk
-	ID             field.Int
-	MatchingIDs    field.Field
-	TopicID        field.String
-	UserIDs        field.Field
-	ConfirmStates  field.Field
-	ChatGroupState field.String
-	ChatGroupID    field.String
-	Closed         field.Bool
-	CreatedBy      field.String
-	FinishedAt     field.Time
-	CreatedAt      field.Time
-	UpdatedAt      field.Time
+	ALL                field.Asterisk
+	ID                 field.Int
+	MatchingIDs        field.Field
+	TopicID            field.String
+	UserIDs            field.Field
+	ConfirmStates      field.Field
+	ChatGroupState     field.String
+	ChatGroupID        field.String
+	Closed             field.Bool
+	CreatedBy          field.String
+	FinishedAt         field.Time
+	ChatGroupCreatedAt field.Time
+	CreatedAt          field.Time
+	UpdatedAt          field.Time
 
 	fieldMap map[string]field.Expr
 }
@@ -86,6 +88,7 @@ func (m *matchingResult) updateTableName(table string) *matchingResult {
 	m.Closed = field.NewBool(table, "closed")
 	m.CreatedBy = field.NewString(table, "created_by")
 	m.FinishedAt = field.NewTime(table, "finished_at")
+	m.ChatGroupCreatedAt = field.NewTime(table, "chat_group_created_at")
 	m.CreatedAt = field.NewTime(table, "created_at")
 	m.UpdatedAt = field.NewTime(table, "updated_at")
 
@@ -112,7 +115,7 @@ func (m *matchingResult) GetFieldByName(fieldName string) (field.OrderExpr, bool
 }
 
 func (m *matchingResult) fillFieldMap() {
-	m.fieldMap = make(map[string]field.Expr, 12)
+	m.fieldMap = make(map[string]field.Expr, 13)
 	m.fieldMap["id"] = m.ID
 	m.fieldMap["matching_ids"] = m.MatchingIDs
 	m.fieldMap["topic_id"] = m.TopicID
@@ -123,6 +126,7 @@ func (m *matchingResult) fillFieldMap() {
 	m.fieldMap["closed"] = m.Closed
 	m.fieldMap["created_by"] = m.CreatedBy
 	m.fieldMap["finished_at"] = m.FinishedAt
+	m.fieldMap["chat_group_created_at"] = m.ChatGroupCreatedAt
 	m.fieldMap["created_at"] = m.CreatedAt
 	m.fieldMap["updated_at"] = m.UpdatedAt
 }

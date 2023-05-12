@@ -2,6 +2,7 @@ package modelutil
 
 import (
 	"context"
+	"fmt"
 	"time"
 	"whale/pkg/dbquery"
 	"whale/pkg/gqlient/hoopoe"
@@ -25,7 +26,7 @@ func GetMatchingAndCheckUser(ctx context.Context, matchingID, uid string) (*mode
 		return nil, err
 	}
 	if matching.State != models.MatchingStateMatching.String() {
-		return nil, err
+		return nil, whalecode.ErrMatchingAlreadyCanceled
 	}
 
 	if uid != "" {
@@ -103,19 +104,21 @@ func CheckMatchingResultAndCreateChatGroup(ctx context.Context, m *models.Matchi
 		Matching := dbquery.Use(db).Matching
 		MatchingResult := dbquery.Use(db).MatchingResult
 		_, err := MatchingResult.WithContext(ctx).
-			Where(MatchingResult.ID).
+			Where(MatchingResult.ID.Eq(m.ID)).
 			UpdateSimple(
 				MatchingResult.ChatGroupState.Value(models.ChatGroupStateCreated.String()),
 				MatchingResult.ChatGroupID.Value(groupID),
+				MatchingResult.ChatGroupCreatedAt.Value(time.Now()),
 			)
 		if err != nil {
 			return err
 		}
 
 		_, err = Matching.WithContext(ctx).
-			Where(Matching.ResultID.Eq(m.ID)).
+			Where(Matching.ID.In(m.MatchingIDs...)).
 			UpdateSimple(
 				Matching.InChatGroup.Value(true),
+				Matching.ChatGroupState.Value(models.ChatGroupStateCreated.String()),
 			)
 		return err
 	})
@@ -129,6 +132,15 @@ func CreateMatching(ctx context.Context, uid string, param models.CreateMatching
 		return nil, err
 	}
 	if quota.Remain <= 0 {
+		return nil, whalecode.ErrMatchingQuotaNotEnough
+	}
+
+	users, err := hoopoe.GetUserByIDs(ctx, midacontext.GetServices(ctx).Hoopoe, []string{uid})
+	if err != nil {
+		return nil, err
+	}
+
+	if users.GetUserByIds[0].Gender == "" {
 		return nil, whalecode.ErrMatchingQuotaNotEnough
 	}
 
@@ -243,7 +255,7 @@ func FinishMatching(ctx context.Context, matchingID string, uid string) error {
 		return err
 	}
 	if uid != "" {
-		if matching.UserID != "" {
+		if matching.UserID != uid {
 			return midacode.ErrNotPermitted
 		}
 	}
@@ -293,9 +305,16 @@ func FinishMatching(ctx context.Context, matchingID string, uid string) error {
 		return err
 	}
 
-	MatchingResult.WithContext(ctx).Where().UpdateSimple(
-		MatchingResult.ChatGroupState.Value(models.ChatGroupStateClosed.String()),
-	)
+	_, err = MatchingResult.WithContext(ctx).
+		Where(MatchingResult.ID.Eq(matching.ResultID)).
+		Where(MatchingResult.ChatGroupState.Eq(models.ChatGroupStateCreated.String())).
+		UpdateSimple(
+			MatchingResult.ChatGroupState.Value(models.ChatGroupStateClosed.String()),
+			MatchingResult.FinishedAt.Value(time.Now()),
+		)
+	if err != nil {
+		fmt.Println(err)
+	}
 
 	for _, matching := range matchingResult.MatchingIDs {
 		midacontext.GetLoader[loader.Loader](ctx).Matching.Clear(ctx, matching)

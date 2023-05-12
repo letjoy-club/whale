@@ -63,9 +63,10 @@ type ComplexityRoot struct {
 	}
 
 	CalendarEvent struct {
-		FinishedAt func(childComplexity int) int
-		MatchedAt  func(childComplexity int) int
-		TopicID    func(childComplexity int) int
+		ChatGroupCreatedAt func(childComplexity int) int
+		FinishedAt         func(childComplexity int) int
+		MatchedAt          func(childComplexity int) int
+		TopicID            func(childComplexity int) int
 	}
 
 	ChatGroup struct {
@@ -229,9 +230,10 @@ type ComplexityRoot struct {
 	}
 
 	Topic struct {
-		ID          func(childComplexity int) int
-		MatchingNum func(childComplexity int, cityID *string) int
-		RecentUsers func(childComplexity int, cityID *string) int
+		FuzzyMatchingNum func(childComplexity int, cityID *string) int
+		ID               func(childComplexity int) int
+		MatchingNum      func(childComplexity int, cityID *string) int
+		RecentUsers      func(childComplexity int, cityID *string) int
 	}
 
 	TopicMetrics struct {
@@ -336,6 +338,7 @@ type QueryResolver interface {
 type TopicResolver interface {
 	RecentUsers(ctx context.Context, obj *models.Topic, cityID *string) ([]*models.SimpleAvatarUser, error)
 	MatchingNum(ctx context.Context, obj *models.Topic, cityID *string) (int, error)
+	FuzzyMatchingNum(ctx context.Context, obj *models.Topic, cityID *string) (int, error)
 }
 type TopicMetricsResolver interface {
 	Heat(ctx context.Context, obj *models.TopicMetrics) (int, error)
@@ -366,6 +369,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Area.Code(childComplexity), true
+
+	case "CalendarEvent.chatGroupCreatedAt":
+		if e.complexity.CalendarEvent.ChatGroupCreatedAt == nil {
+			break
+		}
+
+		return e.complexity.CalendarEvent.ChatGroupCreatedAt(childComplexity), true
 
 	case "CalendarEvent.finishedAt":
 		if e.complexity.CalendarEvent.FinishedAt == nil {
@@ -1379,6 +1389,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Summary.Count(childComplexity), true
 
+	case "Topic.fuzzyMatchingNum":
+		if e.complexity.Topic.FuzzyMatchingNum == nil {
+			break
+		}
+
+		args, err := ec.field_Topic_fuzzyMatchingNum_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Topic.FuzzyMatchingNum(childComplexity, args["cityId"].(*string)), true
+
 	case "Topic.id":
 		if e.complexity.Topic.ID == nil {
 			break
@@ -2290,6 +2312,21 @@ func (ec *executionContext) field_Query_userMatchings_args(ctx context.Context, 
 	return args, nil
 }
 
+func (ec *executionContext) field_Topic_fuzzyMatchingNum_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["cityId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("cityId"))
+		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["cityId"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Topic_matchingNum_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -2522,6 +2559,47 @@ func (ec *executionContext) _CalendarEvent_finishedAt(ctx context.Context, field
 }
 
 func (ec *executionContext) fieldContext_CalendarEvent_finishedAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CalendarEvent",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CalendarEvent_chatGroupCreatedAt(ctx context.Context, field graphql.CollectedField, obj *models.CalendarEvent) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CalendarEvent_chatGroupCreatedAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ChatGroupCreatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*time.Time)
+	fc.Result = res
+	return ec.marshalOTime2ᚖtimeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CalendarEvent_chatGroupCreatedAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "CalendarEvent",
 		Field:      field,
@@ -2783,6 +2861,8 @@ func (ec *executionContext) fieldContext_Entity_findTopicByID(ctx context.Contex
 				return ec.fieldContext_Topic_recentUsers(ctx, field)
 			case "matchingNum":
 				return ec.fieldContext_Topic_matchingNum(ctx, field)
+			case "fuzzyMatchingNum":
+				return ec.fieldContext_Topic_fuzzyMatchingNum(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Topic", field.Name)
 		},
@@ -3808,6 +3888,8 @@ func (ec *executionContext) fieldContext_Matching_topic(ctx context.Context, fie
 				return ec.fieldContext_Topic_recentUsers(ctx, field)
 			case "matchingNum":
 				return ec.fieldContext_Topic_matchingNum(ctx, field)
+			case "fuzzyMatchingNum":
+				return ec.fieldContext_Topic_fuzzyMatchingNum(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Topic", field.Name)
 		},
@@ -4635,6 +4717,8 @@ func (ec *executionContext) fieldContext_MatchingInvitation_topic(ctx context.Co
 				return ec.fieldContext_Topic_recentUsers(ctx, field)
 			case "matchingNum":
 				return ec.fieldContext_Topic_matchingNum(ctx, field)
+			case "fuzzyMatchingNum":
+				return ec.fieldContext_Topic_fuzzyMatchingNum(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Topic", field.Name)
 		},
@@ -6403,6 +6487,8 @@ func (ec *executionContext) fieldContext_MatchingResult_topic(ctx context.Contex
 				return ec.fieldContext_Topic_recentUsers(ctx, field)
 			case "matchingNum":
 				return ec.fieldContext_Topic_matchingNum(ctx, field)
+			case "fuzzyMatchingNum":
+				return ec.fieldContext_Topic_fuzzyMatchingNum(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Topic", field.Name)
 		},
@@ -7784,6 +7870,8 @@ func (ec *executionContext) fieldContext_Query_userMatchingCalendar(ctx context.
 				return ec.fieldContext_CalendarEvent_matchedAt(ctx, field)
 			case "finishedAt":
 				return ec.fieldContext_CalendarEvent_finishedAt(ctx, field)
+			case "chatGroupCreatedAt":
+				return ec.fieldContext_CalendarEvent_chatGroupCreatedAt(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type CalendarEvent", field.Name)
 		},
@@ -9283,6 +9371,61 @@ func (ec *executionContext) fieldContext_Topic_matchingNum(ctx context.Context, 
 	return fc, nil
 }
 
+func (ec *executionContext) _Topic_fuzzyMatchingNum(ctx context.Context, field graphql.CollectedField, obj *models.Topic) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Topic_fuzzyMatchingNum(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Topic().FuzzyMatchingNum(rctx, obj, fc.Args["cityId"].(*string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Topic_fuzzyMatchingNum(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Topic",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Topic_fuzzyMatchingNum_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _TopicMetrics_id(ctx context.Context, field graphql.CollectedField, obj *models.TopicMetrics) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_TopicMetrics_id(ctx, field)
 	if err != nil {
@@ -9504,6 +9647,8 @@ func (ec *executionContext) fieldContext_TopicMetrics_topic(ctx context.Context,
 				return ec.fieldContext_Topic_recentUsers(ctx, field)
 			case "matchingNum":
 				return ec.fieldContext_Topic_matchingNum(ctx, field)
+			case "fuzzyMatchingNum":
+				return ec.fieldContext_Topic_fuzzyMatchingNum(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Topic", field.Name)
 		},
@@ -12023,6 +12168,10 @@ func (ec *executionContext) _CalendarEvent(ctx context.Context, sel ast.Selectio
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "chatGroupCreatedAt":
+
+			out.Values[i] = ec._CalendarEvent_chatGroupCreatedAt(ctx, field, obj)
+
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -13927,6 +14076,26 @@ func (ec *executionContext) _Topic(ctx context.Context, sel ast.SelectionSet, ob
 					}
 				}()
 				res = ec._Topic_matchingNum(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "fuzzyMatchingNum":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Topic_fuzzyMatchingNum(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
