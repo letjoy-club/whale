@@ -46,12 +46,26 @@ type CreateMatchingParam struct {
 }
 
 type MatchingFilter struct {
-	CreateBefore *time.Time     `json:"createBefore,omitempty"`
-	CreateAfter  *time.Time     `json:"createAfter,omitempty"`
-	TopicID      *string        `json:"topicId,omitempty"`
-	State        *MatchingState `json:"state,omitempty"`
-	// 通用关键词，u_ 开头搜用户, t_ 开头搜话题, m_ 开头搜匹配, 6 个数字搜地区
+	Before  *time.Time     `json:"before,omitempty"`
+	After   *time.Time     `json:"after,omitempty"`
+	TopicID *string        `json:"topicId,omitempty"`
+	State   *MatchingState `json:"state,omitempty"`
+	CityID  *string        `json:"cityId,omitempty"`
+	UserID  *string        `json:"userId,omitempty"`
+	// 通用关键词, u_ 开头搜用户, t_ 开头搜话题, m_ 开头搜匹配, 6 个数字搜地区
 	Keyword *string `json:"keyword,omitempty"`
+}
+
+type MatchingInvitationFilter struct {
+	UserID *string    `json:"userId,omitempty"`
+	Before *time.Time `json:"before,omitempty"`
+	After  *time.Time `json:"after,omitempty"`
+}
+
+type MatchingResultFilter struct {
+	UserID *string    `json:"userId,omitempty"`
+	Before *time.Time `json:"before,omitempty"`
+	After  *time.Time `json:"after,omitempty"`
 }
 
 type ReviewMatchingParam struct {
@@ -75,19 +89,28 @@ type Topic struct {
 	RecentUsers []*SimpleAvatarUser `json:"recentUsers"`
 	// 话题下的匹配数量
 	MatchingNum int `json:"matchingNum"`
-	// 话题下的大致匹配数量，一般以数量级给出，9+, 99+, 999+
+	// 话题下的大致匹配数量，范围是 [9, 999]，显示时建议给 + 表示有更多的数量。9-999 数值展示时，对原数据进行增量处理
 	FuzzyMatchingNum int `json:"fuzzyMatchingNum"`
 }
 
 func (Topic) IsEntity() {}
 
+type UpdateMatchingInvitationParam struct {
+	CreatedAt *time.Time `json:"createdAt,omitempty"`
+	TopicID   *string    `json:"topicId,omitempty"`
+	InviteeID *string    `json:"inviteeId,omitempty"`
+	CityID    *string    `json:"cityId,omitempty"`
+	Remark    *string    `json:"remark,omitempty"`
+}
+
 type UpdateMatchingParam struct {
-	TopicID  *string    `json:"topicId,omitempty"`
-	AreaIds  []string   `json:"areaIds,omitempty"`
-	CityID   *string    `json:"cityId,omitempty"`
-	Gender   *Gender    `json:"gender,omitempty"`
-	Remark   *string    `json:"remark,omitempty"`
-	Deadline *time.Time `json:"deadline,omitempty"`
+	TopicID   *string    `json:"topicId,omitempty"`
+	AreaIds   []string   `json:"areaIds,omitempty"`
+	CityID    *string    `json:"cityId,omitempty"`
+	Gender    *Gender    `json:"gender,omitempty"`
+	Remark    *string    `json:"remark,omitempty"`
+	CreatedAt *time.Time `json:"createdAt,omitempty"`
+	Deadline  *time.Time `json:"deadline,omitempty"`
 }
 
 type UpdateMatchingQuotaParam struct {
@@ -102,6 +125,11 @@ type User struct {
 
 func (User) IsEntity() {}
 
+type UserConfirmState struct {
+	UserID string                     `json:"userId"`
+	State  MatchingResultConfirmState `json:"state"`
+}
+
 type UserMatchingCalenderParam struct {
 	Before      time.Time `json:"before"`
 	After       time.Time `json:"after"`
@@ -109,7 +137,8 @@ type UserMatchingCalenderParam struct {
 }
 
 type UserMatchingFilter struct {
-	State *MatchingState `json:"state,omitempty"`
+	State  *MatchingState  `json:"state,omitempty"`
+	States []MatchingState `json:"states,omitempty"`
 }
 
 type UserMatchingInTheDayParam struct {

@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
+	"github.com/letjoy-club/mida-tool/proxy"
 )
 
 type Resp struct {
@@ -22,4 +23,5 @@ func Mount(r chi.Router) {
 			render.JSON(w, r, Resp{})
 		}
 	})
+	r.Handle("/ws", proxy.ProxyHandler())
 }

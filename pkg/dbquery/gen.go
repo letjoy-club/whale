@@ -18,6 +18,7 @@ import (
 func Use(db *gorm.DB, opts ...gen.DOOption) *Query {
 	return &Query{
 		db:                          db,
+		CityTopics:                  newCityTopics(db, opts...),
 		HotTopicsInArea:             newHotTopicsInArea(db, opts...),
 		Matching:                    newMatching(db, opts...),
 		MatchingInvitation:          newMatchingInvitation(db, opts...),
@@ -25,12 +26,14 @@ func Use(db *gorm.DB, opts ...gen.DOOption) *Query {
 		MatchingResult:              newMatchingResult(db, opts...),
 		MatchingResultConfirmAction: newMatchingResultConfirmAction(db, opts...),
 		MatchingReview:              newMatchingReview(db, opts...),
+		UserJoinTopic:               newUserJoinTopic(db, opts...),
 	}
 }
 
 type Query struct {
 	db *gorm.DB
 
+	CityTopics                  cityTopics
 	HotTopicsInArea             hotTopicsInArea
 	Matching                    matching
 	MatchingInvitation          matchingInvitation
@@ -38,6 +41,7 @@ type Query struct {
 	MatchingResult              matchingResult
 	MatchingResultConfirmAction matchingResultConfirmAction
 	MatchingReview              matchingReview
+	UserJoinTopic               userJoinTopic
 }
 
 func (q *Query) Available() bool { return q.db != nil }
@@ -45,6 +49,7 @@ func (q *Query) Available() bool { return q.db != nil }
 func (q *Query) clone(db *gorm.DB) *Query {
 	return &Query{
 		db:                          db,
+		CityTopics:                  q.CityTopics.clone(db),
 		HotTopicsInArea:             q.HotTopicsInArea.clone(db),
 		Matching:                    q.Matching.clone(db),
 		MatchingInvitation:          q.MatchingInvitation.clone(db),
@@ -52,6 +57,7 @@ func (q *Query) clone(db *gorm.DB) *Query {
 		MatchingResult:              q.MatchingResult.clone(db),
 		MatchingResultConfirmAction: q.MatchingResultConfirmAction.clone(db),
 		MatchingReview:              q.MatchingReview.clone(db),
+		UserJoinTopic:               q.UserJoinTopic.clone(db),
 	}
 }
 
@@ -66,6 +72,7 @@ func (q *Query) WriteDB() *Query {
 func (q *Query) ReplaceDB(db *gorm.DB) *Query {
 	return &Query{
 		db:                          db,
+		CityTopics:                  q.CityTopics.replaceDB(db),
 		HotTopicsInArea:             q.HotTopicsInArea.replaceDB(db),
 		Matching:                    q.Matching.replaceDB(db),
 		MatchingInvitation:          q.MatchingInvitation.replaceDB(db),
@@ -73,10 +80,12 @@ func (q *Query) ReplaceDB(db *gorm.DB) *Query {
 		MatchingResult:              q.MatchingResult.replaceDB(db),
 		MatchingResultConfirmAction: q.MatchingResultConfirmAction.replaceDB(db),
 		MatchingReview:              q.MatchingReview.replaceDB(db),
+		UserJoinTopic:               q.UserJoinTopic.replaceDB(db),
 	}
 }
 
 type queryCtx struct {
+	CityTopics                  ICityTopicsDo
 	HotTopicsInArea             IHotTopicsInAreaDo
 	Matching                    IMatchingDo
 	MatchingInvitation          IMatchingInvitationDo
@@ -84,10 +93,12 @@ type queryCtx struct {
 	MatchingResult              IMatchingResultDo
 	MatchingResultConfirmAction IMatchingResultConfirmActionDo
 	MatchingReview              IMatchingReviewDo
+	UserJoinTopic               IUserJoinTopicDo
 }
 
 func (q *Query) WithContext(ctx context.Context) *queryCtx {
 	return &queryCtx{
+		CityTopics:                  q.CityTopics.WithContext(ctx),
 		HotTopicsInArea:             q.HotTopicsInArea.WithContext(ctx),
 		Matching:                    q.Matching.WithContext(ctx),
 		MatchingInvitation:          q.MatchingInvitation.WithContext(ctx),
@@ -95,6 +106,7 @@ func (q *Query) WithContext(ctx context.Context) *queryCtx {
 		MatchingResult:              q.MatchingResult.WithContext(ctx),
 		MatchingResultConfirmAction: q.MatchingResultConfirmAction.WithContext(ctx),
 		MatchingReview:              q.MatchingReview.WithContext(ctx),
+		UserJoinTopic:               q.UserJoinTopic.WithContext(ctx),
 	}
 }
 

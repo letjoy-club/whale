@@ -1,0 +1,19 @@
+extend type Query {
+  cityTopics(cityId: String!): CityTopics!
+
+  citiesTopics(paginator: GraphQLPaginator): [CityTopics!]!
+  citiesTopicsCount: Summary!
+
+  "【匹配系统】某个城市话题排行榜"
+  hotTopicsInArea(cityId: String = "310100"): HotTopicsInArea!
+
+  "【匹配系统】话题排行榜，管理端"
+  hotTopics(paginator: GraphQLPaginator): [HotTopicsInArea!]!
+
+  "【匹配系统】话题排行榜总数，管理端"
+  hotTopicsCount: Summary!
+}
+
+extend type Mutation {
+  updateCityTopics(cityId: String!, topicIds: [String!]!): CityTopics!
+}

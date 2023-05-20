@@ -8,24 +8,26 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"math/rand"
 	"time"
 	"whale/pkg/dbquery"
-	"whale/pkg/gqlient/hoopoe"
 	"whale/pkg/loader"
-	"whale/pkg/matcher"
 	"whale/pkg/models"
 	"whale/pkg/modelutil"
-	"whale/pkg/whalecode"
 
 	"github.com/letjoy-club/mida-tool/dbutil"
-	"github.com/letjoy-club/mida-tool/graphqlutil"
 	"github.com/letjoy-club/mida-tool/midacode"
 	"github.com/letjoy-club/mida-tool/midacontext"
 	"github.com/samber/lo"
 	"go.uber.org/multierr"
-	"gorm.io/gen/field"
-	"gorm.io/gorm"
 )
+
+// Topics is the resolver for the topics field.
+func (r *cityTopicsResolver) Topics(ctx context.Context, obj *models.CityTopics) ([]*models.Topic, error) {
+	return lo.Map(obj.TopicIDs, func(topicId string, i int) *models.Topic {
+		return &models.Topic{ID: topicId}
+	}), nil
+}
 
 // Gender is the resolver for the gender field.
 func (r *matchingResolver) Gender(ctx context.Context, obj *models.Matching) (models.Gender, error) {
@@ -49,6 +51,25 @@ func (r *matchingResolver) MatchingResult(ctx context.Context, obj *models.Match
 		return thunk()
 	}
 	return nil, nil
+}
+
+// Reviewed is the resolver for the reviewed field.
+func (r *matchingResolver) Reviewed(ctx context.Context, obj *models.Matching) (bool, error) {
+	token := midacontext.GetClientToken(ctx)
+	if !token.IsAdmin() && !token.IsUser() {
+		return false, midacode.ErrNotPermitted
+	}
+
+	if obj.ResultID == 0 || obj.FinishedAt == nil {
+		return false, nil
+	}
+
+	thunk := midacontext.GetLoader[loader.Loader](ctx).MatchingReviewed.Load(ctx, obj.ID)
+	reviewd, err := thunk()
+	if err != nil {
+		return false, nil
+	}
+	return reviewd.Reviewed, nil
 }
 
 // User is the resolver for the user field.
@@ -148,6 +169,16 @@ func (r *matchingResultResolver) ConfirmStates(ctx context.Context, obj *models.
 	}), nil
 }
 
+// UserConfirmStates is the resolver for the userConfirmStates field.
+func (r *matchingResultResolver) UserConfirmStates(ctx context.Context, obj *models.MatchingResult) ([]*models.UserConfirmState, error) {
+	return lo.Map(obj.ConfirmStates, func(state string, i int) *models.UserConfirmState {
+		return &models.UserConfirmState{
+			UserID: obj.UserIDs[i],
+			State:  models.MatchingResultConfirmState(state),
+		}
+	}), nil
+}
+
 // ChatGroupState is the resolver for the chatGroupState field.
 func (r *matchingResultResolver) ChatGroupState(ctx context.Context, obj *models.MatchingResult) (models.ChatGroupState, error) {
 	return models.ChatGroupState(obj.ChatGroupState), nil
@@ -191,257 +222,6 @@ func (r *matchingResultResolver) ChatGroup(ctx context.Context, obj *models.Matc
 	return &models.ChatGroup{ID: obj.ChatGroupID}, nil
 }
 
-// CreateMatching is the resolver for the createMatching field.
-func (r *mutationResolver) CreateMatching(ctx context.Context, userID *string, param models.CreateMatchingParam) (*models.Matching, error) {
-	token := midacontext.GetClientToken(ctx)
-	if !token.IsAdmin() && !token.IsUser() {
-		return nil, midacode.ErrNotPermitted
-	}
-	uid := graphqlutil.GetID(token, userID)
-	if uid == "" {
-		return nil, whalecode.ErrUserIDCannotBeEmpty
-	}
-	if param.Remark == nil {
-		emptyStr := ""
-		param.Remark = &emptyStr
-	}
-	return modelutil.CreateMatching(ctx, uid, param)
-}
-
-// CreateMatchingInvitation is the resolver for the createMatchingInvitation field.
-func (r *mutationResolver) CreateMatchingInvitation(ctx context.Context, userID *string, param models.CreateMatchingInvitationParam) (*models.MatchingInvitation, error) {
-	token := midacontext.GetClientToken(ctx)
-	if !token.IsAdmin() && !token.IsUser() {
-		return nil, midacode.ErrNotPermitted
-	}
-	uid := graphqlutil.GetID(token, userID)
-	if uid == "" {
-		return nil, whalecode.ErrUserIDCannotBeEmpty
-	}
-	return modelutil.CreateMatchingInvitation(ctx, uid, param)
-}
-
-// CancelMatchingInvitation is the resolver for the cancelMatchingInvitation field.
-func (r *mutationResolver) CancelMatchingInvitation(ctx context.Context, invitationID string) (*string, error) {
-	token := midacontext.GetClientToken(ctx)
-	if !token.IsAdmin() && !token.IsUser() {
-		return nil, midacode.ErrNotPermitted
-	}
-	db := dbutil.GetDB(ctx)
-	MatchingInvitation := dbquery.Use(db).MatchingInvitation
-	matchingInvitation, err := MatchingInvitation.WithContext(ctx).Where(MatchingInvitation.ID.Eq(invitationID)).Take()
-	if err != nil {
-		return nil, midacode.ItemMayNotFound(err)
-	}
-	if token.IsUser() {
-		if token.String() != matchingInvitation.UserID {
-			return nil, midacode.ErrNotPermitted
-		}
-	}
-
-	if matchingInvitation.Closed {
-		return nil, nil
-	}
-	if matchingInvitation.ConfirmState != models.InvitationConfirmStateUnconfirmed.String() {
-		return nil, nil
-	}
-
-	_, err = MatchingInvitation.WithContext(ctx).Where(MatchingInvitation.ID.Eq(invitationID)).UpdateSimple(
-		MatchingInvitation.Closed.Value(true),
-		MatchingInvitation.ConfirmState.Value(models.InvitationConfirmStateRejected.String()),
-	)
-	if err != nil {
-		return nil, err
-	}
-	// 发起者的配对配额+1
-	MatchingQuota := dbquery.Use(db).MatchingQuota
-	_, err = MatchingQuota.WithContext(ctx).Where(MatchingQuota.UserID.Eq(matchingInvitation.UserID)).UpdateSimple(MatchingQuota.Remain.Add(1))
-	if err != nil {
-		return nil, err
-	}
-	midacontext.GetLoader[loader.Loader](ctx).MatchingQuota.Clear(ctx, matchingInvitation.UserID)
-	midacontext.GetLoader[loader.Loader](ctx).MatchingInvitation.Clear(ctx, matchingInvitation.ID)
-	return nil, nil
-}
-
-// ConfirmMatchingInvitation is the resolver for the confirmMatchingInvitation field.
-func (r *mutationResolver) ConfirmMatchingInvitation(ctx context.Context, userID *string, invitationID string, confirm bool) (*string, error) {
-	token := midacontext.GetClientToken(ctx)
-	if !token.IsAdmin() && !token.IsUser() {
-		return nil, midacode.ErrNotPermitted
-	}
-	thunk := midacontext.GetLoader[loader.Loader](ctx).MatchingInvitation.Load(ctx, invitationID)
-	invitation, err := thunk()
-	if err != nil {
-		return nil, err
-	}
-	if token.IsUser() {
-		if token.String() != invitation.InviteeID {
-			return nil, err
-		}
-	}
-	if confirm {
-		return nil, modelutil.AcceptMatchingInvitation(ctx, invitation)
-	} else {
-		return nil, modelutil.RejectMatchingInvitation(ctx, invitation)
-	}
-}
-
-// UpdateMatching is the resolver for the updateMatching field.
-func (r *mutationResolver) UpdateMatching(ctx context.Context, matchingID string, param models.UpdateMatchingParam) (*models.Matching, error) {
-	token := midacontext.GetClientToken(ctx)
-	if !token.IsAdmin() {
-		return nil, midacode.ErrNotPermitted
-	}
-	db := dbutil.GetDB(ctx)
-	Matching := dbquery.Use(db).Matching
-	fields := []field.AssignExpr{}
-	if param.AreaIds != nil {
-		fields = append(fields, Matching.AreaIDs.Value(graphqlutil.ElementList[string](param.AreaIds)))
-	}
-	if param.TopicID != nil {
-		fields = append(fields, Matching.TopicID.Value(*param.TopicID))
-	}
-	if param.Gender != nil {
-		fields = append(fields, Matching.Gender.Value(param.Gender.String()))
-	}
-	if param.Deadline != nil {
-		fields = append(fields, Matching.Deadline.Value(*param.Deadline))
-	}
-	if param.Remark != nil {
-		fields = append(fields, Matching.Remark.Value(*param.Remark))
-	}
-	_, err := Matching.WithContext(ctx).Where(Matching.ID.Eq(matchingID)).UpdateSimple(fields...)
-	if err != nil {
-		return nil, err
-	}
-	midacontext.GetLoader[loader.Loader](ctx).Matching.Clear(ctx, matchingID)
-	thunk := midacontext.GetLoader[loader.Loader](ctx).Matching.Load(ctx, matchingID)
-	return thunk()
-}
-
-// UpdateMatchingQuota is the resolver for the updateMatchingQuota field.
-func (r *mutationResolver) UpdateMatchingQuota(ctx context.Context, userID string, param models.UpdateMatchingQuotaParam) (string, error) {
-	token := midacontext.GetClientToken(ctx)
-	if !token.IsAdmin() {
-		return "", midacode.ErrNotPermitted
-	}
-	db := dbutil.GetDB(ctx)
-	MatchingQuota := dbquery.Use(db).MatchingQuota
-
-	fields := []field.AssignExpr{}
-	if param.Remain != nil {
-		fields = append(fields, MatchingQuota.Remain.Value(*param.Remain))
-	}
-	if param.Total != nil {
-		fields = append(fields, MatchingQuota.Total.Value(*param.Total))
-	}
-
-	_, err := MatchingQuota.WithContext(ctx).Where(MatchingQuota.UserID.Eq(userID)).UpdateSimple(fields...)
-	if err != nil {
-		return "", err
-	}
-
-	midacontext.GetLoader[loader.Loader](ctx).MatchingQuota.Clear(ctx, userID)
-	return "", nil
-}
-
-// ConfirmMatchingResult is the resolver for the confirmMatchingResult field.
-func (r *mutationResolver) ConfirmMatchingResult(ctx context.Context, userID *string, matchingID string, reject bool) (*string, error) {
-	token := midacontext.GetClientToken(ctx)
-	if !token.IsAdmin() && !token.IsUser() {
-		return nil, midacode.ErrNotPermitted
-	}
-
-	matchingThunk := midacontext.GetLoader[loader.Loader](ctx).Matching.Load(ctx, matchingID)
-	matching, err := matchingThunk()
-	if err != nil {
-		return nil, err
-	}
-	if matching == nil {
-		return nil, midacode.ErrItemNotFound
-	}
-
-	if token.IsUser() {
-		if matching.UserID != token.String() {
-			return nil, midacode.ErrNotPermitted
-		}
-	}
-
-	if matching.State != models.MatchingStateMatched.String() {
-		return nil, whalecode.ErrMatchingStateShouldBeMatched
-	}
-
-	loader := midacontext.GetLoader[loader.Loader](ctx)
-
-	thunk := loader.MatchingResult.Load(ctx, matching.ResultID)
-	matchingResult, err := thunk()
-	if err != nil {
-		return nil, err
-	}
-
-	db := dbutil.GetDB(ctx)
-	err = db.Transaction(func(tx *gorm.DB) error {
-		return modelutil.ConfirmMatching(ctx, tx, matchingResult, matchingID, token.String(), !reject)
-	})
-	if err == nil {
-		err = modelutil.CheckMatchingResultAndCreateChatGroup(ctx, matchingResult)
-	}
-	return nil, err
-}
-
-// CancelMatching is the resolver for the cancelMatching field.
-func (r *mutationResolver) CancelMatching(ctx context.Context, matchingID string) (*string, error) {
-	token := midacontext.GetClientToken(ctx)
-	if !token.IsAdmin() && !token.IsUser() {
-		return nil, midacode.ErrNotPermitted
-	}
-
-	matching, err := modelutil.GetMatchingAndCheckUser(ctx, matchingID, token.UserID())
-	if err != nil {
-		return nil, err
-	}
-
-	if matching.State != models.MatchingStateMatching.String() {
-		return nil, whalecode.ErrMatchingStateShouldBeMatching
-	}
-
-	db := dbutil.GetDB(ctx)
-	err = db.Transaction(func(tx *gorm.DB) error {
-		Matching := dbquery.Use(db).Matching
-		MatchingQuota := dbquery.Use(db).MatchingQuota
-		_, err := Matching.WithContext(ctx).
-			Where(Matching.ID.Eq(matchingID)).
-			UpdateSimple(
-				Matching.State.Value(models.MatchingStateCanceled.String()),
-				Matching.MatchedAt.Null(),
-			)
-		if err != nil {
-			return err
-		}
-		_, err = MatchingQuota.WithContext(ctx).
-			Where(MatchingQuota.UserID.Eq(token.UserID())).
-			UpdateSimple(MatchingQuota.Remain.Add(1))
-		return err
-	})
-	loader := midacontext.GetLoader[loader.Loader](ctx)
-	loader.Matching.Clear(ctx, matchingID)
-	loader.MatchingQuota.Clear(ctx, matching.UserID)
-	return nil, err
-}
-
-// StartMatching is the resolver for the startMatching field.
-func (r *mutationResolver) StartMatching(ctx context.Context) (*string, error) {
-	token := midacontext.GetClientToken(ctx)
-	if !token.IsAdmin() {
-		return nil, midacode.ErrNotPermitted
-	}
-
-	matcher := matcher.Matcher{}
-	err := matcher.Match(ctx)
-	return nil, err
-}
-
 // CheckAndCreateChatGroup is the resolver for the checkAndCreateChatGroup field.
 func (r *mutationResolver) CheckAndCreateChatGroup(ctx context.Context, matchingID string) (*string, error) {
 	panic(fmt.Errorf("not implemented: CheckAndCreateChatGroup - checkAndCreateChatGroup"))
@@ -455,71 +235,6 @@ func (r *mutationResolver) RefreshTopicMetrics(ctx context.Context) (*string, er
 	}
 
 	err := modelutil.RefreshHotTopic(ctx, time.Now().Add(time.Hour*24*-10))
-	return nil, err
-}
-
-// FinishMatching is the resolver for the finishMatching field.
-func (r *mutationResolver) FinishMatching(ctx context.Context, matchingID string) (*string, error) {
-	token := midacontext.GetClientToken(ctx)
-	if !token.IsAdmin() && !token.IsUser() {
-		return nil, midacode.ErrNotPermitted
-	}
-
-	uid := ""
-	if token.IsUser() {
-		uid = token.String()
-	}
-	return nil, modelutil.FinishMatching(ctx, matchingID, uid)
-}
-
-// ReviewMatching is the resolver for the reviewMatching field.
-func (r *mutationResolver) ReviewMatching(ctx context.Context, matchingID string, param models.ReviewMatchingParam) (*string, error) {
-	token := midacontext.GetClientToken(ctx)
-	if !token.IsAdmin() && !token.IsUser() {
-		return nil, midacode.ErrNotPermitted
-	}
-	matchingThunk := midacontext.GetLoader[loader.Loader](ctx).Matching.Load(ctx, matchingID)
-	matching, err := matchingThunk()
-	if err != nil {
-		return nil, err
-	}
-	if token.IsUser() {
-		if matching.UserID != token.String() {
-			return nil, midacode.ErrNotPermitted
-		}
-	}
-	if matching.State != models.ChatGroupStateClosed.String() {
-		return nil, midacode.ErrStateMayHaveChanged
-	}
-	matchingResultThunk := midacontext.GetLoader[loader.Loader](ctx).MatchingResult.Load(ctx, matching.ResultID)
-	result, err := matchingResultThunk()
-	if err != nil {
-		return nil, err
-	}
-
-	db := dbutil.GetDB(ctx)
-	MatchingReview := dbquery.Use(db).MatchingReview
-	_, err = MatchingReview.WithContext(ctx).Where(MatchingReview.MatchingID.Eq(matchingID)).Take()
-	if err == nil {
-		return nil, midacode.ErrRecordExists
-	}
-	peerMatchingID := ""
-	for _, id := range result.MatchingIDs {
-		if id != matchingID {
-			peerMatchingID = id
-			break
-		}
-	}
-	err = MatchingReview.WithContext(ctx).Create(&models.MatchingReview{
-		MatchingResultID: matching.ResultID,
-		UserID:           matching.UserID,
-		ToUserID:         param.ToUserID,
-		TopicID:          matching.TopicID,
-		Score:            param.Score,
-		MatchingID:       matchingID,
-		ToMatchingID:     peerMatchingID,
-		Comment:          param.Comment,
-	})
 	return nil, err
 }
 
@@ -537,489 +252,40 @@ func (r *queryResolver) ChatGroupByResultID(ctx context.Context, resultID int) (
 	return &models.ChatGroup{ID: result.ChatGroupID}, nil
 }
 
-// HotTopics is the resolver for the hotTopics field.
-func (r *queryResolver) HotTopicsInArea(ctx context.Context, cityID *string) (*models.HotTopicsInArea, error) {
-	db := dbutil.GetDB(ctx)
-	HotTopicsInArea := dbquery.Use(db).HotTopicsInArea
-
-	query := HotTopicsInArea.WithContext(ctx)
-	city := "310100"
-	if cityID != nil {
-		city = *cityID
-	}
-	query = query.Where(HotTopicsInArea.CityID.Eq(city))
-
-	hotTopic, err := query.Take()
-	if err != nil {
-		return &models.HotTopicsInArea{
-			CityID:       city,
-			TopicMetrics: []models.TopicMetrics{},
-			CreatedAt:    time.Now(),
-			UpdatedAt:    time.Now(),
-		}, nil
-	}
-	return hotTopic, nil
-}
-
-// Matching is the resolver for the matching field.
-func (r *queryResolver) Matching(ctx context.Context, id string) (*models.Matching, error) {
-	token := midacontext.GetClientToken(ctx)
-	if token.IsAnonymous() {
-		return nil, midacode.ErrNotPermitted
-	}
-	thunk := midacontext.GetLoader[loader.Loader](ctx).Matching.Load(ctx, id)
-	return thunk()
-}
-
-// UserMatchingQuota is the resolver for the userMatchingQuota field.
-func (r *queryResolver) UserMatchingQuota(ctx context.Context, userID string) (*models.MatchingQuota, error) {
-	token := midacontext.GetClientToken(ctx)
-	if !token.IsAdmin() {
-		return nil, midacode.ErrNotPermitted
-	}
-
-	thunk := midacontext.GetLoader[loader.Loader](ctx).MatchingQuota.Load(ctx, userID)
-	return thunk()
-}
-
-// UserMatchingCalendar is the resolver for the userMatchingCalendar field.
-func (r *queryResolver) UserMatchingCalendar(ctx context.Context, userID *string, param models.UserMatchingCalenderParam) ([]*models.CalendarEvent, error) {
-	token := midacontext.GetClientToken(ctx)
-	if !token.IsUser() && !token.IsAdmin() {
-		return nil, midacode.ErrNotPermitted
-	}
-	uid := graphqlutil.GetID(token, userID)
-	if uid == "" {
-		return nil, whalecode.ErrUserIDCannotBeEmpty
-	}
-	if param.Before.Sub(param.After) > 64*24*time.Hour {
-		return nil, whalecode.ErrQueryDurationTooLong
-	}
-	db := dbutil.GetDB(ctx).Debug()
-	MatchingResult := dbquery.Use(db).MatchingResult
-	matchingResultIDs := []int{}
-	query := MatchingResult.WithContext(ctx).
-		Where(
-			dbutil.RawCond(dbutil.Contains(MatchingResult.UserIDs.ColumnName().String(), uid)),
-			MatchingResult.Closed.Is(false),
-			MatchingResult.WithContext(ctx).Or(
-				MatchingResult.FinishedAt.Between(param.After, param.Before.Add(-time.Second)),
-				MatchingResult.ChatGroupCreatedAt.Between(param.After, param.Before.Add(-time.Second)),
-			),
-		)
-	if param.OtherUserID != nil {
-		query = query.Where(dbutil.RawCond(dbutil.Contains(MatchingResult.UserIDs.ColumnName().String(), *param.OtherUserID)))
-	}
-
-	err := query.Limit(100).Pluck(MatchingResult.ID, &matchingResultIDs)
-	if err != nil {
-		return nil, err
-	}
-	thunk := midacontext.GetLoader[loader.Loader](ctx).MatchingResult.LoadMany(ctx, matchingResultIDs)
-	matchingResults, errors := thunk()
-	if len(errors) > 0 {
-		return nil, multierr.Combine(errors...)
-	}
-	return lo.Map(matchingResults, func(m *models.MatchingResult, i int) *models.CalendarEvent {
-		now := time.Now()
-		if m.FinishedAt == nil {
-			m.FinishedAt = &now
-		}
-		return &models.CalendarEvent{
-			TopicID:            m.TopicID,
-			MatchedAt:          m.CreatedAt,
-			FinishedAt:         *m.FinishedAt,
-			ChatGroupCreatedAt: m.ChatGroupCreatedAt,
-		}
-	}), nil
-}
-
-// UserMatchingsInTheDay is the resolver for the userMatchingsInTheDay field.
-func (r *queryResolver) UserMatchingsInTheDay(ctx context.Context, userID *string, param models.UserMatchingInTheDayParam) ([]*models.MatchingResult, error) {
-	token := midacontext.GetClientToken(ctx)
-	if !token.IsUser() && !token.IsAdmin() {
-		return nil, midacode.ErrNotPermitted
-	}
-	uid := graphqlutil.GetID(token, userID)
-	if uid == "" {
-		return nil, whalecode.ErrUserIDCannotBeEmpty
-	}
-	t, err := time.Parse("20060102", param.DayStr)
-	if err != nil {
-		return nil, err
-	}
-
-	db := dbutil.GetDB(ctx)
-	MatchingResult := dbquery.Use(db).MatchingResult
-	matchingResultIDs := []int{}
-	query := MatchingResult.WithContext(ctx).
-		Where(
-			dbutil.RawCond(dbutil.Contains(MatchingResult.UserIDs.ColumnName().String(), uid)),
-			MatchingResult.Closed.Is(false),
-			MatchingResult.WithContext(ctx).Or(
-				MatchingResult.FinishedAt.Between(t, t.Add(time.Hour*24-time.Second)),
-				MatchingResult.ChatGroupCreatedAt.Between(t, t.Add(time.Hour*24-time.Second)),
-			),
-		)
-	if param.OtherUserID != nil {
-		query = query.Where(dbutil.RawCond(dbutil.Contains(MatchingResult.UserIDs.ColumnName().String(), *param.OtherUserID)))
-	}
-
-	err = query.Limit(100).Pluck(MatchingResult.ID, &matchingResultIDs)
-	if err != nil {
-		return nil, err
-	}
-	thunk := midacontext.GetLoader[loader.Loader](ctx).MatchingResult.LoadMany(ctx, matchingResultIDs)
-
-	matchingResults, errors := thunk()
-	if len(errors) > 0 {
-		return nil, multierr.Combine(errors...)
-	}
-	return matchingResults, nil
-}
-
-// MatchingResultByChatGroupID is the resolver for the matchingResultByChatGroupId field.
-func (r *queryResolver) MatchingResultByChatGroupID(ctx context.Context, userID *string, chatGroupID string) (*models.MatchingResult, error) {
-	token := midacontext.GetClientToken(ctx)
-	if !token.IsUser() && !token.IsAdmin() {
-		return nil, midacode.ErrNotPermitted
-	}
-	uid := graphqlutil.GetID(token, userID)
-	if uid == "" {
-		return nil, whalecode.ErrUserIDCannotBeEmpty
-	}
-
-	db := dbutil.GetDB(ctx)
-	MatchingResult := dbquery.Use(db).MatchingResult
-	result, err := MatchingResult.WithContext(ctx).Where(MatchingResult.ChatGroupID.Eq(chatGroupID)).Take()
-	if err != nil {
-		return nil, midacode.ItemMayNotFound(err)
-	}
-	index := lo.IndexOf(result.UserIDs, uid)
-	if index == -1 {
-		return nil, midacode.ErrNotPermitted
-	}
-	return result, nil
-}
-
-// Matchings is the resolver for the matchings field.
-func (r *queryResolver) Matchings(ctx context.Context, filter *models.MatchingFilter, paginator *graphqlutil.GraphQLPaginator) ([]*models.Matching, error) {
-	token := midacontext.GetClientToken(ctx)
-	if !token.IsAdmin() {
-		return nil, midacode.ErrNotPermitted
-	}
-
-	pager := graphqlutil.GetPager(paginator)
-
-	db := dbutil.GetDB(ctx)
-	Matching := dbquery.Use(db).Matching
-
-	query := Matching.WithContext(ctx)
-	if filter != nil {
-		if filter.CreateAfter != nil {
-			query = query.Where(Matching.CreatedAt.Gt(*filter.CreateAfter))
-		}
-		if filter.CreateBefore != nil {
-			query = query.Where(Matching.CreatedAt.Lt(*filter.CreateBefore))
-		}
-		if filter.TopicID != nil {
-			query = query.Where(Matching.TopicID.Eq(*filter.TopicID))
-		}
-		if filter.State != nil {
-			query = query.Where(Matching.State.Eq(filter.State.String()))
-		}
-	}
-	ids := []string{}
-	err := query.Limit(pager.Limit()).Offset(pager.Offset()).Order(Matching.CreatedAt.Desc()).Pluck(Matching.ID, &ids)
-	if err != nil {
-		return nil, err
-	}
-	thunk := midacontext.GetLoader[loader.Loader](ctx).Matching.LoadMany(ctx, ids)
-	matchings, errors := thunk()
-	if len(errors) > 0 {
-		return nil, multierr.Combine(errors...)
-	}
-	return matchings, nil
-}
-
-// MatchingsCount is the resolver for the matchingsCount field.
-func (r *queryResolver) MatchingsCount(ctx context.Context, filter *models.MatchingFilter) (*models.Summary, error) {
-	token := midacontext.GetClientToken(ctx)
-	if !token.IsAdmin() {
-		return nil, midacode.ErrNotPermitted
-	}
-
-	db := dbutil.GetDB(ctx)
-	Matching := dbquery.Use(db).Matching
-
-	query := Matching.WithContext(ctx)
-	if filter != nil {
-		if filter.CreateAfter != nil {
-			query = query.Where(Matching.CreatedAt.Gt(*filter.CreateAfter))
-		}
-		if filter.CreateBefore != nil {
-			query = query.Where(Matching.CreatedAt.Lt(*filter.CreateBefore))
-		}
-		if filter.TopicID != nil {
-			query = query.Where(Matching.TopicID.Eq(*filter.TopicID))
-		}
-		if filter.State != nil {
-			query = query.Where(Matching.State.Eq(filter.State.String()))
-		}
-	}
-	count, err := query.Count()
-	return &models.Summary{Count: int(count)}, err
-}
-
-// UserMatchings is the resolver for the userMatchings field.
-func (r *queryResolver) UserMatchings(ctx context.Context, userID *string, filter *models.UserMatchingFilter, paginator *graphqlutil.GraphQLPaginator) ([]*models.Matching, error) {
-	token := midacontext.GetClientToken(ctx)
-	if !token.IsUser() && !token.IsAdmin() {
-		return nil, midacode.ErrNotPermitted
-	}
-
-	pager := graphqlutil.GetPager(paginator)
-
-	uid := graphqlutil.GetID(token, userID)
-	if uid == "" {
-		return nil, whalecode.ErrUserIDCannotBeEmpty
-	}
-
-	db := dbutil.GetDB(ctx)
-	Matching := dbquery.Use(db).Matching
-
-	query := Matching.WithContext(ctx).Where(Matching.UserID.Eq(uid))
-	if filter != nil {
-		if filter.State != nil {
-			query = query.Where(Matching.State.Eq(filter.State.String()))
-		}
-	}
-	ids := []string{}
-	err := query.Limit(pager.Limit()).Offset(pager.Offset()).Order(Matching.CreatedAt.Desc()).Pluck(Matching.ID, &ids)
-	if err != nil {
-		return nil, err
-	}
-	thunk := midacontext.GetLoader[loader.Loader](ctx).Matching.LoadMany(ctx, ids)
-	matchings, errors := thunk()
-	if len(errors) > 0 {
-		return nil, multierr.Combine(errors...)
-	}
-	return matchings, nil
-}
-
-// UserMatchingsCount is the resolver for the userMatchingsCount field.
-func (r *queryResolver) UserMatchingsCount(ctx context.Context, userID *string, filter *models.UserMatchingFilter) (*models.Summary, error) {
-	token := midacontext.GetClientToken(ctx)
-	if !token.IsUser() && !token.IsAdmin() {
-		return nil, midacode.ErrNotPermitted
-	}
-
-	uid := graphqlutil.GetID(token, userID)
-	if uid == "" {
-		return nil, whalecode.ErrUserIDCannotBeEmpty
-	}
-
-	db := dbutil.GetDB(ctx)
-	Matching := dbquery.Use(db).Matching
-
-	query := Matching.WithContext(ctx).Where(Matching.UserID.Eq(uid))
-	if filter != nil {
-		if filter.State != nil {
-			query = query.Where(Matching.State.Eq(filter.State.String()))
-		}
-	}
-	count, err := query.Count()
-	return &models.Summary{Count: int(count)}, err
-}
-
-// PreviewMatchingsOfTopic is the resolver for the previewMatchingsOfTopic field.
-func (r *queryResolver) PreviewMatchingsOfTopic(ctx context.Context, cityID string, topicID string, limit *int) ([]*models.Matching, error) {
-	db := dbutil.GetDB(ctx)
-	Matching := dbquery.Use(db).Matching
-
-	n := 4
-	if limit != nil {
-		if *limit <= 0 {
-			*limit = 4
-		}
-		if *limit > 8 {
-			*limit = 8
-		}
-		n = *limit
-	}
-
-	ids := []string{}
-	err := Matching.WithContext(ctx).Where(
-		Matching.CityID.Eq(cityID),
-		Matching.TopicID.Eq(topicID),
-	).Limit(n).Order(Matching.CreatedAt.Desc()).Order(Matching.CreatedAt.Desc()).Pluck(Matching.ID, &ids)
-	if err != nil {
-		return nil, err
-	}
-	thunk := midacontext.GetLoader[loader.Loader](ctx).Matching.LoadMany(ctx, ids)
-	matchings, errors := thunk()
-	if len(errors) > 0 {
-		return nil, multierr.Combine(errors...)
-	}
-	return matchings, nil
-}
-
-// Invitations is the resolver for the invitations field.
-func (r *queryResolver) Invitations(ctx context.Context, userID *string, paginator *graphqlutil.GraphQLPaginator) ([]*models.MatchingInvitation, error) {
-	token := midacontext.GetClientToken(ctx)
-	if !token.IsUser() && !token.IsAdmin() {
-		return nil, midacode.ErrNotPermitted
-	}
-	pager := graphqlutil.GetPager(paginator)
-	uid := graphqlutil.GetID(token, userID)
-	if uid == "" {
-		return nil, whalecode.ErrUserIDCannotBeEmpty
-	}
-
-	db := dbutil.GetDB(ctx)
-	ids := []string{}
-	MatchingInvitation := dbquery.Use(db).MatchingInvitation
-	err := MatchingInvitation.WithContext(ctx).
-		Where(MatchingInvitation.UserID.Eq(uid)).
-		Order(MatchingInvitation.CreatedAt.Desc()).
-		Offset(pager.Offset()).
-		Limit(pager.Limit()).
-		Pluck(MatchingInvitation.ID, &ids)
-	if err != nil {
-		return nil, err
-	}
-	thunk := midacontext.GetLoader[loader.Loader](ctx).MatchingInvitation.LoadMany(ctx, ids)
-	invitations, errors := thunk()
-	if len(errors) > 0 {
-		return nil, multierr.Combine(errors...)
-	}
-	return invitations, nil
-}
-
-// Invitation is the resolver for the invitation field.
-func (r *queryResolver) Invitation(ctx context.Context, userID *string, id string) (*models.MatchingInvitation, error) {
-	token := midacontext.GetClientToken(ctx)
-	if !token.IsUser() && !token.IsAdmin() {
-		return nil, midacode.ErrNotPermitted
-	}
-	thunk := midacontext.GetLoader[loader.Loader](ctx).MatchingInvitation.Load(ctx, id)
-	invitation, err := thunk()
-	if err != nil {
-		return nil, err
-	}
-	if token.IsUser() {
-		if invitation.UserID != token.String() && invitation.InviteeID != token.String() {
-			return nil, midacode.ErrNotPermitted
-		}
-	}
-	return invitation, nil
-}
-
-// InvitationsCount is the resolver for the invitationsCount field.
-func (r *queryResolver) InvitationsCount(ctx context.Context, userID *string) (*models.Summary, error) {
-	token := midacontext.GetClientToken(ctx)
-	if !token.IsUser() && !token.IsAdmin() {
-		return nil, midacode.ErrNotPermitted
-	}
-	uid := graphqlutil.GetID(token, userID)
-	if uid == "" {
-		return nil, whalecode.ErrUserIDCannotBeEmpty
-	}
-
-	db := dbutil.GetDB(ctx)
-	MatchingInvitation := dbquery.Use(db).MatchingInvitation
-	count, err := MatchingInvitation.WithContext(ctx).Where(MatchingInvitation.UserID.Eq(uid)).Count()
-	if err != nil {
-		return nil, err
-	}
-	return &models.Summary{Count: int(count)}, nil
-}
-
-// UnconfirmedInvitations is the resolver for the unconfirmedInvitations field.
-func (r *queryResolver) UnconfirmedInvitations(ctx context.Context, userID *string) ([]*models.MatchingInvitation, error) {
-	token := midacontext.GetClientToken(ctx)
-	if !token.IsUser() && !token.IsAdmin() {
-		return nil, midacode.ErrNotPermitted
-	}
-	uid := graphqlutil.GetID(token, userID)
-	if uid == "" {
-		return nil, whalecode.ErrUserIDCannotBeEmpty
-	}
-	db := dbutil.GetDB(ctx)
-	MatchingInvitation := dbquery.Use(db).MatchingInvitation
-	ids := []string{}
-	err := MatchingInvitation.WithContext(ctx).
-		Where(MatchingInvitation.InviteeID.Eq(uid)).
-		Where(MatchingInvitation.Closed.Is(false)).
-		Where(MatchingInvitation.ConfirmState.Eq(models.InvitationConfirmStateUnconfirmed.String())).
-		Order(MatchingInvitation.CreatedAt.Desc()).
-		Pluck(MatchingInvitation.ID, &ids)
-	if err != nil {
-		return nil, err
-	}
-	thunk := midacontext.GetLoader[loader.Loader](ctx).MatchingInvitation.LoadMany(ctx, ids)
-	invitaions, errors := thunk()
-	if len(errors) > 0 {
-		return nil, multierr.Combine(errors...)
-	}
-	return invitaions, nil
-}
-
-// UnconfirmedInvitationCount is the resolver for the unconfirmedInvitationCount field.
-func (r *queryResolver) UnconfirmedInvitationCount(ctx context.Context, userID *string) (*models.Summary, error) {
-	token := midacontext.GetClientToken(ctx)
-	if !token.IsUser() && !token.IsAdmin() {
-		return nil, midacode.ErrNotPermitted
-	}
-	uid := graphqlutil.GetID(token, userID)
-	if uid == "" {
-		return nil, whalecode.ErrUserIDCannotBeEmpty
-	}
-	db := dbutil.GetDB(ctx)
-	MatchingInvitation := dbquery.Use(db).MatchingInvitation
-	count, err := MatchingInvitation.WithContext(ctx).
-		Where(MatchingInvitation.InviteeID.Eq(uid)).
-		Where(MatchingInvitation.Closed.Is(false)).
-		Where(MatchingInvitation.ConfirmState.Eq(models.InvitationConfirmStateUnconfirmed.String())).
-		Count()
-	if err != nil {
-		return nil, err
-	}
-	return &models.Summary{Count: int(count)}, nil
-}
-
 // RecentUsers is the resolver for the recentUsers field.
 func (r *topicResolver) RecentUsers(ctx context.Context, obj *models.Topic, cityID *string) ([]*models.SimpleAvatarUser, error) {
 	db := dbutil.GetDB(ctx)
-	Matching := dbquery.Use(db).Matching
+	UserJoinTopic := dbquery.Use(db).UserJoinTopic
 
 	userIDs := []string{}
 	if cityID != nil {
-		err := Matching.WithContext(ctx).
-			Distinct(Matching.UserID).
-			Where(Matching.TopicID.Eq(obj.ID), Matching.CityID.Eq(*cityID)).
-			Limit(5).
-			Pluck(Matching.UserID, &userIDs)
+		err := UserJoinTopic.WithContext(ctx).
+			Where(UserJoinTopic.CityID.Eq(*cityID)).
+			Where(UserJoinTopic.TopicID.Eq(obj.ID)).
+			Limit(5).Order(UserJoinTopic.UpdatedAt.Desc()).
+			Pluck(UserJoinTopic.LatestMatchingID, &userIDs)
 		if err != nil {
 			return nil, err
 		}
 	}
 	if len(userIDs) == 0 {
-		err := Matching.WithContext(ctx).
-			Distinct(Matching.UserID).
-			Where(Matching.TopicID.Eq(obj.ID)).
-			Limit(5).
-			Pluck(Matching.UserID, &userIDs)
+		err := UserJoinTopic.WithContext(ctx).
+			Where(UserJoinTopic.CityID.Eq("310100")).
+			Where(UserJoinTopic.TopicID.Eq(obj.ID)).
+			Limit(30).Order(UserJoinTopic.UpdatedAt.Desc()).
+			Pluck(UserJoinTopic.LatestMatchingID, &userIDs)
 		if err != nil {
 			return nil, err
 		}
+		userIDs = lo.Uniq(userIDs)
 	}
 	if len(userIDs) != 0 {
-		ret, err := hoopoe.GetAvatarByIDs(ctx, midacontext.GetServices(ctx).Hoopoe, userIDs)
-		if err != nil {
-			return nil, err
+		thunk := midacontext.GetLoader[loader.Loader](ctx).UserAvatarNickname.LoadMany(ctx, userIDs)
+		avatarNickname, errors := thunk()
+		if errors != nil {
+			return nil, multierr.Combine(errors...)
 		}
-		users := lo.Map(ret.GetUserByIds, func(u hoopoe.GetAvatarByIDsGetUserByIdsUser, i int) *models.SimpleAvatarUser {
+		users := lo.Map(avatarNickname, func(u loader.UserAvatarNickname, i int) *models.SimpleAvatarUser {
 			return &models.SimpleAvatarUser{
 				Avatar:   u.Avatar,
 				Nickname: u.Nickname,
@@ -1060,8 +326,9 @@ func (r *topicResolver) FuzzyMatchingNum(ctx context.Context, obj *models.Topic,
 	if err != nil {
 		return 0, err
 	}
-	if count <= 9 {
-		return 9, nil
+	if count <= 3 {
+		remain := rand.Int() % 3
+		return 3 + remain, nil
 	}
 	newCount := int(math.Sqrt(float64(count)) * 33)
 	if newCount >= 1000 {
@@ -1095,6 +362,9 @@ func (r *userResolver) MatchingQuota(ctx context.Context, obj *models.User) (*mo
 	return thunk()
 }
 
+// CityTopics returns CityTopicsResolver implementation.
+func (r *Resolver) CityTopics() CityTopicsResolver { return &cityTopicsResolver{r} }
+
 // Matching returns MatchingResolver implementation.
 func (r *Resolver) Matching() MatchingResolver { return &matchingResolver{r} }
 
@@ -1127,6 +397,7 @@ func (r *Resolver) TopicMetrics() TopicMetricsResolver { return &topicMetricsRes
 // User returns UserResolver implementation.
 func (r *Resolver) User() UserResolver { return &userResolver{r} }
 
+type cityTopicsResolver struct{ *Resolver }
 type matchingResolver struct{ *Resolver }
 type matchingInvitationResolver struct{ *Resolver }
 type matchingOfTopicResolver struct{ *Resolver }

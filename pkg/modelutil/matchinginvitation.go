@@ -9,6 +9,8 @@ import (
 	"whale/pkg/whalecode"
 
 	"github.com/letjoy-club/mida-tool/dbutil"
+	"github.com/letjoy-club/mida-tool/graphqlutil"
+	"github.com/letjoy-club/mida-tool/midacode"
 	"github.com/letjoy-club/mida-tool/midacontext"
 	"github.com/letjoy-club/mida-tool/shortid"
 )
@@ -52,6 +54,7 @@ func AcceptMatchingInvitation(ctx context.Context, invitation *models.MatchingIn
 		State:          string(models.MatchingStateMatched),
 	}
 	result := models.MatchingResult{
+		CreatedBy:      models.ResultCreatedByInvitation.String(),
 		MatchingIDs:    []string{m1.ID, m2.ID},
 		TopicID:        invitation.TopicID,
 		UserIDs:        []string{invitation.UserID, invitation.InviteeID},
@@ -79,6 +82,8 @@ func AcceptMatchingInvitation(ctx context.Context, invitation *models.MatchingIn
 		UpdateSimple(
 			MatchingInvitation.ConfirmedAt.Value(time.Now()),
 			MatchingInvitation.Closed.Value(true),
+			MatchingInvitation.MatchingIds.Value(graphqlutil.ElementList[string]([]string{m1.ID, m2.ID})),
+			MatchingInvitation.MatchingResultId.Value(result.ID),
 			MatchingInvitation.ConfirmState.Value(models.InvitationConfirmStateConfirmed.String()),
 		)
 	if err != nil {
@@ -89,6 +94,8 @@ func AcceptMatchingInvitation(ctx context.Context, invitation *models.MatchingIn
 	if err != nil {
 		return err
 	}
+
+	midacontext.GetLoader[loader.Loader](ctx).MatchingResult.Clear(ctx, result.ID)
 	midacontext.GetLoader[loader.Loader](ctx).Matching.Clear(ctx, m1.ID)
 	midacontext.GetLoader[loader.Loader](ctx).Matching.Clear(ctx, m2.ID)
 	midacontext.GetLoader[loader.Loader](ctx).MatchingInvitation.Clear(ctx, invitation.ID)
@@ -114,5 +121,44 @@ func RejectMatchingInvitation(ctx context.Context, invitation *models.MatchingIn
 	}
 
 	midacontext.GetLoader[loader.Loader](ctx).MatchingInvitation.Clear(ctx, invitation.ID)
+	return nil
+}
+
+func CancelMatchingInvitation(ctx context.Context, uid string, invitationID string) error {
+	db := dbutil.GetDB(ctx)
+	MatchingInvitation := dbquery.Use(db).MatchingInvitation
+	matchingInvitation, err := MatchingInvitation.WithContext(ctx).Where(MatchingInvitation.ID.Eq(invitationID)).Take()
+	if err != nil {
+		return midacode.ItemMayNotFound(err)
+	}
+	if uid != "" {
+		if uid != matchingInvitation.UserID {
+			return midacode.ErrNotPermitted
+		}
+	}
+
+	if matchingInvitation.Closed {
+		return nil
+	}
+
+	if matchingInvitation.ConfirmState != models.InvitationConfirmStateUnconfirmed.String() {
+		return nil
+	}
+
+	_, err = MatchingInvitation.WithContext(ctx).Where(MatchingInvitation.ID.Eq(invitationID)).UpdateSimple(
+		MatchingInvitation.Closed.Value(true),
+		MatchingInvitation.ConfirmState.Value(models.InvitationConfirmStateRejected.String()),
+	)
+	if err != nil {
+		return err
+	}
+	// 发起者的配对配额+1
+	MatchingQuota := dbquery.Use(db).MatchingQuota
+	_, err = MatchingQuota.WithContext(ctx).Where(MatchingQuota.UserID.Eq(matchingInvitation.UserID)).UpdateSimple(MatchingQuota.Remain.Add(1))
+	if err != nil {
+		return err
+	}
+	midacontext.GetLoader[loader.Loader](ctx).MatchingQuota.Clear(ctx, matchingInvitation.UserID)
+	midacontext.GetLoader[loader.Loader](ctx).MatchingInvitation.Clear(ctx, matchingInvitation.ID)
 	return nil
 }

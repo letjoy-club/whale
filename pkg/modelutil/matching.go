@@ -2,7 +2,6 @@ package modelutil
 
 import (
 	"context"
-	"fmt"
 	"time"
 	"whale/pkg/dbquery"
 	"whale/pkg/gqlient/hoopoe"
@@ -53,15 +52,24 @@ func ConfirmMatching(ctx context.Context, db *gorm.DB, matchingResult *models.Ma
 			midacontext.GetLoader[loader.Loader](ctx).Matching.Clear(ctx, id)
 		}
 	}()
+
+	if matchingResult.ChatGroupState != models.ChatGroupStateUncreated.String() {
+		// 已经创建了聊天室
+		return nil
+	}
 	index := lo.IndexOf(matchingResult.MatchingIDs, matchingID)
-	if index != -1 {
-		if confirmed {
-			matchingResult.ConfirmStates[index] = models.MatchingResultConfirmStateConfirmed.String()
-		} else {
-			matchingResult.ConfirmStates[index] = models.MatchingResultConfirmStateRejected.String()
-			matchingResult.Closed = true
-		}
-		MatchingResult := dbquery.Use(db).MatchingResult
+	if index == -1 {
+		return nil
+	}
+	if confirmed {
+		matchingResult.ConfirmStates[index] = models.MatchingResultConfirmStateConfirmed.String()
+	} else {
+		matchingResult.ConfirmStates[index] = models.MatchingResultConfirmStateRejected.String()
+		matchingResult.Closed = true
+	}
+
+	err = db.Transaction(func(tx *gorm.DB) error {
+		MatchingResult := dbquery.Use(tx).MatchingResult
 		_, err = MatchingResult.WithContext(ctx).
 			Where(MatchingResult.ID.Eq(matchingResult.ID)).
 			Select(MatchingResult.ConfirmStates, MatchingResult.Closed).
@@ -69,23 +77,25 @@ func ConfirmMatching(ctx context.Context, db *gorm.DB, matchingResult *models.Ma
 		if err != nil {
 			return err
 		}
-		if matchingResult.Closed {
-			// 如果有人拒绝匹配
-			Matching := dbquery.Use(db).Matching
-			_, err = Matching.WithContext(ctx).
-				Where(Matching.ID.In(matchingResult.MatchingIDs...)).
-				UpdateSimple(
-					// 回到匹配状态
-					Matching.State.Value(string(models.MatchingStateMatching)),
-					Matching.MatchedAt.Null(),
-					Matching.ResultID.Value(0),
-				)
-			if err != nil {
-				return err
-			}
+		if !matchingResult.Closed {
+			return nil
 		}
-	}
-	return nil
+		// 如果有人拒绝匹配
+		Matching := dbquery.Use(tx).Matching
+		_, err = Matching.WithContext(ctx).
+			Where(Matching.ID.In(matchingResult.MatchingIDs...)).
+			UpdateSimple(
+				// 回到匹配状态
+				Matching.State.Value(string(models.MatchingStateMatching)),
+				Matching.MatchedAt.Null(),
+				Matching.ResultID.Value(0),
+			)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+	return err
 }
 
 func CheckMatchingResultAndCreateChatGroup(ctx context.Context, m *models.MatchingResult) error {
@@ -168,7 +178,7 @@ func CreateMatching(ctx context.Context, uid string, param models.CreateMatching
 	// 如果有找到，或者其他数据库错误
 	notFoundErr := midacode.ItemCustomNotFound(err, midacode.ErrItemNotFound)
 	if notFoundErr != midacode.ErrItemNotFound {
-		return nil, whalecode.ErrTopicIsAlreadyInMatching
+		return nil, whalecode.ErrCannotPerformActionWhenChatGroupAlreadyCreated
 	}
 
 	matching := &models.Matching{
@@ -220,9 +230,13 @@ func CreateMatchingInvitation(ctx context.Context, uid string, param models.Crea
 		return nil, err
 	}
 
-	db := dbutil.GetDB(ctx)
-	MatchingInvitation := dbquery.Use(db).MatchingInvitation
+	profileThunk := midacontext.GetLoader[loader.Loader](ctx).UserProfile.Load(ctx, param.InviteeID)
+	_, err = profileThunk()
+	if err != nil {
+		return nil, err
+	}
 
+	db := dbutil.GetDB(ctx)
 	invitation := models.MatchingInvitation{
 		ID:               shortid.New("mi_", 8),
 		UserID:           uid,
@@ -235,15 +249,21 @@ func CreateMatchingInvitation(ctx context.Context, uid string, param models.Crea
 		MatchingIds:      []string{},
 		MatchingResultId: 0,
 	}
-	err = MatchingInvitation.WithContext(ctx).Create(&invitation)
-	if err != nil {
-		return nil, err
-	}
-	MatchingQuota := dbquery.Use(db).MatchingQuota
-	_, err = MatchingQuota.WithContext(ctx).Where(MatchingQuota.UserID.Eq(uid)).UpdateSimple(MatchingQuota.Remain.Add(-1))
-	if err != nil {
-		return nil, err
-	}
+
+	err = db.Transaction(func(tx *gorm.DB) error {
+		MatchingInvitation := dbquery.Use(tx).MatchingInvitation
+		err = MatchingInvitation.WithContext(ctx).Create(&invitation)
+		if err != nil {
+			return err
+		}
+		MatchingQuota := dbquery.Use(tx).MatchingQuota
+		_, err = MatchingQuota.WithContext(ctx).Where(MatchingQuota.UserID.Eq(uid)).UpdateSimple(MatchingQuota.Remain.Add(-1))
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+
 	midacontext.GetLoader[loader.Loader](ctx).MatchingQuota.Clear(ctx, uid)
 	return &invitation, nil
 }
@@ -276,50 +296,51 @@ func FinishMatching(ctx context.Context, matchingID string, uid string) error {
 	}
 
 	db := dbutil.GetDB(ctx)
-	Matching := dbquery.Use(db).Matching
-	MatchingQuota := dbquery.Use(db).MatchingQuota
-	MatchingResult := dbquery.Use(db).MatchingResult
 
-	ret, err := Matching.WithContext(ctx).
-		Where(Matching.ID.Eq(matchingID)).
-		Where(Matching.State.Eq(models.MatchingStateMatched.String())).
-		UpdateSimple(
-			Matching.State.Value(models.MatchingStateFinished.String()),
-			Matching.InChatGroup.Value(false),
-			Matching.FinishedAt.Value(time.Now()),
-		)
+	err = db.Transaction(func(tx *gorm.DB) error {
+		Matching := dbquery.Use(tx).Matching
+		MatchingQuota := dbquery.Use(tx).MatchingQuota
+		MatchingResult := dbquery.Use(tx).MatchingResult
 
-	if err != nil {
+		ret, err := Matching.WithContext(ctx).
+			Where(Matching.ID.Eq(matchingID)).
+			Where(Matching.State.Eq(models.MatchingStateMatched.String())).
+			UpdateSimple(
+				Matching.State.Value(models.MatchingStateFinished.String()),
+				Matching.InChatGroup.Value(false),
+				Matching.FinishedAt.Value(time.Now()),
+			)
+
+		if err != nil {
+			return err
+		}
+
+		if ret.RowsAffected != 1 {
+			return midacode.ErrStateMayHaveChanged
+		}
+
+		_, err = MatchingQuota.
+			WithContext(ctx).
+			Where(MatchingQuota.UserID.Eq(matching.UserID)).
+			UpdateSimple(MatchingQuota.Remain.Add(1))
+		if err != nil {
+			return err
+		}
+
+		_, err = MatchingResult.WithContext(ctx).
+			Where(MatchingResult.ID.Eq(matching.ResultID)).
+			Where(MatchingResult.ChatGroupState.Eq(models.ChatGroupStateCreated.String())).
+			UpdateSimple(
+				MatchingResult.ChatGroupState.Value(models.ChatGroupStateClosed.String()),
+				MatchingResult.FinishedAt.Value(time.Now()),
+			)
 		return err
-	}
-
-	if ret.RowsAffected != 1 {
-		return midacode.ErrStateMayHaveChanged
-	}
-
-	_, err = MatchingQuota.
-		WithContext(ctx).
-		Where(MatchingQuota.UserID.Eq(matching.UserID)).
-		UpdateSimple(MatchingQuota.Remain.Add(1))
-	if err != nil {
-		return err
-	}
-
-	_, err = MatchingResult.WithContext(ctx).
-		Where(MatchingResult.ID.Eq(matching.ResultID)).
-		Where(MatchingResult.ChatGroupState.Eq(models.ChatGroupStateCreated.String())).
-		UpdateSimple(
-			MatchingResult.ChatGroupState.Value(models.ChatGroupStateClosed.String()),
-			MatchingResult.FinishedAt.Value(time.Now()),
-		)
-	if err != nil {
-		fmt.Println(err)
-	}
+	})
 
 	for _, matching := range matchingResult.MatchingIDs {
 		midacontext.GetLoader[loader.Loader](ctx).Matching.Clear(ctx, matching)
 	}
 	midacontext.GetLoader[loader.Loader](ctx).MatchingResult.Clear(ctx, matching.ResultID)
 	midacontext.GetLoader[loader.Loader](ctx).MatchingQuota.Clear(ctx, matching.UserID)
-	return nil
+	return err
 }

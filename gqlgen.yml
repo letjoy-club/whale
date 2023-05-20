@@ -1,6 +1,7 @@
 # Where are all the schema files located? globs are supported eg  src/**/*.graphqls
 schema:
   - graph/*.graphqls
+  - graph/*.graphql
 
 # Where should the generated server code go?
 exec:
@@ -91,3 +92,6 @@ models:
   TopicMetrics:
     model:
       - whale/pkg/models.TopicMetrics
+  CityTopics:
+    model:
+      - whale/pkg/models.CityTopics

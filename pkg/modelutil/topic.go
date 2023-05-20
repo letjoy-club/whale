@@ -84,3 +84,26 @@ func HotTopicsInArea(ctx context.Context, cityID string) (*models.HotTopicsInAre
 	}
 	return topics, nil
 }
+
+func RecordUserJoinTopic(ctx context.Context, topicID, cityID, userID, matchingID string) {
+	db := dbutil.GetDB(ctx)
+	UserJoinTopic := dbquery.Use(db).UserJoinTopic
+	userjoined, err := UserJoinTopic.WithContext(ctx).Where(UserJoinTopic.TopicID.Eq(topicID)).Where(UserJoinTopic.CityID.Eq(cityID)).Where(UserJoinTopic.UserID.Eq(userID)).Take()
+	if err != nil {
+		// 没有找到记录
+		UserJoinTopic.WithContext(ctx).Clauses(clause.OnConflict{
+			DoNothing: true,
+		}).Create(&models.UserJoinTopic{
+			TopicID:          topicID,
+			CityID:           cityID,
+			UserID:           userID,
+			LatestMatchingID: matchingID,
+			Times:            1,
+		})
+	} else {
+		// 已经有记录了
+		userjoined.Times++
+		userjoined.LatestMatchingID = matchingID
+		UserJoinTopic.WithContext(ctx).Save(userjoined)
+	}
+}

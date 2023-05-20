@@ -9,6 +9,7 @@ import (
 	"github.com/letjoy-club/mida-tool/dbutil"
 	"github.com/letjoy-club/mida-tool/logger"
 	"github.com/letjoy-club/mida-tool/midacode"
+	"github.com/samber/lo"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
@@ -45,6 +46,23 @@ func (m *Matcher) MatchTopic(ctx context.Context, topicID string) error {
 func (m *Matcher) MatchPair(ctx context.Context, topicID string) error {
 	mc := GetMatchingContext(ctx)
 	matchings := mc.TopicMatchings(topicID)
+	city2matchings := lo.GroupBy(matchings, func(m *models.Matching) string {
+		return m.CityID
+	})
+	for _, cityMatchings := range city2matchings {
+		if len(cityMatchings) < 2 {
+			continue
+		}
+		err := MatchingInArea(ctx, cityMatchings)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func MatchingInArea(ctx context.Context, matchings []*models.Matching) error {
+	mc := GetMatchingContext(ctx)
 	if len(matchings) < 2 {
 		return nil
 	}

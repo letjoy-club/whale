@@ -3,6 +3,8 @@ package matcher
 import (
 	"context"
 	"whale/pkg/models"
+
+	"github.com/samber/lo"
 )
 
 type MatchingReason string
@@ -12,11 +14,18 @@ const (
 	MatchingReasonAreaNotOverlapse  MatchingReason = "AreaNotOverlapse"
 	MatchingReasonGenderNotMatched  MatchingReason = "GenderNotMatched"
 	MatchingReasonCannotMatchItSelf MatchingReason = "CannotMatchItSelf"
+	MatchingReasonUserRejected      MatchingReason = "UserRejected"
 )
 
 func Matched(ctx context.Context, m1 *models.Matching, m2 *models.Matching) (MatchingReason, bool) {
 	if m1.UserID == m2.UserID {
 		return MatchingReasonCannotMatchItSelf, false
+	}
+	if m1.RejectedUserIDs != nil && lo.IndexOf(m1.RejectedUserIDs, m2.UserID) != -1 {
+		return MatchingReasonUserRejected, false
+	}
+	if m2.RejectedUserIDs != nil && lo.IndexOf(m2.RejectedUserIDs, m1.UserID) != -1 {
+		return MatchingReasonUserRejected, false
 	}
 	mc := GetMatchingContext(ctx)
 	userIGender := mc.userProfiles[m1.UserID].Gender.String()

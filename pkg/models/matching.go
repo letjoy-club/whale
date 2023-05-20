@@ -78,6 +78,25 @@ type MatchingResult struct {
 	UpdatedAt time.Time `gorm:"autoUpdateTime"`
 }
 
+func (m *MatchingResult) GetMatchingID(userID string) string {
+	for i, id := range m.UserIDs {
+		if id == userID {
+			return m.MatchingIDs[i]
+		}
+	}
+	return ""
+}
+
+func (m *MatchingResult) OtherUserIDs(userID string) []string {
+	userIDs := []string{}
+	for _, id := range m.UserIDs {
+		if id != userID {
+			userIDs = append(userIDs, id)
+		}
+	}
+	return userIDs
+}
+
 func (MatchingResult) IsEntity() {}
 
 type MatchingResultConfirmAction struct {

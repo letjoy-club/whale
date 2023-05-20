@@ -22,6 +22,7 @@ import (
 	"github.com/letjoy-club/mida-tool/dbutil"
 	"github.com/letjoy-club/mida-tool/midacode"
 	"github.com/letjoy-club/mida-tool/midacontext"
+	"github.com/letjoy-club/mida-tool/proxy"
 	"github.com/letjoy-club/mida-tool/redisutil"
 	"github.com/vektah/gqlparser/v2/gqlerror"
 )
@@ -30,6 +31,9 @@ func main() {
 
 	port := flag.Int("port", 11013, "port to run server on")
 	confPath := flag.String("conf", "conf.yaml", "path to config file")
+
+	upstream := flag.String("upstream", "", "upstream url, example: ws://localhost:11013/whale/v1/ws?userIds=1000,u_abc")
+
 	flag.Parse()
 
 	conf := whaleconf.ReadConf(*confPath)
@@ -51,11 +55,6 @@ func main() {
 		oc := graphql.GetOperationContext(ctx)
 		fmt.Printf("RawQuery: %s\n", oc.RawQuery)
 		return next(ctx)
-		// return graphql.ResponseHandler(func(ctx context.Context) *graphql.Response {
-		// 	return &graphql.Response{
-		// 		Errors: gqlerror.List{&gqlerror.Error{Message: "DEEP_QUERY"}},
-		// 	}
-		// })
 	})
 	srv.SetErrorPresenter(func(ctx context.Context, e error) *gqlerror.Error {
 		var ok bool
@@ -105,6 +104,10 @@ func main() {
 				return
 			}
 
+			if proxy.RedirectProxy(token.String(), w, r) {
+				return
+			}
+
 			ctx = dbutil.WithDB(ctx, db)
 			ctx = redisutil.WithRedis(ctx, redis)
 			ctx = midacontext.WithLoader(ctx, loader)
@@ -130,9 +133,10 @@ func main() {
 		})
 	})
 
+	if *upstream != "" {
+		go proxy.Gateway(*upstream, r)
+	}
+
 	log.Printf("connect to http://localhost:%d/whale/v2 for GraphQL playground", *port)
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", *port), r))
-}
-
-func queryDepth() {
 }

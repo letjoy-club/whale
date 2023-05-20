@@ -17,7 +17,7 @@ extend type Topic @key(fields: "id") {
   "话题下的匹配数量"
   matchingNum(cityId: String): Int!
 
-  "话题下的大致匹配数量，一般以数量级给出，9+, 99+, 999+"
+  "话题下的大致匹配数量，范围是 [9, 999]，显示时建议给 + 表示有更多的数量。9-999 数值展示时，对原数据进行增量处理"
   fuzzyMatchingNum(cityId: String): Int!
 }
 
@@ -82,6 +82,7 @@ type Matching @key(fields: "id") {
 
   # query
   matchingResult: MatchingResult
+  reviewed: Boolean!
 
   user: User!
   topic: Topic!
@@ -138,6 +139,11 @@ enum MatchingState {
   Finished
 }
 
+type UserConfirmState {
+  userId: String!
+  state: MatchingResultConfirmState!
+}
+
 type MatchingResult {
   "id 只有管理员可以查看"
   id: Int! @adminOnly
@@ -146,6 +152,7 @@ type MatchingResult {
   topicId: String!
   userIds: [String!]!
   confirmStates: [MatchingResultConfirmState!]!
+  userConfirmStates: [UserConfirmState!]!
 
   chatGroupId: String!
   chatGroupState: ChatGroupState!
@@ -199,11 +206,13 @@ input GraphQLPaginator {
 }
 
 input MatchingFilter {
-  createBefore: Time
-  createAfter: Time
+  before: Time
+  after: Time
   topicId: String
   state: MatchingState
-  "通用关键词，u_ 开头搜用户, t_ 开头搜话题, m_ 开头搜匹配, 6 个数字搜地区"
+  cityId: String
+  userId: String
+  "通用关键词, u_ 开头搜用户, t_ 开头搜话题, m_ 开头搜匹配, 6 个数字搜地区"
   keyword: String
 }
 
@@ -261,6 +270,15 @@ type TopicMetrics {
   topic: Topic!
 }
 
+type CityTopics {
+  cityId: String!
+  topicIds: [String!]!
+  updatedAt: Time!
+
+  # query
+  topics: [Topic!]!
+}
+
 input UserMatchingCalenderParam {
   before: Time!
   after: Time!
@@ -280,62 +298,21 @@ type CalendarEvent {
   chatGroupCreatedAt: Time
 }
 
+input MatchingInvitationFilter {
+  userId: String
+  before: Time
+  after: Time
+}
+
+input MatchingResultFilter {
+  userId: String
+  before: Time
+  after: Time
+}
+
 type Query {
   "【匹配系统】内部专有"
   chatGroupByResultId(resultId: Int!): ChatGroup!
-
-  "【匹配系统】话题排行榜"
-  hotTopicsInArea(cityId: String = "310100"): HotTopicsInArea!
-
-  "【匹配系统】查看匹配"
-  matching(id: String!): Matching!
-
-  "【匹配系统】查看匹配配额"
-  userMatchingQuota(userId: String!): MatchingQuota!
-
-  "【匹配系统】查看匹配活动日历，最多返回 100 个结果"
-  userMatchingCalendar(
-    "用户 id 不需要传"
-    userId: String
-    "时间段，最长返回 64 天（最多满足两个月需求）"
-    param: UserMatchingCalenderParam!
-  ): [CalendarEvent!]!
-
-  "【匹配系统】查看当天的活动日历"
-  userMatchingsInTheDay("用户 id 不需要传" userId: String, param: UserMatchingInTheDayParam!): [MatchingResult!]!
-
-  "【匹配系统】使用 chatGroupId 查匹配结果"
-  matchingResultByChatGroupId("用户 id 不用传，只在管理端使用" userId: String, chatGroupId: String!): MatchingResult!
-
-  "【匹配系统】匹配查询，管理端用"
-  matchings(filter: MatchingFilter, paginator: GraphQLPaginator): [Matching!]!
-
-  "【匹配系统】匹配总量，管理端用"
-  matchingsCount(filter: MatchingFilter): Summary!
-
-  "【匹配系统】用户匹配"
-  userMatchings(userId: String, filter: UserMatchingFilter, paginator: GraphQLPaginator): [Matching!]!
-
-  "【匹配系统】用户匹配数量"
-  userMatchingsCount(userId: String, filter: UserMatchingFilter): Summary!
-
-  "【匹配系统】预览话题下的用匹配"
-  previewMatchingsOfTopic(cityId: String!, topicId: String!, limit: Int): [MatchingOfTopic!]!
-
-  "【匹配系统】我的邀请"
-  invitations(userId: String, paginator: GraphQLPaginator): [MatchingInvitation!]!
-
-  "【匹配系统】查看匹配邀请"
-  invitation(userId: String, id: String!): MatchingInvitation!
-
-  "【匹配系统】我的邀请数量"
-  invitationsCount(userId: String): Summary!
-
-  "【匹配系统】待确认邀请（邀请我的）"
-  unconfirmedInvitations(userId: String): [MatchingInvitation!]
-
-  "【匹配系统】待确认邀请数量"
-  unconfirmedInvitationCount(userId: String): Summary!
 }
 
 input CreateMatchingParam {
@@ -357,12 +334,14 @@ input UpdateMatchingParam {
   cityId: String
   gender: Gender
   remark: String
+  createdAt: Time
 
   deadline: Time
 }
 
 input UserMatchingFilter {
-  state: MatchingState
+  state: MatchingState @deprecated(reason: "请使用 states")
+  states: [MatchingState!]
 }
 
 input CreateMatchingInvitationParam {
@@ -384,43 +363,18 @@ input UpdateMatchingQuotaParam {
   remain: Int
 }
 
+input UpdateMatchingInvitationParam {
+  createdAt: Time
+  topicId: String
+  inviteeId: String
+  cityId: String
+  remark: String
+}
+
 type Mutation {
-  "【匹配系统】创建匹配"
-  createMatching(userId: String, param: CreateMatchingParam!): Matching!
-
-  "【匹配系统】邀请用户进行活动"
-  createMatchingInvitation(userId: String, param: CreateMatchingInvitationParam!): MatchingInvitation!
-
-  "【匹配系统】取消邀请"
-  cancelMatchingInvitation(invitationId: String!): String
-
-  "【匹配系统】确认/拒绝用户活动邀请"
-  confirmMatchingInvitation(userId: String, invitationId: String!, confirm: Boolean!): String
-
-  "【匹配系统】更新匹配，管理端使用"
-  updateMatching(matchingId: String!, param: UpdateMatchingParam!): Matching!
-
-  "【匹配系统】更新匹配配额，管理端使用"
-  updateMatchingQuota(userId: String!, param: UpdateMatchingQuotaParam!): String!
-
-  "【匹配系统】确认/拒绝匹配结果"
-  confirmMatchingResult(userId: String, matchingId: String!, reject: Boolean!): String
-
-  "【匹配系统】取消匹配"
-  cancelMatching(matchingId: String!): String
-
-  "【匹配系统】开始匹配，管理端使用"
-  startMatching: String
-
   "【匹配系统】尝试创建聊天室，管理端使用"
   checkAndCreateChatGroup(matchingId: String!): String
 
   "【匹配系统】分析话题热度，管理端使用"
   refreshTopicMetrics: String
-
-  "【匹配系统】完成匹配，退出聊天"
-  finishMatching(matchingId: String!): String
-
-  "【匹配系统】打分"
-  reviewMatching(matchingId: String!, param: ReviewMatchingParam!): String
 }

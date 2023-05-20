@@ -1,0 +1,30 @@
+extend type Query {
+  "【匹配系统】邀请列表，管理端使用"
+  matchingInvitations(filter: MatchingInvitationFilter, paginator: GraphQLPaginator): [MatchingInvitation!]!
+
+  "【匹配系统】邀请数量，管理端使用"
+  matchingInvitationsCount(filter: MatchingInvitationFilter): Summary!
+
+  "【匹配系统】我的邀请"
+  invitations(userId: String, paginator: GraphQLPaginator): [MatchingInvitation!]!
+
+  "【匹配系统】查看匹配邀请"
+  invitation(userId: String, id: String!): MatchingInvitation!
+
+  "【匹配系统】我的邀请数量"
+  invitationsCount(userId: String): Summary!
+}
+
+extend type Mutation {
+  "【匹配系统】邀请用户进行活动"
+  createMatchingInvitation(userId: String, param: CreateMatchingInvitationParam!): MatchingInvitation!
+
+  "【匹配系统】取消邀请"
+  cancelMatchingInvitation(invitationId: String!): String
+
+  "【匹配系统】确认/拒绝用户活动邀请"
+  confirmMatchingInvitation(userId: String, invitationId: String!, confirm: Boolean!): String
+
+  "【匹配系统】更新匹配邀请，管理端使用"
+  updateMatchingInvitation(invitationId: String!, param: UpdateMatchingInvitationParam!): MatchingInvitation!
+}

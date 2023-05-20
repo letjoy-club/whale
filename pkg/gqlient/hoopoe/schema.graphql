@@ -1,6 +1,6 @@
 directive @extends on OBJECT | INTERFACE
 
-directive @external on FIELD_DEFINITION
+directive @external on FIELD_DEFINITION | OBJECT
 
 directive @goModel(model: String, models: [String!]) on OBJECT | INPUT_OBJECT | SCALAR | ENUM | INTERFACE | UNION
 
@@ -37,6 +37,60 @@ type _Service {
   sdl: String
 }
 
+input AddTagCategoryParam {
+  """标签类别名称"""
+  name: String!
+
+  """标签类别作用域：personal-个人/topic-话题"""
+  scope: String!
+
+  """对应的scope的ID，如话题ID，scope为personal时，无需上送"""
+  entityId: String
+
+  """该类别标签是否只能自己打，仅scope=personal时生效，默认为false"""
+  onlySelf: Boolean
+
+  """默认样式ID"""
+  defaultStyleId: Int
+
+  """是否可用"""
+  enable: Boolean!
+}
+
+input AddTagParam {
+  """标签名"""
+  name: String!
+
+  """标签类别"""
+  categoryId: Int!
+
+  """情绪属性"""
+  sentiment: String
+
+  """样式ID"""
+  styleId: Int
+
+  """是否可用"""
+  enable: Boolean!
+}
+
+input AddTagStyleParam {
+  """样式名称"""
+  name: String!
+
+  """标签字体颜色"""
+  fontColor: String
+
+  """标签背景颜色"""
+  backgroundColor: String
+
+  """背景图片URL"""
+  backgroundImage: String
+
+  """是否可用"""
+  enable: Boolean!
+}
+
 input AddTopicCategoryParam {
   """类别名"""
   name: String!
@@ -55,11 +109,17 @@ input AddTopicParam {
   """话题名"""
   name: String!
 
+  """副标题"""
+  subtitle: String
+
   """类别"""
   categoryId: Int
 
   """话题颜色"""
   color: String
+
+  """话题描述"""
+  desc: String
 
   """可见地区"""
   visibleArea: AreaIDList
@@ -69,6 +129,16 @@ input AddTopicParam {
 
   """是否可用"""
   enable: Boolean!
+}
+
+type AdminAccount {
+  id: String!
+  nickname: String!
+  email: String!
+  avatar: String!
+  enabled: Boolean!
+  createdAt: Time!
+  token: String!
 }
 
 type Area {
@@ -122,6 +192,12 @@ type Entity {
 type ErrorDesc {
   code: String!
   cn: String!
+}
+
+input FeishuLoginParam {
+  avatar: String!
+  email: String!
+  nickname: String!
 }
 
 input GraphQLPaginator {
@@ -180,6 +256,10 @@ type Mutation {
     """用户ID"""
     userId: String!
   ): String
+  addAdminAccount(email: String!): AdminAccount!
+  feishuLogin(param: FeishuLoginParam!): AdminAccount!
+  updateAdminAccount(id: String!, param: UpdateAdminAccountParam!): AdminAccount!
+  renewAdminToken: String!
 
   """【地区】上线"""
   enableArea(
@@ -213,8 +293,8 @@ type Mutation {
     """被关注人的ID"""
     userId: String!
 
-    """匹配结果ID"""
-    matchingResultId: Int!
+    """匹配结ID"""
+    matchingId: String!
   ): String
 
   """取消关注"""
@@ -248,19 +328,7 @@ type Mutation {
   ): String
 
   """【标签】新增标签"""
-  addTag(
-    """标签名"""
-    name: String!
-
-    """标签类别"""
-    categoryId: Int!
-
-    """情绪属性"""
-    sentiment: Sentiment
-
-    """样式ID"""
-    styleId: Int
-  ): String
+  addTag(param: AddTagParam!): String
 
   """【标签】设置标签可用状态"""
   tagSetSentiment(
@@ -268,7 +336,7 @@ type Mutation {
     tagId: String!
 
     """情绪属性"""
-    sentiment: Sentiment
+    sentiment: String
   ): String
 
   """【标签】设置标签样式"""
@@ -280,29 +348,20 @@ type Mutation {
     styleId: Int
   ): String
 
-  """【标签】删除标签"""
-  removeTag(
+  """【标签】将标签样式设为可用"""
+  enableTag(
     """标签ID"""
-    tagId: String!
+    id: String!
+  ): String
+
+  """【标签】将标签样式设为不可用"""
+  disableTag(
+    """标签ID"""
+    id: String!
   ): String
 
   """【标签】新增标签样式"""
-  addTagStyle(
-    """样式名称"""
-    name: String!
-
-    """标签字体颜色"""
-    fontColor: String
-
-    """标签背景颜色"""
-    backgroundColor: String
-
-    """背景图片URL"""
-    backgroundImage: String
-
-    """是否可用"""
-    enable: Boolean!
-  ): String
+  addTagStyle(param: AddTagStyleParam!): String
 
   """【标签】修改标签样式字体颜色"""
   tagStyleSetFontColor(
@@ -343,25 +402,16 @@ type Mutation {
     id: Int!
   ): String
 
-  """【标签】移除标签样式"""
-  removeTagStyle(
-    """标签样式ID"""
-    id: Int!
-  ): String
-
   """【标签】新增标签类别"""
-  addTagCategory(
-    """标签类别名称"""
-    name: String!
+  addTagCategory(param: AddTagCategoryParam!): String
 
-    """标签类别作用域：personal-个人/topic-话题"""
-    scope: String!
+  """【标签】标签类别设置是否标签自己打"""
+  tagCategorySetOnlySelf(
+    """标签类别ID"""
+    id: Int!
 
-    """对应的scope的ID，如话题ID，scope为personal时，无需上送"""
-    entityId: String
-
-    """默认样式ID"""
-    defaultStyleId: Int
+    """该类别标签是否只能自己打"""
+    onlySelf: Boolean!
   ): String
 
   """【标签】标签类别设置默认样式"""
@@ -372,7 +422,15 @@ type Mutation {
     """默认样式ID"""
     defaultStyleId: Int
   ): String
-  removeTagCategory(
+
+  """【标签】将标签样式设为可用"""
+  enableTagCategory(
+    """标签类别ID"""
+    id: Int!
+  ): String
+
+  """【标签】将标签样式设为不可用"""
+  disableTagCategory(
     """标签类别ID"""
     id: Int!
   ): String
@@ -382,6 +440,15 @@ type Mutation {
 
   """【话题】添加话题类别"""
   addTopicCategory(param: AddTopicCategoryParam): String
+
+  """【话题】修改话题副标题"""
+  topicSetSubtitle(
+    """话题ID"""
+    id: String!
+
+    """副标题"""
+    subtitle: String!
+  ): String
 
   """【话题】修改话题封面"""
   topicSetFrontCover(
@@ -408,6 +475,15 @@ type Mutation {
 
     """话题颜色"""
     color: String!
+  ): String
+
+  """【话题】修改话题颜色"""
+  topicSetDesc(
+    """话题ID"""
+    id: String!
+
+    """话题描述"""
+    desc: String!
   ): String
 
   """【话题】将话题设为可用"""
@@ -565,8 +641,8 @@ type Mutation {
 
   """【用户】用户举报"""
   userReport(
-    """匹配结果ID"""
-    matchingResultId: Int!
+    """匹配ID"""
+    matchingId: String!
 
     """被举报人用户ID"""
     userId: String!
@@ -594,6 +670,9 @@ type Mutation {
 type Query {
   """【通用】健康检查"""
   healthCheck: String!
+  listAdminAccount: [AdminAccount!]!
+  isAdminLogined: Boolean
+  adminAccount(id: String!): AdminAccount!
 
   """【通用】根据地区代码查询地区信息"""
   area(
@@ -703,7 +782,7 @@ type Query {
   """【话题】评价时备选话题类别"""
   evaluateTagCategories(
     """话题ID"""
-    topicId: String!
+    topicId: String
   ): [TagCategory!]
 
   """【标签】评价他们标签-按类别查询"""
@@ -739,6 +818,15 @@ type Query {
     enable: Boolean
   ): [TopicCategory!]!
 
+  """【话题】类别列表查询"""
+  topicCategoriesCount(
+    """地区"""
+    area: AreaCode
+
+    """是否可用，管理端可用，其他情况默认为TRUE"""
+    enable: Boolean
+  ): Summary!
+
   """【话题】话题查询"""
   topic(
     """话题ID"""
@@ -754,11 +842,8 @@ type Query {
     paginator: GraphQLPaginator
   ): [Topic!]!
 
-  """【话题】热门话题"""
-  hotTopic(
-    """地区"""
-    area: AreaCode
-  ): [Topic!]!
+  """【话题】列表查询数量，管理端功能"""
+  topicsCount(filter: TopicFilter): Summary!
 
   """【用户】获取用户信息"""
   user(
@@ -801,19 +886,20 @@ type Query {
     """用户ID，管理端必填"""
     userId: String
   ): [String!]
+
+  """【举报】是否已举报"""
+  userReportState(
+    """匹配ID"""
+    matchingId: String!
+
+    """被举报人用户ID"""
+    userId: String!
+
+    """举报人用户ID，管理端使用"""
+    reporterId: String
+  ): Boolean!
   _entities(representations: [_Any!]!): [_Entity]!
   _service: _Service!
-}
-
-enum Sentiment {
-  """正面的"""
-  positive
-
-  """负面的"""
-  negative
-
-  """中性的"""
-  neutral
 }
 
 type Summary {
@@ -831,10 +917,13 @@ type Tag {
   category: TagCategory!
 
   """情绪"""
-  sentiment: Sentiment
+  sentiment: String
 
   """标签样式"""
   style: TagStyle
+
+  """是否可用"""
+  enable: Boolean!
 }
 
 type TagCategory {
@@ -852,6 +941,9 @@ type TagCategory {
 
   """类别的标签默认样式"""
   defaultStyle: TagStyle
+
+  """是否可用"""
+  enable: Boolean!
 }
 
 input TagCategoryFilter {
@@ -863,6 +955,9 @@ input TagCategoryFilter {
 
   """话题ID"""
   entityId: String
+
+  """是否可用，仅管理端可用"""
+  enable: Boolean
 }
 
 input TagFilter {
@@ -873,7 +968,10 @@ input TagFilter {
   categoryId: Int
 
   """情绪类别"""
-  sentiment: Sentiment
+  sentiment: String
+
+  """是否可用，仅管理端可用"""
+  enable: Boolean
 }
 
 type TagStyle {
@@ -905,6 +1003,9 @@ type Topic {
   """名称"""
   name: String!
 
+  """副标题"""
+  subtitle: String
+
   """封面图片URL"""
   frontCover: String
 
@@ -914,14 +1015,11 @@ type Topic {
   """话题颜色"""
   color: String
 
+  """话题描述"""
+  desc: String
+
   """是否可用"""
   enable: Boolean!
-
-  """参与人数"""
-  matchingNum: Int!
-
-  """热门话题参与用户，临时使用"""
-  userIds: [String!]!
 }
 
 type TopicCategory {
@@ -942,11 +1040,15 @@ type TopicCategory {
 }
 
 input TopicFilter {
-  """话题名，支持模糊查询"""
+  """话题名，支持模糊查询，如果是以 t_ 开头，则搜索话题 id"""
   name: String
 
   """是否可用，管理端可用，其他情况默认为TRUE"""
   enable: Boolean
+}
+
+input UpdateAdminAccountParam {
+  enabled: Boolean
 }
 
 type User {
@@ -1000,14 +1102,11 @@ type User {
 }
 
 input UserFilter {
-  """昵称，支持模糊查询"""
-  nickname: String
+  """昵称/id，支持模糊查询（当以 u_ 开头的时候，搜 id）"""
+  keyword: String
 
   """性别"""
   gender: String
-
-  """用户ID"""
-  id: String
 
   """注册时间（最早）"""
   createAfter: Time

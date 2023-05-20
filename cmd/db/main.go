@@ -24,7 +24,9 @@ func main() {
 	m := []interface{}{
 		// &models.HotTopic{},
 		&models.HotTopicsInArea{},
+		&models.CityTopics{},
 		&models.MatchingReview{},
+		&models.UserJoinTopic{},
 
 		&models.MatchingInvitation{},
 		&models.MatchingQuota{},

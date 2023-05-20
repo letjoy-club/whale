@@ -3,6 +3,7 @@ package whalecode
 import "github.com/letjoy-club/mida-tool/midacode"
 
 var (
+	ErrResourceBusy                  = midacode.NewError("RESOURCE_BUSY", "资源繁忙", midacode.LogLevelWarn)
 	ErrMatchingStateShouldBeMatched  = midacode.NewError("MATCHING_STATE_SHOULD_BE_MATCHED", "匹配状态应该为已匹配", midacode.LogLevelWarn)
 	ErrMatchingStateShouldBeMatching = midacode.NewError("MATCHING_STATE_SHOULD_BE_MATCHING", "匹配状态应该为匹配中", midacode.LogLevelWarn)
 	ErrMatchingAlreadyCanceled       = midacode.NewError("MATCHING_ALREADY_CANCELED", "匹配已经取消", midacode.LogLevelWarn)
@@ -13,4 +14,7 @@ var (
 	ErrTopicIsAlreadyInMatching = midacode.NewError("TOPIC_IS_ALREADY_IN_MATCHING", "该话题已经在匹配中", midacode.LogLevelWarn)
 	ErrQueryDurationTooLong     = midacode.NewError("QUERY_DURATION_TOO_LONG", "查询时间段过长", midacode.LogLevelWarn)
 	ErrUserGenderIsNotSet       = midacode.NewError("USER_GENDER_IS_NOT_SET", "账号性别信息为空，请先补充性别", midacode.LogLevelWarn)
+	ErrCannotInviteSelf         = midacode.NewError("CANNOT_INVITE_SELF", "不能邀请自己", midacode.LogLevelWarn)
+
+	ErrCannotPerformActionWhenChatGroupAlreadyCreated = midacode.NewError("CANNOT_PERFORM_ACTION_WHEN_CHAT_GROUP_ALREADY_CREATED", "聊天室已经创建，不能执行该操作", midacode.LogLevelWarn)
 )

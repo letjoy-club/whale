@@ -20,9 +20,11 @@ type Loader struct {
 	MatchingInvitation *dataloader.Loader[string, *models.MatchingInvitation]
 	MatchingQuota      *dataloader.Loader[string, *models.MatchingQuota]
 	MatchingResult     *dataloader.Loader[int, *models.MatchingResult]
+	MatchingReviewed   *dataloader.Loader[string, MatchingReviewed]
 
-	UserProfile *dataloader.Loader[string, UserProfile]
-	HotTopics   *dataloader.Loader[string, *models.HotTopicsInArea]
+	UserProfile        *dataloader.Loader[string, UserProfile]
+	UserAvatarNickname *dataloader.Loader[string, UserAvatarNickname]
+	HotTopics          *dataloader.Loader[string, *models.HotTopicsInArea]
 }
 
 func NewLoader(db *gorm.DB) *Loader {
@@ -71,6 +73,19 @@ func NewLoader(db *gorm.DB) *Loader {
 			MatchingResult := dbquery.Use(db).MatchingResult
 			return MatchingResult.WithContext(ctx).Where(MatchingResult.ID.In(keys...)).Find()
 		}, func(k map[int]*models.MatchingResult, v *models.MatchingResult) { k[v.ID] = v }, time.Second*100),
+		MatchingReviewed: NewSingleLoader(db, func(ctx context.Context, keys []string) ([]MatchingReviewed, error) {
+			MatchingReview := dbquery.Use(db).MatchingReview
+			reviews, err := MatchingReview.WithContext(ctx).Where(MatchingReview.MatchingID.In(keys...)).Find()
+			if err != nil {
+				return nil, err
+			}
+			return lo.Map(reviews, func(r *models.MatchingReview, i int) MatchingReviewed {
+				return MatchingReviewed{
+					MatchingReviewed: r.MatchingID,
+					Reviewed:         true,
+				}
+			}), nil
+		}, func(k map[string]MatchingReviewed, v MatchingReviewed) { k[v.MatchingReviewed] = v }, time.Second*30),
 		UserProfile: NewSingleLoader(db, func(ctx context.Context, keys []string) ([]UserProfile, error) {
 			ret, err := hoopoe.GetUserByIDs(ctx, midacontext.GetServices(ctx).Hoopoe, keys)
 			if err != nil {
@@ -80,6 +95,15 @@ func NewLoader(db *gorm.DB) *Loader {
 				return UserProfile{ID: u.Id, Gender: models.Gender(u.Gender)}
 			}), nil
 		}, func(k map[string]UserProfile, v UserProfile) { k[v.ID] = v }, time.Minute),
+		UserAvatarNickname: NewSingleLoader(db, func(ctx context.Context, keys []string) ([]UserAvatarNickname, error) {
+			ret, err := hoopoe.GetAvatarByIDs(ctx, midacontext.GetServices(ctx).Hoopoe, keys)
+			if err != nil {
+				return nil, err
+			}
+			return lo.Map(ret.GetUserByIds, func(u hoopoe.GetAvatarByIDsGetUserByIdsUser, i int) UserAvatarNickname {
+				return UserAvatarNickname{ID: u.Id, Avatar: u.Avatar, Nickname: u.Nickname}
+			}), nil
+		}, func(k map[string]UserAvatarNickname, u UserAvatarNickname) { k[u.ID] = u }, time.Minute),
 		HotTopics: NewSingleLoader(db, func(ctx context.Context, keys []string) ([]*models.HotTopicsInArea, error) {
 			HotTopicsInArea := dbquery.Use(db).HotTopicsInArea
 			topics, err := HotTopicsInArea.WithContext(ctx).Where(HotTopicsInArea.CityID.In(keys...)).Find()

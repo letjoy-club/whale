@@ -38,11 +38,16 @@ func (v *GetAreaResponse) GetArea() GetAreaArea { return v.Area }
 
 // GetAvatarByIDsGetUserByIdsUser includes the requested fields of the GraphQL type User.
 type GetAvatarByIDsGetUserByIdsUser struct {
+	// 用户ID
+	Id string `json:"id"`
 	// 昵称
 	Nickname string `json:"nickname"`
 	// 头像URL
 	Avatar string `json:"avatar"`
 }
+
+// GetId returns GetAvatarByIDsGetUserByIdsUser.Id, and is useful for accessing the field via an interface.
+func (v *GetAvatarByIDsGetUserByIdsUser) GetId() string { return v.Id }
 
 // GetNickname returns GetAvatarByIDsGetUserByIdsUser.Nickname, and is useful for accessing the field via an interface.
 func (v *GetAvatarByIDsGetUserByIdsUser) GetNickname() string { return v.Nickname }
@@ -180,6 +185,7 @@ func GetAvatarByIDs(
 		Query: `
 query GetAvatarByIDs ($ids: [String!]!) {
 	getUserByIds(ids: $ids) {
+		id
 		nickname
 		avatar
 	}
