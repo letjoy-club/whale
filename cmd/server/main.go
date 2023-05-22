@@ -28,7 +28,6 @@ import (
 )
 
 func main() {
-
 	port := flag.Int("port", 11013, "port to run server on")
 	confPath := flag.String("conf", "conf.yaml", "path to config file")
 

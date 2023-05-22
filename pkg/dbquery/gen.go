@@ -26,6 +26,7 @@ func Use(db *gorm.DB, opts ...gen.DOOption) *Query {
 		MatchingResult:              newMatchingResult(db, opts...),
 		MatchingResultConfirmAction: newMatchingResultConfirmAction(db, opts...),
 		MatchingReview:              newMatchingReview(db, opts...),
+		RecentMatching:              newRecentMatching(db, opts...),
 		UserJoinTopic:               newUserJoinTopic(db, opts...),
 	}
 }
@@ -41,6 +42,7 @@ type Query struct {
 	MatchingResult              matchingResult
 	MatchingResultConfirmAction matchingResultConfirmAction
 	MatchingReview              matchingReview
+	RecentMatching              recentMatching
 	UserJoinTopic               userJoinTopic
 }
 
@@ -57,6 +59,7 @@ func (q *Query) clone(db *gorm.DB) *Query {
 		MatchingResult:              q.MatchingResult.clone(db),
 		MatchingResultConfirmAction: q.MatchingResultConfirmAction.clone(db),
 		MatchingReview:              q.MatchingReview.clone(db),
+		RecentMatching:              q.RecentMatching.clone(db),
 		UserJoinTopic:               q.UserJoinTopic.clone(db),
 	}
 }
@@ -80,6 +83,7 @@ func (q *Query) ReplaceDB(db *gorm.DB) *Query {
 		MatchingResult:              q.MatchingResult.replaceDB(db),
 		MatchingResultConfirmAction: q.MatchingResultConfirmAction.replaceDB(db),
 		MatchingReview:              q.MatchingReview.replaceDB(db),
+		RecentMatching:              q.RecentMatching.replaceDB(db),
 		UserJoinTopic:               q.UserJoinTopic.replaceDB(db),
 	}
 }
@@ -93,6 +97,7 @@ type queryCtx struct {
 	MatchingResult              IMatchingResultDo
 	MatchingResultConfirmAction IMatchingResultConfirmActionDo
 	MatchingReview              IMatchingReviewDo
+	RecentMatching              IRecentMatchingDo
 	UserJoinTopic               IUserJoinTopicDo
 }
 
@@ -106,6 +111,7 @@ func (q *Query) WithContext(ctx context.Context) *queryCtx {
 		MatchingResult:              q.MatchingResult.WithContext(ctx),
 		MatchingResultConfirmAction: q.MatchingResultConfirmAction.WithContext(ctx),
 		MatchingReview:              q.MatchingReview.WithContext(ctx),
+		RecentMatching:              q.RecentMatching.WithContext(ctx),
 		UserJoinTopic:               q.UserJoinTopic.WithContext(ctx),
 	}
 }

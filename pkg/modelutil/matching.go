@@ -207,6 +207,7 @@ func CreateMatching(ctx context.Context, uid string, param models.CreateMatching
 	if err == nil {
 		midacontext.GetLoader[loader.Loader](ctx).MatchingQuota.Clear(ctx, uid)
 	}
+	RecordUserJoinTopic(ctx, matching.TopicID, matching.CityID, matching.UserID, matching.ID)
 	return matching, err
 }
 

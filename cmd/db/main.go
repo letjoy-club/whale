@@ -27,6 +27,7 @@ func main() {
 		&models.CityTopics{},
 		&models.MatchingReview{},
 		&models.UserJoinTopic{},
+		&models.RecentMatching{},
 
 		&models.MatchingInvitation{},
 		&models.MatchingQuota{},

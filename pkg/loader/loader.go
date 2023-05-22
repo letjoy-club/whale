@@ -4,12 +4,10 @@ import (
 	"context"
 	"time"
 	"whale/pkg/dbquery"
-	"whale/pkg/gqlient/hoopoe"
 	"whale/pkg/models"
 
 	"github.com/graph-gophers/dataloader/v7"
 	"github.com/letjoy-club/mida-tool/midacode"
-	"github.com/letjoy-club/mida-tool/midacontext"
 	"github.com/letjoy-club/mida-tool/ttlcache"
 	"github.com/samber/lo"
 	"gorm.io/gorm"
@@ -22,6 +20,9 @@ type Loader struct {
 	MatchingResult     *dataloader.Loader[int, *models.MatchingResult]
 	MatchingReviewed   *dataloader.Loader[string, MatchingReviewed]
 
+	CityTopicMatchings  *dataloader.Loader[CityTopicKey, CityTopicMatchings]
+	CityTopicRequestNum *dataloader.Loader[string, CityTopicRequestNum]
+
 	UserProfile        *dataloader.Loader[string, UserProfile]
 	UserAvatarNickname *dataloader.Loader[string, UserAvatarNickname]
 	HotTopics          *dataloader.Loader[string, *models.HotTopicsInArea]
@@ -29,81 +30,17 @@ type Loader struct {
 
 func NewLoader(db *gorm.DB) *Loader {
 	return &Loader{
-		Matching: NewSingleLoader(db, func(ctx context.Context, keys []string) ([]*models.Matching, error) {
-			Matching := dbquery.Use(db).Matching
-			return Matching.WithContext(ctx).Where(Matching.ID.In(keys...)).Find()
-		}, func(k map[string]*models.Matching, v *models.Matching) {
-			k[v.ID] = v
-		}, time.Second*10),
-		MatchingInvitation: NewSingleLoader(db, func(ctx context.Context, keys []string) ([]*models.MatchingInvitation, error) {
-			MatchingInvitation := dbquery.Use(db).MatchingInvitation
-			return MatchingInvitation.WithContext(ctx).Where(MatchingInvitation.ID.In(keys...)).Find()
-		}, func(k map[string]*models.MatchingInvitation, v *models.MatchingInvitation) {
-			k[v.ID] = v
-		}, time.Second*10),
-		MatchingQuota: NewSingleLoader(db, func(ctx context.Context, keys []string) ([]*models.MatchingQuota, error) {
-			MatchingQuota := dbquery.Use(db).MatchingQuota
-			matchingQuotas, err := MatchingQuota.WithContext(ctx).Where(MatchingQuota.UserID.In(keys...)).Find()
-			if err != nil {
-				return nil, err
-			}
-			notFound := map[string]struct{}{}
-			for _, id := range keys {
-				notFound[id] = struct{}{}
-			}
-			for _, matchingQuota := range matchingQuotas {
-				delete(notFound, matchingQuota.UserID)
-			}
-			toBeAdded := []*models.MatchingQuota{}
-			if len(notFound) > 0 {
-				for id := range notFound {
-					toBeAdded = append(toBeAdded, &models.MatchingQuota{
-						UserID: id,
-						Remain: 3,
-						Total:  3,
-					})
-				}
-				if err := MatchingQuota.WithContext(ctx).Create(toBeAdded...); err != nil {
-					return nil, err
-				}
-			}
-			return append(matchingQuotas, toBeAdded...), nil
-		}, func(k map[string]*models.MatchingQuota, v *models.MatchingQuota) { k[v.UserID] = v }, time.Second*60),
-		MatchingResult: NewSingleLoader(db, func(ctx context.Context, keys []int) ([]*models.MatchingResult, error) {
-			MatchingResult := dbquery.Use(db).MatchingResult
-			return MatchingResult.WithContext(ctx).Where(MatchingResult.ID.In(keys...)).Find()
-		}, func(k map[int]*models.MatchingResult, v *models.MatchingResult) { k[v.ID] = v }, time.Second*100),
-		MatchingReviewed: NewSingleLoader(db, func(ctx context.Context, keys []string) ([]MatchingReviewed, error) {
-			MatchingReview := dbquery.Use(db).MatchingReview
-			reviews, err := MatchingReview.WithContext(ctx).Where(MatchingReview.MatchingID.In(keys...)).Find()
-			if err != nil {
-				return nil, err
-			}
-			return lo.Map(reviews, func(r *models.MatchingReview, i int) MatchingReviewed {
-				return MatchingReviewed{
-					MatchingReviewed: r.MatchingID,
-					Reviewed:         true,
-				}
-			}), nil
-		}, func(k map[string]MatchingReviewed, v MatchingReviewed) { k[v.MatchingReviewed] = v }, time.Second*30),
-		UserProfile: NewSingleLoader(db, func(ctx context.Context, keys []string) ([]UserProfile, error) {
-			ret, err := hoopoe.GetUserByIDs(ctx, midacontext.GetServices(ctx).Hoopoe, keys)
-			if err != nil {
-				return nil, err
-			}
-			return lo.Map(ret.GetUserByIds, func(u hoopoe.GetUserByIDsGetUserByIdsUser, i int) UserProfile {
-				return UserProfile{ID: u.Id, Gender: models.Gender(u.Gender)}
-			}), nil
-		}, func(k map[string]UserProfile, v UserProfile) { k[v.ID] = v }, time.Minute),
-		UserAvatarNickname: NewSingleLoader(db, func(ctx context.Context, keys []string) ([]UserAvatarNickname, error) {
-			ret, err := hoopoe.GetAvatarByIDs(ctx, midacontext.GetServices(ctx).Hoopoe, keys)
-			if err != nil {
-				return nil, err
-			}
-			return lo.Map(ret.GetUserByIds, func(u hoopoe.GetAvatarByIDsGetUserByIdsUser, i int) UserAvatarNickname {
-				return UserAvatarNickname{ID: u.Id, Avatar: u.Avatar, Nickname: u.Nickname}
-			}), nil
-		}, func(k map[string]UserAvatarNickname, u UserAvatarNickname) { k[u.ID] = u }, time.Minute),
+		CityTopicMatchings:  NewCityTopicMatchingLoader(db),
+		CityTopicRequestNum: NewCityTopicRequestNumLoader(db),
+
+		Matching:           NewMatchingLoader(db),
+		MatchingInvitation: NewMatchingInvitationLoader(db),
+		MatchingQuota:      NewMatchingQuotaLoader(db),
+
+		MatchingResult:     NEwMatchingResultLoader(db),
+		MatchingReviewed:   NewMatchingReviewedLoader(db),
+		UserProfile:        NewUserProfileLoader(db),
+		UserAvatarNickname: NewUserAvatarNicknameLoader(db),
 		HotTopics: NewSingleLoader(db, func(ctx context.Context, keys []string) ([]*models.HotTopicsInArea, error) {
 			HotTopicsInArea := dbquery.Use(db).HotTopicsInArea
 			topics, err := HotTopicsInArea.WithContext(ctx).Where(HotTopicsInArea.CityID.In(keys...)).Find()

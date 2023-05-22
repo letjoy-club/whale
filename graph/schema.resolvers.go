@@ -263,7 +263,7 @@ func (r *topicResolver) RecentUsers(ctx context.Context, obj *models.Topic, city
 			Where(UserJoinTopic.CityID.Eq(*cityID)).
 			Where(UserJoinTopic.TopicID.Eq(obj.ID)).
 			Limit(5).Order(UserJoinTopic.UpdatedAt.Desc()).
-			Pluck(UserJoinTopic.LatestMatchingID, &userIDs)
+			Pluck(UserJoinTopic.UserID, &userIDs)
 		if err != nil {
 			return nil, err
 		}
@@ -273,7 +273,7 @@ func (r *topicResolver) RecentUsers(ctx context.Context, obj *models.Topic, city
 			Where(UserJoinTopic.CityID.Eq("310100")).
 			Where(UserJoinTopic.TopicID.Eq(obj.ID)).
 			Limit(30).Order(UserJoinTopic.UpdatedAt.Desc()).
-			Pluck(UserJoinTopic.LatestMatchingID, &userIDs)
+			Pluck(UserJoinTopic.UserID, &userIDs)
 		if err != nil {
 			return nil, err
 		}
@@ -298,34 +298,30 @@ func (r *topicResolver) RecentUsers(ctx context.Context, obj *models.Topic, city
 
 // MatchingNum is the resolver for the matchingNum field.
 func (r *topicResolver) MatchingNum(ctx context.Context, obj *models.Topic, cityID *string) (int, error) {
-	db := dbutil.GetDB(ctx)
-	Matching := dbquery.Use(db).Matching
-	query := Matching.WithContext(ctx).Where(
-		Matching.TopicID.Eq(obj.ID),
-		Matching.State.In(string(models.MatchingStateMatching), string(models.MatchingStateMatched)),
-	)
-	if cityID != nil {
-		query = query.Where(Matching.CityID.Eq(*cityID))
+	if cityID == nil {
+		sh := "310100"
+		cityID = &sh
 	}
-	count, err := query.Count()
-	return int(count), err
+	thunk := midacontext.GetLoader[loader.Loader](ctx).CityTopicRequestNum.Load(ctx, *cityID)
+	requestNum, err := thunk()
+	if err != nil {
+		return 0, err
+	}
+	return requestNum.RequestNum[obj.ID], nil
 }
 
 // FuzzyMatchingNum is the resolver for the fuzzyMatchingNum field.
 func (r *topicResolver) FuzzyMatchingNum(ctx context.Context, obj *models.Topic, cityID *string) (int, error) {
-	db := dbutil.GetDB(ctx)
-	Matching := dbquery.Use(db).Matching
-	query := Matching.WithContext(ctx).Where(
-		Matching.TopicID.Eq(obj.ID),
-		Matching.State.In(string(models.MatchingStateMatching), string(models.MatchingStateMatched)),
-	)
-	if cityID != nil {
-		query = query.Where(Matching.CityID.Eq(*cityID))
+	if cityID == nil {
+		sh := "310100"
+		cityID = &sh
 	}
-	count, err := query.Count()
+	thunk := midacontext.GetLoader[loader.Loader](ctx).CityTopicRequestNum.Load(ctx, *cityID)
+	requestNum, err := thunk()
 	if err != nil {
 		return 0, err
 	}
+	count := requestNum.RequestNum[obj.ID]
 	if count <= 3 {
 		remain := rand.Int() % 3
 		return 3 + remain, nil

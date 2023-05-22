@@ -681,9 +681,6 @@ func (r *queryResolver) UserMatchingsCount(ctx context.Context, userID *string, 
 
 // PreviewMatchingsOfTopic is the resolver for the previewMatchingsOfTopic field.
 func (r *queryResolver) PreviewMatchingsOfTopic(ctx context.Context, cityID string, topicID string, limit *int) ([]*models.Matching, error) {
-	db := dbutil.GetDB(ctx)
-	Matching := dbquery.Use(db).Matching
-
 	n := 4
 	if limit != nil {
 		if *limit <= 0 {
@@ -695,15 +692,14 @@ func (r *queryResolver) PreviewMatchingsOfTopic(ctx context.Context, cityID stri
 		n = *limit
 	}
 
-	ids := []string{}
-	err := Matching.WithContext(ctx).Where(
-		Matching.CityID.Eq(cityID),
-		Matching.TopicID.Eq(topicID),
-	).Limit(n).Order(Matching.CreatedAt.Desc()).Order(Matching.CreatedAt.Desc()).Pluck(Matching.ID, &ids)
+	recentMatchingThunk := midacontext.GetLoader[loader.Loader](ctx).CityTopicMatchings.Load(ctx, loader.CityTopicKey{CityID: cityID, TopicID: topicID})
+	cityTopicMatching, err := recentMatchingThunk()
 	if err != nil {
 		return nil, err
 	}
-	thunk := midacontext.GetLoader[loader.Loader](ctx).Matching.LoadMany(ctx, ids)
+
+	matchingIDs := lo.Slice(cityTopicMatching.MatchingIDs, 0, n)
+	thunk := midacontext.GetLoader[loader.Loader](ctx).Matching.LoadMany(ctx, matchingIDs)
 	matchings, errors := thunk()
 	if len(errors) > 0 {
 		return nil, multierr.Combine(errors...)
