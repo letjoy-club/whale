@@ -1,19 +1,114 @@
+type UserJoinTopic {
+  id: Int!
+  topicId: String!
+  cityId: String!
+  userId: String!
+  latestMatchingId: String!
+  createdAt: Time!
+  updatedAt: Time!
+
+  # query
+  topic: Topic!
+  city: Area!
+  user: User!
+  matching: Matching!
+}
+
+type RecentMatching {
+  id: String!
+  cityId: String!
+  topicId: String!
+  matchingIds: [String!]!
+  createdAt: Time!
+  updatedAt: Time!
+
+  # query
+  topic: Topic!
+  city: Area!
+  matchings: [Matching!]!
+}
+
+input UserJoinTopicFilter {
+  cityId: String
+  topicId: String
+  userId: String
+}
+
+input UpdateCityTopicParam {
+  topicIds: [String!]!
+}
+
+input UpdateHotTopicParam {
+  topicMetrics: [UpdateHotTopicMetricsParam!]!
+}
+
+input UpdateHotTopicMetricsParam {
+  topicId: String!
+  heat: Int!
+  matched: Int!
+  matching: Int!
+}
+
+input UpdateUserJoinTopicParam {
+  matchingId: String!
+}
+
+input CreateUserJoinTopicParam {
+  matchingId: String!
+}
+
+input CitiesTopicsFilter {
+  cityId: String
+}
+
+input HotTopicsFilter {
+  cityId: String
+  topicId: String
+}
+
+input CreateCityTopicParam {
+  topicIds: [String!]!
+  cityId: String!
+}
+
 extend type Query {
   cityTopics(cityId: String!): CityTopics!
 
-  citiesTopics(paginator: GraphQLPaginator): [CityTopics!]!
-  citiesTopicsCount: Summary!
+  citiesTopics(filter: CitiesTopicsFilter, paginator: GraphQLPaginator): [CityTopics!]!
+  citiesTopicsCount(filter: CitiesTopicsFilter): Summary!
 
   "【匹配系统】某个城市话题排行榜"
   hotTopicsInArea(cityId: String = "310100"): HotTopicsInArea!
 
   "【匹配系统】话题排行榜，管理端"
-  hotTopics(paginator: GraphQLPaginator): [HotTopicsInArea!]!
+  hotTopics(filter: HotTopicsFilter, paginator: GraphQLPaginator): [HotTopicsInArea!]!
 
   "【匹配系统】话题排行榜总数，管理端"
-  hotTopicsCount: Summary!
+  hotTopicsCount(filter: HotTopicsFilter): Summary!
+
+  "【匹配系统】话题排行榜，管理端"
+  userJoinTopics(filter: UserJoinTopicFilter, paginator: GraphQLPaginator): [UserJoinTopic!]!
+
+  "【匹配系统】话题排行榜总数，管理端"
+  userJoinTopicsCount(filter: UserJoinTopicFilter): Summary!
+
+  "【匹配系统】根据 id 获取用户与城市，话题的三元组，管理端"
+  userJoinTopic(id: Int!): UserJoinTopic!
 }
 
 extend type Mutation {
-  updateCityTopics(cityId: String!, topicIds: [String!]!): CityTopics!
+  "【匹配系统】创建话题推荐，管理端"
+  createCityTopics(param: CreateCityTopicParam!): CityTopics!
+
+  "【匹配系统】更新城市话题推荐，管理端"
+  updateCityTopics(cityId: String!, param: UpdateCityTopicParam!): CityTopics!
+
+  "【匹配系统】更新话题排行榜，管理端"
+  updateHotTopicsInArea(cityId: String!, param: UpdateHotTopicParam!): HotTopicsInArea!
+
+  "【匹配系统】更新用户与城市，话题的三元组，管理端"
+  updateUserJoinTopic(id: Int!, param: UpdateUserJoinTopicParam!): UserJoinTopic!
+
+  "【匹配系统】创建用户与城市，话题的三元组，管理端"
+  createUserJoinTopic(param: CreateUserJoinTopicParam!): UserJoinTopic!
 }

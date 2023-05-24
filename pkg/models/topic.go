@@ -14,6 +14,7 @@ type TopicMetrics struct {
 	ID       string `json:"id"`
 	Matching int    `json:"matching"`
 	Matched  int    `json:"matched"`
+	Heat     int    `json:"heat"`
 }
 
 func (tm TopicMetrics) Total() int {

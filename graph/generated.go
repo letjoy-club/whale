@@ -42,6 +42,7 @@ type Config struct {
 type ResolverRoot interface {
 	CityTopics() CityTopicsResolver
 	Entity() EntityResolver
+	HotTopicsInArea() HotTopicsInAreaResolver
 	Matching() MatchingResolver
 	MatchingInvitation() MatchingInvitationResolver
 	MatchingOfTopic() MatchingOfTopicResolver
@@ -49,9 +50,11 @@ type ResolverRoot interface {
 	MatchingResult() MatchingResultResolver
 	Mutation() MutationResolver
 	Query() QueryResolver
+	RecentMatching() RecentMatchingResolver
 	Topic() TopicResolver
 	TopicMetrics() TopicMetricsResolver
 	User() UserResolver
+	UserJoinTopic() UserJoinTopicResolver
 }
 
 type DirectiveRoot struct {
@@ -75,6 +78,7 @@ type ComplexityRoot struct {
 	}
 
 	CityTopics struct {
+		City      func(childComplexity int) int
 		CityID    func(childComplexity int) int
 		TopicIDs  func(childComplexity int) int
 		Topics    func(childComplexity int) int
@@ -89,6 +93,7 @@ type ComplexityRoot struct {
 	}
 
 	HotTopicsInArea struct {
+		City         func(childComplexity int) int
 		CityID       func(childComplexity int) int
 		TopicMetrics func(childComplexity int) int
 		UpdatedAt    func(childComplexity int) int
@@ -199,25 +204,30 @@ type ComplexityRoot struct {
 		ConfirmMatchingInvitation func(childComplexity int, userID *string, invitationID string, confirm bool) int
 		ConfirmMatchingResult     func(childComplexity int, userID *string, matchingID string, reject bool) int
 		ConfirmMatchingResultV2   func(childComplexity int, userID *string, matchingID string, confirm bool) int
+		CreateCityTopics          func(childComplexity int, param models.CreateCityTopicParam) int
 		CreateMatching            func(childComplexity int, userID *string, param models.CreateMatchingParam) int
 		CreateMatchingInvitation  func(childComplexity int, userID *string, param models.CreateMatchingInvitationParam) int
+		CreateUserJoinTopic       func(childComplexity int, param models.CreateUserJoinTopicParam) int
 		FinishMatching            func(childComplexity int, matchingID string) int
 		RefreshTopicMetrics       func(childComplexity int) int
 		ReviewMatching            func(childComplexity int, matchingID string, param models.ReviewMatchingParam) int
 		StartMatching             func(childComplexity int) int
-		UpdateCityTopics          func(childComplexity int, cityID string, topicIds []string) int
+		UpdateCityTopics          func(childComplexity int, cityID string, param models.UpdateCityTopicParam) int
+		UpdateHotTopicsInArea     func(childComplexity int, cityID string, param models.UpdateHotTopicParam) int
 		UpdateMatching            func(childComplexity int, matchingID string, param models.UpdateMatchingParam) int
 		UpdateMatchingInvitation  func(childComplexity int, invitationID string, param models.UpdateMatchingInvitationParam) int
 		UpdateMatchingQuota       func(childComplexity int, userID string, param models.UpdateMatchingQuotaParam) int
+		UpdateRecentMatching      func(childComplexity int, id string, param models.UpdateRecentMatchingParam) int
+		UpdateUserJoinTopic       func(childComplexity int, id int, param models.UpdateUserJoinTopicParam) int
 	}
 
 	Query struct {
 		ChatGroupByResultID         func(childComplexity int, resultID int) int
-		CitiesTopics                func(childComplexity int, paginator *graphqlutil.GraphQLPaginator) int
-		CitiesTopicsCount           func(childComplexity int) int
+		CitiesTopics                func(childComplexity int, filter *models.CitiesTopicsFilter, paginator *graphqlutil.GraphQLPaginator) int
+		CitiesTopicsCount           func(childComplexity int, filter *models.CitiesTopicsFilter) int
 		CityTopics                  func(childComplexity int, cityID string) int
-		HotTopics                   func(childComplexity int, paginator *graphqlutil.GraphQLPaginator) int
-		HotTopicsCount              func(childComplexity int) int
+		HotTopics                   func(childComplexity int, filter *models.HotTopicsFilter, paginator *graphqlutil.GraphQLPaginator) int
+		HotTopicsCount              func(childComplexity int, filter *models.HotTopicsFilter) int
 		HotTopicsInArea             func(childComplexity int, cityID *string) int
 		Invitation                  func(childComplexity int, userID *string, id string) int
 		Invitations                 func(childComplexity int, userID *string, paginator *graphqlutil.GraphQLPaginator) int
@@ -232,9 +242,15 @@ type ComplexityRoot struct {
 		Matchings                   func(childComplexity int, filter *models.MatchingFilter, paginator *graphqlutil.GraphQLPaginator) int
 		MatchingsCount              func(childComplexity int, filter *models.MatchingFilter) int
 		PreviewMatchingsOfTopic     func(childComplexity int, cityID string, topicID string, limit *int) int
+		RecentMatching              func(childComplexity int, id string) int
+		RecentMatchings             func(childComplexity int, paginator *graphqlutil.GraphQLPaginator) int
+		RecentMatchingsCount        func(childComplexity int) int
 		UnconfirmedInvitationCount  func(childComplexity int, userID *string) int
 		UnconfirmedInvitations      func(childComplexity int, userID *string) int
 		UnconfirmedUserMatchings    func(childComplexity int, userID *string) int
+		UserJoinTopic               func(childComplexity int, id int) int
+		UserJoinTopics              func(childComplexity int, filter *models.UserJoinTopicFilter, paginator *graphqlutil.GraphQLPaginator) int
+		UserJoinTopicsCount         func(childComplexity int, filter *models.UserJoinTopicFilter) int
 		UserMatchingCalendar        func(childComplexity int, userID *string, param models.UserMatchingCalenderParam) int
 		UserMatchingQuota           func(childComplexity int, userID string) int
 		UserMatchings               func(childComplexity int, userID *string, filter *models.UserMatchingFilter, paginator *graphqlutil.GraphQLPaginator) int
@@ -242,6 +258,18 @@ type ComplexityRoot struct {
 		UserMatchingsInTheDay       func(childComplexity int, userID *string, param models.UserMatchingInTheDayParam) int
 		__resolve__service          func(childComplexity int) int
 		__resolve_entities          func(childComplexity int, representations []map[string]interface{}) int
+	}
+
+	RecentMatching struct {
+		City        func(childComplexity int) int
+		CityID      func(childComplexity int) int
+		CreatedAt   func(childComplexity int) int
+		ID          func(childComplexity int) int
+		MatchingIDs func(childComplexity int) int
+		Matchings   func(childComplexity int) int
+		Topic       func(childComplexity int) int
+		TopicID     func(childComplexity int) int
+		UpdatedAt   func(childComplexity int) int
 	}
 
 	SimpleAvatarUser struct {
@@ -278,6 +306,20 @@ type ComplexityRoot struct {
 		UserID func(childComplexity int) int
 	}
 
+	UserJoinTopic struct {
+		City             func(childComplexity int) int
+		CityID           func(childComplexity int) int
+		CreatedAt        func(childComplexity int) int
+		ID               func(childComplexity int) int
+		LatestMatchingID func(childComplexity int) int
+		Matching         func(childComplexity int) int
+		Topic            func(childComplexity int) int
+		TopicID          func(childComplexity int) int
+		UpdatedAt        func(childComplexity int) int
+		User             func(childComplexity int) int
+		UserID           func(childComplexity int) int
+	}
+
 	_Service struct {
 		SDL func(childComplexity int) int
 	}
@@ -285,12 +327,16 @@ type ComplexityRoot struct {
 
 type CityTopicsResolver interface {
 	Topics(ctx context.Context, obj *models.CityTopics) ([]*models.Topic, error)
+	City(ctx context.Context, obj *models.CityTopics) (*models.Area, error)
 }
 type EntityResolver interface {
 	FindMatchingByID(ctx context.Context, id string) (*models.Matching, error)
 	FindMatchingQuotaByUserID(ctx context.Context, userID string) (*models.MatchingQuota, error)
 	FindTopicByID(ctx context.Context, id string) (*models.Topic, error)
 	FindUserByID(ctx context.Context, id string) (*models.User, error)
+}
+type HotTopicsInAreaResolver interface {
+	City(ctx context.Context, obj *models.HotTopicsInArea) (*models.Area, error)
 }
 type MatchingResolver interface {
 	Gender(ctx context.Context, obj *models.Matching) (models.Gender, error)
@@ -351,7 +397,12 @@ type MutationResolver interface {
 	StartMatching(ctx context.Context) (*string, error)
 	FinishMatching(ctx context.Context, matchingID string) (*string, error)
 	ReviewMatching(ctx context.Context, matchingID string, param models.ReviewMatchingParam) (*string, error)
-	UpdateCityTopics(ctx context.Context, cityID string, topicIds []string) (*models.CityTopics, error)
+	UpdateRecentMatching(ctx context.Context, id string, param models.UpdateRecentMatchingParam) (*models.RecentMatching, error)
+	CreateCityTopics(ctx context.Context, param models.CreateCityTopicParam) (*models.CityTopics, error)
+	UpdateCityTopics(ctx context.Context, cityID string, param models.UpdateCityTopicParam) (*models.CityTopics, error)
+	UpdateHotTopicsInArea(ctx context.Context, cityID string, param models.UpdateHotTopicParam) (*models.HotTopicsInArea, error)
+	UpdateUserJoinTopic(ctx context.Context, id int, param models.UpdateUserJoinTopicParam) (*models.UserJoinTopic, error)
+	CreateUserJoinTopic(ctx context.Context, param models.CreateUserJoinTopicParam) (*models.UserJoinTopic, error)
 }
 type QueryResolver interface {
 	ChatGroupByResultID(ctx context.Context, resultID int) (*models.ChatGroup, error)
@@ -376,12 +427,23 @@ type QueryResolver interface {
 	PreviewMatchingsOfTopic(ctx context.Context, cityID string, topicID string, limit *int) ([]*models.Matching, error)
 	UnconfirmedInvitations(ctx context.Context, userID *string) ([]*models.MatchingInvitation, error)
 	UnconfirmedInvitationCount(ctx context.Context, userID *string) (*models.Summary, error)
+	RecentMatchings(ctx context.Context, paginator *graphqlutil.GraphQLPaginator) ([]*models.RecentMatching, error)
+	RecentMatchingsCount(ctx context.Context) (*models.Summary, error)
+	RecentMatching(ctx context.Context, id string) (*models.RecentMatching, error)
 	CityTopics(ctx context.Context, cityID string) (*models.CityTopics, error)
-	CitiesTopics(ctx context.Context, paginator *graphqlutil.GraphQLPaginator) ([]*models.CityTopics, error)
-	CitiesTopicsCount(ctx context.Context) (*models.Summary, error)
+	CitiesTopics(ctx context.Context, filter *models.CitiesTopicsFilter, paginator *graphqlutil.GraphQLPaginator) ([]*models.CityTopics, error)
+	CitiesTopicsCount(ctx context.Context, filter *models.CitiesTopicsFilter) (*models.Summary, error)
 	HotTopicsInArea(ctx context.Context, cityID *string) (*models.HotTopicsInArea, error)
-	HotTopics(ctx context.Context, paginator *graphqlutil.GraphQLPaginator) ([]*models.HotTopicsInArea, error)
-	HotTopicsCount(ctx context.Context) (*models.Summary, error)
+	HotTopics(ctx context.Context, filter *models.HotTopicsFilter, paginator *graphqlutil.GraphQLPaginator) ([]*models.HotTopicsInArea, error)
+	HotTopicsCount(ctx context.Context, filter *models.HotTopicsFilter) (*models.Summary, error)
+	UserJoinTopics(ctx context.Context, filter *models.UserJoinTopicFilter, paginator *graphqlutil.GraphQLPaginator) ([]*models.UserJoinTopic, error)
+	UserJoinTopicsCount(ctx context.Context, filter *models.UserJoinTopicFilter) (*models.Summary, error)
+	UserJoinTopic(ctx context.Context, id int) (*models.UserJoinTopic, error)
+}
+type RecentMatchingResolver interface {
+	Topic(ctx context.Context, obj *models.RecentMatching) (*models.Topic, error)
+	City(ctx context.Context, obj *models.RecentMatching) (*models.Area, error)
+	Matchings(ctx context.Context, obj *models.RecentMatching) ([]*models.Matching, error)
 }
 type TopicResolver interface {
 	RecentUsers(ctx context.Context, obj *models.Topic, cityID *string) ([]*models.SimpleAvatarUser, error)
@@ -389,11 +451,16 @@ type TopicResolver interface {
 	FuzzyMatchingNum(ctx context.Context, obj *models.Topic, cityID *string) (int, error)
 }
 type TopicMetricsResolver interface {
-	Heat(ctx context.Context, obj *models.TopicMetrics) (int, error)
 	Topic(ctx context.Context, obj *models.TopicMetrics) (*models.Topic, error)
 }
 type UserResolver interface {
 	MatchingQuota(ctx context.Context, obj *models.User) (*models.MatchingQuota, error)
+}
+type UserJoinTopicResolver interface {
+	Topic(ctx context.Context, obj *models.UserJoinTopic) (*models.Topic, error)
+	City(ctx context.Context, obj *models.UserJoinTopic) (*models.Area, error)
+	User(ctx context.Context, obj *models.UserJoinTopic) (*models.User, error)
+	Matching(ctx context.Context, obj *models.UserJoinTopic) (*models.Matching, error)
 }
 
 type executableSchema struct {
@@ -452,6 +519,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ChatGroup.ID(childComplexity), true
+
+	case "CityTopics.city":
+		if e.complexity.CityTopics.City == nil {
+			break
+		}
+
+		return e.complexity.CityTopics.City(childComplexity), true
 
 	case "CityTopics.cityId":
 		if e.complexity.CityTopics.CityID == nil {
@@ -528,6 +602,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Entity.FindUserByID(childComplexity, args["id"].(string)), true
+
+	case "HotTopicsInArea.city":
+		if e.complexity.HotTopicsInArea.City == nil {
+			break
+		}
+
+		return e.complexity.HotTopicsInArea.City(childComplexity), true
 
 	case "HotTopicsInArea.cityId":
 		if e.complexity.HotTopicsInArea.CityID == nil {
@@ -1161,6 +1242,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.ConfirmMatchingResultV2(childComplexity, args["userId"].(*string), args["matchingId"].(string), args["confirm"].(bool)), true
 
+	case "Mutation.createCityTopics":
+		if e.complexity.Mutation.CreateCityTopics == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createCityTopics_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.CreateCityTopics(childComplexity, args["param"].(models.CreateCityTopicParam)), true
+
 	case "Mutation.createMatching":
 		if e.complexity.Mutation.CreateMatching == nil {
 			break
@@ -1184,6 +1277,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.CreateMatchingInvitation(childComplexity, args["userId"].(*string), args["param"].(models.CreateMatchingInvitationParam)), true
+
+	case "Mutation.createUserJoinTopic":
+		if e.complexity.Mutation.CreateUserJoinTopic == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createUserJoinTopic_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.CreateUserJoinTopic(childComplexity, args["param"].(models.CreateUserJoinTopicParam)), true
 
 	case "Mutation.finishMatching":
 		if e.complexity.Mutation.FinishMatching == nil {
@@ -1233,7 +1338,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UpdateCityTopics(childComplexity, args["cityId"].(string), args["topicIds"].([]string)), true
+		return e.complexity.Mutation.UpdateCityTopics(childComplexity, args["cityId"].(string), args["param"].(models.UpdateCityTopicParam)), true
+
+	case "Mutation.updateHotTopicsInArea":
+		if e.complexity.Mutation.UpdateHotTopicsInArea == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateHotTopicsInArea_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UpdateHotTopicsInArea(childComplexity, args["cityId"].(string), args["param"].(models.UpdateHotTopicParam)), true
 
 	case "Mutation.updateMatching":
 		if e.complexity.Mutation.UpdateMatching == nil {
@@ -1271,6 +1388,30 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.UpdateMatchingQuota(childComplexity, args["userId"].(string), args["param"].(models.UpdateMatchingQuotaParam)), true
 
+	case "Mutation.updateRecentMatching":
+		if e.complexity.Mutation.UpdateRecentMatching == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateRecentMatching_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UpdateRecentMatching(childComplexity, args["id"].(string), args["param"].(models.UpdateRecentMatchingParam)), true
+
+	case "Mutation.updateUserJoinTopic":
+		if e.complexity.Mutation.UpdateUserJoinTopic == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateUserJoinTopic_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UpdateUserJoinTopic(childComplexity, args["id"].(int), args["param"].(models.UpdateUserJoinTopicParam)), true
+
 	case "Query.chatGroupByResultId":
 		if e.complexity.Query.ChatGroupByResultID == nil {
 			break
@@ -1293,14 +1434,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.CitiesTopics(childComplexity, args["paginator"].(*graphqlutil.GraphQLPaginator)), true
+		return e.complexity.Query.CitiesTopics(childComplexity, args["filter"].(*models.CitiesTopicsFilter), args["paginator"].(*graphqlutil.GraphQLPaginator)), true
 
 	case "Query.citiesTopicsCount":
 		if e.complexity.Query.CitiesTopicsCount == nil {
 			break
 		}
 
-		return e.complexity.Query.CitiesTopicsCount(childComplexity), true
+		args, err := ec.field_Query_citiesTopicsCount_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.CitiesTopicsCount(childComplexity, args["filter"].(*models.CitiesTopicsFilter)), true
 
 	case "Query.cityTopics":
 		if e.complexity.Query.CityTopics == nil {
@@ -1324,14 +1470,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.HotTopics(childComplexity, args["paginator"].(*graphqlutil.GraphQLPaginator)), true
+		return e.complexity.Query.HotTopics(childComplexity, args["filter"].(*models.HotTopicsFilter), args["paginator"].(*graphqlutil.GraphQLPaginator)), true
 
 	case "Query.hotTopicsCount":
 		if e.complexity.Query.HotTopicsCount == nil {
 			break
 		}
 
-		return e.complexity.Query.HotTopicsCount(childComplexity), true
+		args, err := ec.field_Query_hotTopicsCount_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.HotTopicsCount(childComplexity, args["filter"].(*models.HotTopicsFilter)), true
 
 	case "Query.hotTopicsInArea":
 		if e.complexity.Query.HotTopicsInArea == nil {
@@ -1501,6 +1652,37 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.PreviewMatchingsOfTopic(childComplexity, args["cityId"].(string), args["topicId"].(string), args["limit"].(*int)), true
 
+	case "Query.recentMatching":
+		if e.complexity.Query.RecentMatching == nil {
+			break
+		}
+
+		args, err := ec.field_Query_recentMatching_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.RecentMatching(childComplexity, args["id"].(string)), true
+
+	case "Query.recentMatchings":
+		if e.complexity.Query.RecentMatchings == nil {
+			break
+		}
+
+		args, err := ec.field_Query_recentMatchings_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.RecentMatchings(childComplexity, args["paginator"].(*graphqlutil.GraphQLPaginator)), true
+
+	case "Query.recentMatchingsCount":
+		if e.complexity.Query.RecentMatchingsCount == nil {
+			break
+		}
+
+		return e.complexity.Query.RecentMatchingsCount(childComplexity), true
+
 	case "Query.unconfirmedInvitationCount":
 		if e.complexity.Query.UnconfirmedInvitationCount == nil {
 			break
@@ -1536,6 +1718,42 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.UnconfirmedUserMatchings(childComplexity, args["userId"].(*string)), true
+
+	case "Query.userJoinTopic":
+		if e.complexity.Query.UserJoinTopic == nil {
+			break
+		}
+
+		args, err := ec.field_Query_userJoinTopic_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.UserJoinTopic(childComplexity, args["id"].(int)), true
+
+	case "Query.userJoinTopics":
+		if e.complexity.Query.UserJoinTopics == nil {
+			break
+		}
+
+		args, err := ec.field_Query_userJoinTopics_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.UserJoinTopics(childComplexity, args["filter"].(*models.UserJoinTopicFilter), args["paginator"].(*graphqlutil.GraphQLPaginator)), true
+
+	case "Query.userJoinTopicsCount":
+		if e.complexity.Query.UserJoinTopicsCount == nil {
+			break
+		}
+
+		args, err := ec.field_Query_userJoinTopicsCount_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.UserJoinTopicsCount(childComplexity, args["filter"].(*models.UserJoinTopicFilter)), true
 
 	case "Query.userMatchingCalendar":
 		if e.complexity.Query.UserMatchingCalendar == nil {
@@ -1615,6 +1833,69 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.__resolve_entities(childComplexity, args["representations"].([]map[string]interface{})), true
+
+	case "RecentMatching.city":
+		if e.complexity.RecentMatching.City == nil {
+			break
+		}
+
+		return e.complexity.RecentMatching.City(childComplexity), true
+
+	case "RecentMatching.cityId":
+		if e.complexity.RecentMatching.CityID == nil {
+			break
+		}
+
+		return e.complexity.RecentMatching.CityID(childComplexity), true
+
+	case "RecentMatching.createdAt":
+		if e.complexity.RecentMatching.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.RecentMatching.CreatedAt(childComplexity), true
+
+	case "RecentMatching.id":
+		if e.complexity.RecentMatching.ID == nil {
+			break
+		}
+
+		return e.complexity.RecentMatching.ID(childComplexity), true
+
+	case "RecentMatching.matchingIds":
+		if e.complexity.RecentMatching.MatchingIDs == nil {
+			break
+		}
+
+		return e.complexity.RecentMatching.MatchingIDs(childComplexity), true
+
+	case "RecentMatching.matchings":
+		if e.complexity.RecentMatching.Matchings == nil {
+			break
+		}
+
+		return e.complexity.RecentMatching.Matchings(childComplexity), true
+
+	case "RecentMatching.topic":
+		if e.complexity.RecentMatching.Topic == nil {
+			break
+		}
+
+		return e.complexity.RecentMatching.Topic(childComplexity), true
+
+	case "RecentMatching.topicId":
+		if e.complexity.RecentMatching.TopicID == nil {
+			break
+		}
+
+		return e.complexity.RecentMatching.TopicID(childComplexity), true
+
+	case "RecentMatching.updatedAt":
+		if e.complexity.RecentMatching.UpdatedAt == nil {
+			break
+		}
+
+		return e.complexity.RecentMatching.UpdatedAt(childComplexity), true
 
 	case "SimpleAvatarUser.avatar":
 		if e.complexity.SimpleAvatarUser.Avatar == nil {
@@ -1743,6 +2024,83 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.UserConfirmState.UserID(childComplexity), true
 
+	case "UserJoinTopic.city":
+		if e.complexity.UserJoinTopic.City == nil {
+			break
+		}
+
+		return e.complexity.UserJoinTopic.City(childComplexity), true
+
+	case "UserJoinTopic.cityId":
+		if e.complexity.UserJoinTopic.CityID == nil {
+			break
+		}
+
+		return e.complexity.UserJoinTopic.CityID(childComplexity), true
+
+	case "UserJoinTopic.createdAt":
+		if e.complexity.UserJoinTopic.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.UserJoinTopic.CreatedAt(childComplexity), true
+
+	case "UserJoinTopic.id":
+		if e.complexity.UserJoinTopic.ID == nil {
+			break
+		}
+
+		return e.complexity.UserJoinTopic.ID(childComplexity), true
+
+	case "UserJoinTopic.latestMatchingId":
+		if e.complexity.UserJoinTopic.LatestMatchingID == nil {
+			break
+		}
+
+		return e.complexity.UserJoinTopic.LatestMatchingID(childComplexity), true
+
+	case "UserJoinTopic.matching":
+		if e.complexity.UserJoinTopic.Matching == nil {
+			break
+		}
+
+		return e.complexity.UserJoinTopic.Matching(childComplexity), true
+
+	case "UserJoinTopic.topic":
+		if e.complexity.UserJoinTopic.Topic == nil {
+			break
+		}
+
+		return e.complexity.UserJoinTopic.Topic(childComplexity), true
+
+	case "UserJoinTopic.topicId":
+		if e.complexity.UserJoinTopic.TopicID == nil {
+			break
+		}
+
+		return e.complexity.UserJoinTopic.TopicID(childComplexity), true
+
+	case "UserJoinTopic.updatedAt":
+		if e.complexity.UserJoinTopic.UpdatedAt == nil {
+			break
+		}
+
+		return e.complexity.UserJoinTopic.UpdatedAt(childComplexity), true
+
+	case "UserJoinTopic.user":
+		if e.complexity.UserJoinTopic.User == nil {
+			break
+		}
+
+		return e.complexity.UserJoinTopic.User(childComplexity), true
+
+	case "UserJoinTopic.userId":
+		if e.complexity.UserJoinTopic.UserID == nil {
+			break
+		}
+
+		return e.complexity.UserJoinTopic.UserID(childComplexity), true
+
 	case "_Service.sdl":
 		if e.complexity._Service.SDL == nil {
 			break
@@ -1758,16 +2116,27 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 	rc := graphql.GetOperationContext(ctx)
 	ec := executionContext{rc, e}
 	inputUnmarshalMap := graphql.BuildUnmarshalerMap(
+		ec.unmarshalInputCitiesTopicsFilter,
+		ec.unmarshalInputCreateCityTopicParam,
 		ec.unmarshalInputCreateMatchingInvitationParam,
 		ec.unmarshalInputCreateMatchingParam,
+		ec.unmarshalInputCreateUserJoinTopicParam,
 		ec.unmarshalInputGraphQLPaginator,
+		ec.unmarshalInputHotTopicsFilter,
 		ec.unmarshalInputMatchingFilter,
 		ec.unmarshalInputMatchingInvitationFilter,
 		ec.unmarshalInputMatchingResultFilter,
+		ec.unmarshalInputRecentMatchingFilter,
 		ec.unmarshalInputReviewMatchingParam,
+		ec.unmarshalInputUpdateCityTopicParam,
+		ec.unmarshalInputUpdateHotTopicMetricsParam,
+		ec.unmarshalInputUpdateHotTopicParam,
 		ec.unmarshalInputUpdateMatchingInvitationParam,
 		ec.unmarshalInputUpdateMatchingParam,
 		ec.unmarshalInputUpdateMatchingQuotaParam,
+		ec.unmarshalInputUpdateRecentMatchingParam,
+		ec.unmarshalInputUpdateUserJoinTopicParam,
+		ec.unmarshalInputUserJoinTopicFilter,
 		ec.unmarshalInputUserMatchingCalenderParam,
 		ec.unmarshalInputUserMatchingFilter,
 		ec.unmarshalInputUserMatchingInTheDayParam,
@@ -2094,6 +2463,21 @@ func (ec *executionContext) field_Mutation_confirmMatchingResult_args(ctx contex
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_createCityTopics_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 models.CreateCityTopicParam
+	if tmp, ok := rawArgs["param"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("param"))
+		arg0, err = ec.unmarshalNCreateCityTopicParam2whaleᚋpkgᚋmodelsᚐCreateCityTopicParam(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["param"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_createMatchingInvitation_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -2139,6 +2523,21 @@ func (ec *executionContext) field_Mutation_createMatching_args(ctx context.Conte
 		}
 	}
 	args["param"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_createUserJoinTopic_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 models.CreateUserJoinTopicParam
+	if tmp, ok := rawArgs["param"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("param"))
+		arg0, err = ec.unmarshalNCreateUserJoinTopicParam2whaleᚋpkgᚋmodelsᚐCreateUserJoinTopicParam(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["param"] = arg0
 	return args, nil
 }
 
@@ -2193,15 +2592,39 @@ func (ec *executionContext) field_Mutation_updateCityTopics_args(ctx context.Con
 		}
 	}
 	args["cityId"] = arg0
-	var arg1 []string
-	if tmp, ok := rawArgs["topicIds"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("topicIds"))
-		arg1, err = ec.unmarshalNString2ᚕstringᚄ(ctx, tmp)
+	var arg1 models.UpdateCityTopicParam
+	if tmp, ok := rawArgs["param"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("param"))
+		arg1, err = ec.unmarshalNUpdateCityTopicParam2whaleᚋpkgᚋmodelsᚐUpdateCityTopicParam(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["topicIds"] = arg1
+	args["param"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_updateHotTopicsInArea_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["cityId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("cityId"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["cityId"] = arg0
+	var arg1 models.UpdateHotTopicParam
+	if tmp, ok := rawArgs["param"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("param"))
+		arg1, err = ec.unmarshalNUpdateHotTopicParam2whaleᚋpkgᚋmodelsᚐUpdateHotTopicParam(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["param"] = arg1
 	return args, nil
 }
 
@@ -2277,6 +2700,54 @@ func (ec *executionContext) field_Mutation_updateMatching_args(ctx context.Conte
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_updateRecentMatching_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	var arg1 models.UpdateRecentMatchingParam
+	if tmp, ok := rawArgs["param"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("param"))
+		arg1, err = ec.unmarshalNUpdateRecentMatchingParam2whaleᚋpkgᚋmodelsᚐUpdateRecentMatchingParam(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["param"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_updateUserJoinTopic_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 int
+	if tmp, ok := rawArgs["id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+		arg0, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	var arg1 models.UpdateUserJoinTopicParam
+	if tmp, ok := rawArgs["param"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("param"))
+		arg1, err = ec.unmarshalNUpdateUserJoinTopicParam2whaleᚋpkgᚋmodelsᚐUpdateUserJoinTopicParam(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["param"] = arg1
+	return args, nil
+}
+
 func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -2322,18 +2793,42 @@ func (ec *executionContext) field_Query_chatGroupByResultId_args(ctx context.Con
 	return args, nil
 }
 
-func (ec *executionContext) field_Query_citiesTopics_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Query_citiesTopicsCount_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *graphqlutil.GraphQLPaginator
-	if tmp, ok := rawArgs["paginator"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("paginator"))
-		arg0, err = ec.unmarshalOGraphQLPaginator2ᚖgithubᚗcomᚋletjoyᚑclubᚋmidaᚑtoolᚋgraphqlutilᚐGraphQLPaginator(ctx, tmp)
+	var arg0 *models.CitiesTopicsFilter
+	if tmp, ok := rawArgs["filter"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
+		arg0, err = ec.unmarshalOCitiesTopicsFilter2ᚖwhaleᚋpkgᚋmodelsᚐCitiesTopicsFilter(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["paginator"] = arg0
+	args["filter"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_citiesTopics_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *models.CitiesTopicsFilter
+	if tmp, ok := rawArgs["filter"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
+		arg0, err = ec.unmarshalOCitiesTopicsFilter2ᚖwhaleᚋpkgᚋmodelsᚐCitiesTopicsFilter(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["filter"] = arg0
+	var arg1 *graphqlutil.GraphQLPaginator
+	if tmp, ok := rawArgs["paginator"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("paginator"))
+		arg1, err = ec.unmarshalOGraphQLPaginator2ᚖgithubᚗcomᚋletjoyᚑclubᚋmidaᚑtoolᚋgraphqlutilᚐGraphQLPaginator(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["paginator"] = arg1
 	return args, nil
 }
 
@@ -2349,6 +2844,21 @@ func (ec *executionContext) field_Query_cityTopics_args(ctx context.Context, raw
 		}
 	}
 	args["cityId"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_hotTopicsCount_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *models.HotTopicsFilter
+	if tmp, ok := rawArgs["filter"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
+		arg0, err = ec.unmarshalOHotTopicsFilter2ᚖwhaleᚋpkgᚋmodelsᚐHotTopicsFilter(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["filter"] = arg0
 	return args, nil
 }
 
@@ -2370,15 +2880,24 @@ func (ec *executionContext) field_Query_hotTopicsInArea_args(ctx context.Context
 func (ec *executionContext) field_Query_hotTopics_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *graphqlutil.GraphQLPaginator
-	if tmp, ok := rawArgs["paginator"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("paginator"))
-		arg0, err = ec.unmarshalOGraphQLPaginator2ᚖgithubᚗcomᚋletjoyᚑclubᚋmidaᚑtoolᚋgraphqlutilᚐGraphQLPaginator(ctx, tmp)
+	var arg0 *models.HotTopicsFilter
+	if tmp, ok := rawArgs["filter"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
+		arg0, err = ec.unmarshalOHotTopicsFilter2ᚖwhaleᚋpkgᚋmodelsᚐHotTopicsFilter(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["paginator"] = arg0
+	args["filter"] = arg0
+	var arg1 *graphqlutil.GraphQLPaginator
+	if tmp, ok := rawArgs["paginator"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("paginator"))
+		arg1, err = ec.unmarshalOGraphQLPaginator2ᚖgithubᚗcomᚋletjoyᚑclubᚋmidaᚑtoolᚋgraphqlutilᚐGraphQLPaginator(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["paginator"] = arg1
 	return args, nil
 }
 
@@ -2649,6 +3168,36 @@ func (ec *executionContext) field_Query_previewMatchingsOfTopic_args(ctx context
 	return args, nil
 }
 
+func (ec *executionContext) field_Query_recentMatching_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_recentMatchings_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *graphqlutil.GraphQLPaginator
+	if tmp, ok := rawArgs["paginator"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("paginator"))
+		arg0, err = ec.unmarshalOGraphQLPaginator2ᚖgithubᚗcomᚋletjoyᚑclubᚋmidaᚑtoolᚋgraphqlutilᚐGraphQLPaginator(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["paginator"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Query_unconfirmedInvitationCount_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -2691,6 +3240,60 @@ func (ec *executionContext) field_Query_unconfirmedUserMatchings_args(ctx contex
 		}
 	}
 	args["userId"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_userJoinTopic_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 int
+	if tmp, ok := rawArgs["id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+		arg0, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_userJoinTopicsCount_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *models.UserJoinTopicFilter
+	if tmp, ok := rawArgs["filter"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
+		arg0, err = ec.unmarshalOUserJoinTopicFilter2ᚖwhaleᚋpkgᚋmodelsᚐUserJoinTopicFilter(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["filter"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_userJoinTopics_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *models.UserJoinTopicFilter
+	if tmp, ok := rawArgs["filter"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
+		arg0, err = ec.unmarshalOUserJoinTopicFilter2ᚖwhaleᚋpkgᚋmodelsᚐUserJoinTopicFilter(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["filter"] = arg0
+	var arg1 *graphqlutil.GraphQLPaginator
+	if tmp, ok := rawArgs["paginator"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("paginator"))
+		arg1, err = ec.unmarshalOGraphQLPaginator2ᚖgithubᚗcomᚋletjoyᚑclubᚋmidaᚑtoolᚋgraphqlutilᚐGraphQLPaginator(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["paginator"] = arg1
 	return args, nil
 }
 
@@ -3344,6 +3947,54 @@ func (ec *executionContext) fieldContext_CityTopics_topics(ctx context.Context, 
 	return fc, nil
 }
 
+func (ec *executionContext) _CityTopics_city(ctx context.Context, field graphql.CollectedField, obj *models.CityTopics) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CityTopics_city(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.CityTopics().City(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*models.Area)
+	fc.Result = res
+	return ec.marshalNArea2ᚖwhaleᚋpkgᚋmodelsᚐArea(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CityTopics_city(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CityTopics",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "code":
+				return ec.fieldContext_Area_code(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Area", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Entity_findMatchingByID(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Entity_findMatchingByID(ctx, field)
 	if err != nil {
@@ -3771,6 +4422,54 @@ func (ec *executionContext) fieldContext_HotTopicsInArea_topicMetrics(ctx contex
 				return ec.fieldContext_TopicMetrics_topic(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type TopicMetrics", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _HotTopicsInArea_city(ctx context.Context, field graphql.CollectedField, obj *models.HotTopicsInArea) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_HotTopicsInArea_city(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.HotTopicsInArea().City(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*models.Area)
+	fc.Result = res
+	return ec.marshalNArea2ᚖwhaleᚋpkgᚋmodelsᚐArea(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_HotTopicsInArea_city(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "HotTopicsInArea",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "code":
+				return ec.fieldContext_Area_code(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Area", field.Name)
 		},
 	}
 	return fc, nil
@@ -8482,6 +9181,148 @@ func (ec *executionContext) fieldContext_Mutation_reviewMatching(ctx context.Con
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_updateRecentMatching(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_updateRecentMatching(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().UpdateRecentMatching(rctx, fc.Args["id"].(string), fc.Args["param"].(models.UpdateRecentMatchingParam))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*models.RecentMatching)
+	fc.Result = res
+	return ec.marshalNRecentMatching2ᚖwhaleᚋpkgᚋmodelsᚐRecentMatching(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_updateRecentMatching(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_RecentMatching_id(ctx, field)
+			case "cityId":
+				return ec.fieldContext_RecentMatching_cityId(ctx, field)
+			case "topicId":
+				return ec.fieldContext_RecentMatching_topicId(ctx, field)
+			case "matchingIds":
+				return ec.fieldContext_RecentMatching_matchingIds(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_RecentMatching_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_RecentMatching_updatedAt(ctx, field)
+			case "topic":
+				return ec.fieldContext_RecentMatching_topic(ctx, field)
+			case "city":
+				return ec.fieldContext_RecentMatching_city(ctx, field)
+			case "matchings":
+				return ec.fieldContext_RecentMatching_matchings(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type RecentMatching", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_updateRecentMatching_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_createCityTopics(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_createCityTopics(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().CreateCityTopics(rctx, fc.Args["param"].(models.CreateCityTopicParam))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*models.CityTopics)
+	fc.Result = res
+	return ec.marshalNCityTopics2ᚖwhaleᚋpkgᚋmodelsᚐCityTopics(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_createCityTopics(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "cityId":
+				return ec.fieldContext_CityTopics_cityId(ctx, field)
+			case "topicIds":
+				return ec.fieldContext_CityTopics_topicIds(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_CityTopics_updatedAt(ctx, field)
+			case "topics":
+				return ec.fieldContext_CityTopics_topics(ctx, field)
+			case "city":
+				return ec.fieldContext_CityTopics_city(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type CityTopics", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_createCityTopics_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Mutation_updateCityTopics(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Mutation_updateCityTopics(ctx, field)
 	if err != nil {
@@ -8496,7 +9337,7 @@ func (ec *executionContext) _Mutation_updateCityTopics(ctx context.Context, fiel
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().UpdateCityTopics(rctx, fc.Args["cityId"].(string), fc.Args["topicIds"].([]string))
+		return ec.resolvers.Mutation().UpdateCityTopics(rctx, fc.Args["cityId"].(string), fc.Args["param"].(models.UpdateCityTopicParam))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -8529,6 +9370,8 @@ func (ec *executionContext) fieldContext_Mutation_updateCityTopics(ctx context.C
 				return ec.fieldContext_CityTopics_updatedAt(ctx, field)
 			case "topics":
 				return ec.fieldContext_CityTopics_topics(ctx, field)
+			case "city":
+				return ec.fieldContext_CityTopics_city(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type CityTopics", field.Name)
 		},
@@ -8541,6 +9384,229 @@ func (ec *executionContext) fieldContext_Mutation_updateCityTopics(ctx context.C
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_updateCityTopics_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_updateHotTopicsInArea(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_updateHotTopicsInArea(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().UpdateHotTopicsInArea(rctx, fc.Args["cityId"].(string), fc.Args["param"].(models.UpdateHotTopicParam))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*models.HotTopicsInArea)
+	fc.Result = res
+	return ec.marshalNHotTopicsInArea2ᚖwhaleᚋpkgᚋmodelsᚐHotTopicsInArea(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_updateHotTopicsInArea(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "cityId":
+				return ec.fieldContext_HotTopicsInArea_cityId(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_HotTopicsInArea_updatedAt(ctx, field)
+			case "topicMetrics":
+				return ec.fieldContext_HotTopicsInArea_topicMetrics(ctx, field)
+			case "city":
+				return ec.fieldContext_HotTopicsInArea_city(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type HotTopicsInArea", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_updateHotTopicsInArea_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_updateUserJoinTopic(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_updateUserJoinTopic(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().UpdateUserJoinTopic(rctx, fc.Args["id"].(int), fc.Args["param"].(models.UpdateUserJoinTopicParam))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*models.UserJoinTopic)
+	fc.Result = res
+	return ec.marshalNUserJoinTopic2ᚖwhaleᚋpkgᚋmodelsᚐUserJoinTopic(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_updateUserJoinTopic(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_UserJoinTopic_id(ctx, field)
+			case "topicId":
+				return ec.fieldContext_UserJoinTopic_topicId(ctx, field)
+			case "cityId":
+				return ec.fieldContext_UserJoinTopic_cityId(ctx, field)
+			case "userId":
+				return ec.fieldContext_UserJoinTopic_userId(ctx, field)
+			case "latestMatchingId":
+				return ec.fieldContext_UserJoinTopic_latestMatchingId(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_UserJoinTopic_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_UserJoinTopic_updatedAt(ctx, field)
+			case "topic":
+				return ec.fieldContext_UserJoinTopic_topic(ctx, field)
+			case "city":
+				return ec.fieldContext_UserJoinTopic_city(ctx, field)
+			case "user":
+				return ec.fieldContext_UserJoinTopic_user(ctx, field)
+			case "matching":
+				return ec.fieldContext_UserJoinTopic_matching(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type UserJoinTopic", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_updateUserJoinTopic_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_createUserJoinTopic(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_createUserJoinTopic(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().CreateUserJoinTopic(rctx, fc.Args["param"].(models.CreateUserJoinTopicParam))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*models.UserJoinTopic)
+	fc.Result = res
+	return ec.marshalNUserJoinTopic2ᚖwhaleᚋpkgᚋmodelsᚐUserJoinTopic(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_createUserJoinTopic(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_UserJoinTopic_id(ctx, field)
+			case "topicId":
+				return ec.fieldContext_UserJoinTopic_topicId(ctx, field)
+			case "cityId":
+				return ec.fieldContext_UserJoinTopic_cityId(ctx, field)
+			case "userId":
+				return ec.fieldContext_UserJoinTopic_userId(ctx, field)
+			case "latestMatchingId":
+				return ec.fieldContext_UserJoinTopic_latestMatchingId(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_UserJoinTopic_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_UserJoinTopic_updatedAt(ctx, field)
+			case "topic":
+				return ec.fieldContext_UserJoinTopic_topic(ctx, field)
+			case "city":
+				return ec.fieldContext_UserJoinTopic_city(ctx, field)
+			case "user":
+				return ec.fieldContext_UserJoinTopic_user(ctx, field)
+			case "matching":
+				return ec.fieldContext_UserJoinTopic_matching(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type UserJoinTopic", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_createUserJoinTopic_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return
 	}
@@ -10288,6 +11354,204 @@ func (ec *executionContext) fieldContext_Query_unconfirmedInvitationCount(ctx co
 	return fc, nil
 }
 
+func (ec *executionContext) _Query_recentMatchings(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_recentMatchings(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().RecentMatchings(rctx, fc.Args["paginator"].(*graphqlutil.GraphQLPaginator))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*models.RecentMatching)
+	fc.Result = res
+	return ec.marshalNRecentMatching2ᚕᚖwhaleᚋpkgᚋmodelsᚐRecentMatchingᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_recentMatchings(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_RecentMatching_id(ctx, field)
+			case "cityId":
+				return ec.fieldContext_RecentMatching_cityId(ctx, field)
+			case "topicId":
+				return ec.fieldContext_RecentMatching_topicId(ctx, field)
+			case "matchingIds":
+				return ec.fieldContext_RecentMatching_matchingIds(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_RecentMatching_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_RecentMatching_updatedAt(ctx, field)
+			case "topic":
+				return ec.fieldContext_RecentMatching_topic(ctx, field)
+			case "city":
+				return ec.fieldContext_RecentMatching_city(ctx, field)
+			case "matchings":
+				return ec.fieldContext_RecentMatching_matchings(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type RecentMatching", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_recentMatchings_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_recentMatchingsCount(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_recentMatchingsCount(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().RecentMatchingsCount(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*models.Summary)
+	fc.Result = res
+	return ec.marshalNSummary2ᚖwhaleᚋpkgᚋmodelsᚐSummary(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_recentMatchingsCount(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "count":
+				return ec.fieldContext_Summary_count(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Summary", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_recentMatching(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_recentMatching(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().RecentMatching(rctx, fc.Args["id"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*models.RecentMatching)
+	fc.Result = res
+	return ec.marshalNRecentMatching2ᚖwhaleᚋpkgᚋmodelsᚐRecentMatching(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_recentMatching(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_RecentMatching_id(ctx, field)
+			case "cityId":
+				return ec.fieldContext_RecentMatching_cityId(ctx, field)
+			case "topicId":
+				return ec.fieldContext_RecentMatching_topicId(ctx, field)
+			case "matchingIds":
+				return ec.fieldContext_RecentMatching_matchingIds(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_RecentMatching_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_RecentMatching_updatedAt(ctx, field)
+			case "topic":
+				return ec.fieldContext_RecentMatching_topic(ctx, field)
+			case "city":
+				return ec.fieldContext_RecentMatching_city(ctx, field)
+			case "matchings":
+				return ec.fieldContext_RecentMatching_matchings(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type RecentMatching", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_recentMatching_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_cityTopics(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_cityTopics(ctx, field)
 	if err != nil {
@@ -10335,6 +11599,8 @@ func (ec *executionContext) fieldContext_Query_cityTopics(ctx context.Context, f
 				return ec.fieldContext_CityTopics_updatedAt(ctx, field)
 			case "topics":
 				return ec.fieldContext_CityTopics_topics(ctx, field)
+			case "city":
+				return ec.fieldContext_CityTopics_city(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type CityTopics", field.Name)
 		},
@@ -10367,7 +11633,7 @@ func (ec *executionContext) _Query_citiesTopics(ctx context.Context, field graph
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().CitiesTopics(rctx, fc.Args["paginator"].(*graphqlutil.GraphQLPaginator))
+		return ec.resolvers.Query().CitiesTopics(rctx, fc.Args["filter"].(*models.CitiesTopicsFilter), fc.Args["paginator"].(*graphqlutil.GraphQLPaginator))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -10400,6 +11666,8 @@ func (ec *executionContext) fieldContext_Query_citiesTopics(ctx context.Context,
 				return ec.fieldContext_CityTopics_updatedAt(ctx, field)
 			case "topics":
 				return ec.fieldContext_CityTopics_topics(ctx, field)
+			case "city":
+				return ec.fieldContext_CityTopics_city(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type CityTopics", field.Name)
 		},
@@ -10432,7 +11700,7 @@ func (ec *executionContext) _Query_citiesTopicsCount(ctx context.Context, field 
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().CitiesTopicsCount(rctx)
+		return ec.resolvers.Query().CitiesTopicsCount(rctx, fc.Args["filter"].(*models.CitiesTopicsFilter))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -10462,6 +11730,17 @@ func (ec *executionContext) fieldContext_Query_citiesTopicsCount(ctx context.Con
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Summary", field.Name)
 		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_citiesTopicsCount_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
 	}
 	return fc, nil
 }
@@ -10511,6 +11790,8 @@ func (ec *executionContext) fieldContext_Query_hotTopicsInArea(ctx context.Conte
 				return ec.fieldContext_HotTopicsInArea_updatedAt(ctx, field)
 			case "topicMetrics":
 				return ec.fieldContext_HotTopicsInArea_topicMetrics(ctx, field)
+			case "city":
+				return ec.fieldContext_HotTopicsInArea_city(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type HotTopicsInArea", field.Name)
 		},
@@ -10543,7 +11824,7 @@ func (ec *executionContext) _Query_hotTopics(ctx context.Context, field graphql.
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().HotTopics(rctx, fc.Args["paginator"].(*graphqlutil.GraphQLPaginator))
+		return ec.resolvers.Query().HotTopics(rctx, fc.Args["filter"].(*models.HotTopicsFilter), fc.Args["paginator"].(*graphqlutil.GraphQLPaginator))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -10574,6 +11855,8 @@ func (ec *executionContext) fieldContext_Query_hotTopics(ctx context.Context, fi
 				return ec.fieldContext_HotTopicsInArea_updatedAt(ctx, field)
 			case "topicMetrics":
 				return ec.fieldContext_HotTopicsInArea_topicMetrics(ctx, field)
+			case "city":
+				return ec.fieldContext_HotTopicsInArea_city(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type HotTopicsInArea", field.Name)
 		},
@@ -10606,7 +11889,7 @@ func (ec *executionContext) _Query_hotTopicsCount(ctx context.Context, field gra
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().HotTopicsCount(rctx)
+		return ec.resolvers.Query().HotTopicsCount(rctx, fc.Args["filter"].(*models.HotTopicsFilter))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -10636,6 +11919,234 @@ func (ec *executionContext) fieldContext_Query_hotTopicsCount(ctx context.Contex
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Summary", field.Name)
 		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_hotTopicsCount_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_userJoinTopics(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_userJoinTopics(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().UserJoinTopics(rctx, fc.Args["filter"].(*models.UserJoinTopicFilter), fc.Args["paginator"].(*graphqlutil.GraphQLPaginator))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*models.UserJoinTopic)
+	fc.Result = res
+	return ec.marshalNUserJoinTopic2ᚕᚖwhaleᚋpkgᚋmodelsᚐUserJoinTopicᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_userJoinTopics(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_UserJoinTopic_id(ctx, field)
+			case "topicId":
+				return ec.fieldContext_UserJoinTopic_topicId(ctx, field)
+			case "cityId":
+				return ec.fieldContext_UserJoinTopic_cityId(ctx, field)
+			case "userId":
+				return ec.fieldContext_UserJoinTopic_userId(ctx, field)
+			case "latestMatchingId":
+				return ec.fieldContext_UserJoinTopic_latestMatchingId(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_UserJoinTopic_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_UserJoinTopic_updatedAt(ctx, field)
+			case "topic":
+				return ec.fieldContext_UserJoinTopic_topic(ctx, field)
+			case "city":
+				return ec.fieldContext_UserJoinTopic_city(ctx, field)
+			case "user":
+				return ec.fieldContext_UserJoinTopic_user(ctx, field)
+			case "matching":
+				return ec.fieldContext_UserJoinTopic_matching(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type UserJoinTopic", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_userJoinTopics_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_userJoinTopicsCount(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_userJoinTopicsCount(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().UserJoinTopicsCount(rctx, fc.Args["filter"].(*models.UserJoinTopicFilter))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*models.Summary)
+	fc.Result = res
+	return ec.marshalNSummary2ᚖwhaleᚋpkgᚋmodelsᚐSummary(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_userJoinTopicsCount(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "count":
+				return ec.fieldContext_Summary_count(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Summary", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_userJoinTopicsCount_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_userJoinTopic(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_userJoinTopic(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().UserJoinTopic(rctx, fc.Args["id"].(int))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*models.UserJoinTopic)
+	fc.Result = res
+	return ec.marshalNUserJoinTopic2ᚖwhaleᚋpkgᚋmodelsᚐUserJoinTopic(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_userJoinTopic(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_UserJoinTopic_id(ctx, field)
+			case "topicId":
+				return ec.fieldContext_UserJoinTopic_topicId(ctx, field)
+			case "cityId":
+				return ec.fieldContext_UserJoinTopic_cityId(ctx, field)
+			case "userId":
+				return ec.fieldContext_UserJoinTopic_userId(ctx, field)
+			case "latestMatchingId":
+				return ec.fieldContext_UserJoinTopic_latestMatchingId(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_UserJoinTopic_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_UserJoinTopic_updatedAt(ctx, field)
+			case "topic":
+				return ec.fieldContext_UserJoinTopic_topic(ctx, field)
+			case "city":
+				return ec.fieldContext_UserJoinTopic_city(ctx, field)
+			case "user":
+				return ec.fieldContext_UserJoinTopic_user(ctx, field)
+			case "matching":
+				return ec.fieldContext_UserJoinTopic_matching(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type UserJoinTopic", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_userJoinTopic_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
 	}
 	return fc, nil
 }
@@ -10867,6 +12378,456 @@ func (ec *executionContext) fieldContext_Query___schema(ctx context.Context, fie
 				return ec.fieldContext___Schema_directives(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type __Schema", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RecentMatching_id(ctx context.Context, field graphql.CollectedField, obj *models.RecentMatching) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RecentMatching_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RecentMatching_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RecentMatching",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RecentMatching_cityId(ctx context.Context, field graphql.CollectedField, obj *models.RecentMatching) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RecentMatching_cityId(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CityID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RecentMatching_cityId(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RecentMatching",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RecentMatching_topicId(ctx context.Context, field graphql.CollectedField, obj *models.RecentMatching) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RecentMatching_topicId(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TopicID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RecentMatching_topicId(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RecentMatching",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RecentMatching_matchingIds(ctx context.Context, field graphql.CollectedField, obj *models.RecentMatching) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RecentMatching_matchingIds(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MatchingIDs, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RecentMatching_matchingIds(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RecentMatching",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RecentMatching_createdAt(ctx context.Context, field graphql.CollectedField, obj *models.RecentMatching) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RecentMatching_createdAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CreatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RecentMatching_createdAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RecentMatching",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RecentMatching_updatedAt(ctx context.Context, field graphql.CollectedField, obj *models.RecentMatching) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RecentMatching_updatedAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UpdatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RecentMatching_updatedAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RecentMatching",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RecentMatching_topic(ctx context.Context, field graphql.CollectedField, obj *models.RecentMatching) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RecentMatching_topic(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.RecentMatching().Topic(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*models.Topic)
+	fc.Result = res
+	return ec.marshalNTopic2ᚖwhaleᚋpkgᚋmodelsᚐTopic(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RecentMatching_topic(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RecentMatching",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Topic_id(ctx, field)
+			case "recentUsers":
+				return ec.fieldContext_Topic_recentUsers(ctx, field)
+			case "matchingNum":
+				return ec.fieldContext_Topic_matchingNum(ctx, field)
+			case "fuzzyMatchingNum":
+				return ec.fieldContext_Topic_fuzzyMatchingNum(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Topic", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RecentMatching_city(ctx context.Context, field graphql.CollectedField, obj *models.RecentMatching) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RecentMatching_city(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.RecentMatching().City(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*models.Area)
+	fc.Result = res
+	return ec.marshalNArea2ᚖwhaleᚋpkgᚋmodelsᚐArea(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RecentMatching_city(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RecentMatching",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "code":
+				return ec.fieldContext_Area_code(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Area", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RecentMatching_matchings(ctx context.Context, field graphql.CollectedField, obj *models.RecentMatching) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RecentMatching_matchings(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.RecentMatching().Matchings(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*models.Matching)
+	fc.Result = res
+	return ec.marshalNMatching2ᚕᚖwhaleᚋpkgᚋmodelsᚐMatchingᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RecentMatching_matchings(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RecentMatching",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Matching_id(ctx, field)
+			case "topicId":
+				return ec.fieldContext_Matching_topicId(ctx, field)
+			case "userId":
+				return ec.fieldContext_Matching_userId(ctx, field)
+			case "areaIds":
+				return ec.fieldContext_Matching_areaIds(ctx, field)
+			case "cityId":
+				return ec.fieldContext_Matching_cityId(ctx, field)
+			case "gender":
+				return ec.fieldContext_Matching_gender(ctx, field)
+			case "state":
+				return ec.fieldContext_Matching_state(ctx, field)
+			case "rejectedUserIds":
+				return ec.fieldContext_Matching_rejectedUserIds(ctx, field)
+			case "inChatGroup":
+				return ec.fieldContext_Matching_inChatGroup(ctx, field)
+			case "remark":
+				return ec.fieldContext_Matching_remark(ctx, field)
+			case "deadline":
+				return ec.fieldContext_Matching_deadline(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_Matching_updatedAt(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Matching_createdAt(ctx, field)
+			case "matchingResult":
+				return ec.fieldContext_Matching_matchingResult(ctx, field)
+			case "reviewed":
+				return ec.fieldContext_Matching_reviewed(ctx, field)
+			case "user":
+				return ec.fieldContext_Matching_user(ctx, field)
+			case "topic":
+				return ec.fieldContext_Matching_topic(ctx, field)
+			case "areas":
+				return ec.fieldContext_Matching_areas(ctx, field)
+			case "city":
+				return ec.fieldContext_Matching_city(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Matching", field.Name)
 		},
 	}
 	return fc, nil
@@ -11365,7 +13326,7 @@ func (ec *executionContext) _TopicMetrics_heat(ctx context.Context, field graphq
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.TopicMetrics().Heat(rctx, obj)
+		return obj.Heat, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -11386,8 +13347,8 @@ func (ec *executionContext) fieldContext_TopicMetrics_heat(ctx context.Context, 
 	fc = &graphql.FieldContext{
 		Object:     "TopicMetrics",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Int does not have child fields")
 		},
@@ -11632,6 +13593,550 @@ func (ec *executionContext) fieldContext_UserConfirmState_state(ctx context.Cont
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type MatchingResultConfirmState does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UserJoinTopic_id(ctx context.Context, field graphql.CollectedField, obj *models.UserJoinTopic) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UserJoinTopic_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UserJoinTopic_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UserJoinTopic",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UserJoinTopic_topicId(ctx context.Context, field graphql.CollectedField, obj *models.UserJoinTopic) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UserJoinTopic_topicId(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TopicID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UserJoinTopic_topicId(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UserJoinTopic",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UserJoinTopic_cityId(ctx context.Context, field graphql.CollectedField, obj *models.UserJoinTopic) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UserJoinTopic_cityId(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CityID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UserJoinTopic_cityId(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UserJoinTopic",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UserJoinTopic_userId(ctx context.Context, field graphql.CollectedField, obj *models.UserJoinTopic) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UserJoinTopic_userId(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UserID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UserJoinTopic_userId(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UserJoinTopic",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UserJoinTopic_latestMatchingId(ctx context.Context, field graphql.CollectedField, obj *models.UserJoinTopic) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UserJoinTopic_latestMatchingId(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LatestMatchingID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UserJoinTopic_latestMatchingId(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UserJoinTopic",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UserJoinTopic_createdAt(ctx context.Context, field graphql.CollectedField, obj *models.UserJoinTopic) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UserJoinTopic_createdAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CreatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UserJoinTopic_createdAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UserJoinTopic",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UserJoinTopic_updatedAt(ctx context.Context, field graphql.CollectedField, obj *models.UserJoinTopic) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UserJoinTopic_updatedAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UpdatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UserJoinTopic_updatedAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UserJoinTopic",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UserJoinTopic_topic(ctx context.Context, field graphql.CollectedField, obj *models.UserJoinTopic) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UserJoinTopic_topic(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.UserJoinTopic().Topic(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*models.Topic)
+	fc.Result = res
+	return ec.marshalNTopic2ᚖwhaleᚋpkgᚋmodelsᚐTopic(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UserJoinTopic_topic(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UserJoinTopic",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Topic_id(ctx, field)
+			case "recentUsers":
+				return ec.fieldContext_Topic_recentUsers(ctx, field)
+			case "matchingNum":
+				return ec.fieldContext_Topic_matchingNum(ctx, field)
+			case "fuzzyMatchingNum":
+				return ec.fieldContext_Topic_fuzzyMatchingNum(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Topic", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UserJoinTopic_city(ctx context.Context, field graphql.CollectedField, obj *models.UserJoinTopic) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UserJoinTopic_city(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.UserJoinTopic().City(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*models.Area)
+	fc.Result = res
+	return ec.marshalNArea2ᚖwhaleᚋpkgᚋmodelsᚐArea(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UserJoinTopic_city(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UserJoinTopic",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "code":
+				return ec.fieldContext_Area_code(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Area", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UserJoinTopic_user(ctx context.Context, field graphql.CollectedField, obj *models.UserJoinTopic) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UserJoinTopic_user(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.UserJoinTopic().User(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*models.User)
+	fc.Result = res
+	return ec.marshalNUser2ᚖwhaleᚋpkgᚋmodelsᚐUser(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UserJoinTopic_user(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UserJoinTopic",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_User_id(ctx, field)
+			case "matchingQuota":
+				return ec.fieldContext_User_matchingQuota(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UserJoinTopic_matching(ctx context.Context, field graphql.CollectedField, obj *models.UserJoinTopic) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UserJoinTopic_matching(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.UserJoinTopic().Matching(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*models.Matching)
+	fc.Result = res
+	return ec.marshalNMatching2ᚖwhaleᚋpkgᚋmodelsᚐMatching(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UserJoinTopic_matching(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UserJoinTopic",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Matching_id(ctx, field)
+			case "topicId":
+				return ec.fieldContext_Matching_topicId(ctx, field)
+			case "userId":
+				return ec.fieldContext_Matching_userId(ctx, field)
+			case "areaIds":
+				return ec.fieldContext_Matching_areaIds(ctx, field)
+			case "cityId":
+				return ec.fieldContext_Matching_cityId(ctx, field)
+			case "gender":
+				return ec.fieldContext_Matching_gender(ctx, field)
+			case "state":
+				return ec.fieldContext_Matching_state(ctx, field)
+			case "rejectedUserIds":
+				return ec.fieldContext_Matching_rejectedUserIds(ctx, field)
+			case "inChatGroup":
+				return ec.fieldContext_Matching_inChatGroup(ctx, field)
+			case "remark":
+				return ec.fieldContext_Matching_remark(ctx, field)
+			case "deadline":
+				return ec.fieldContext_Matching_deadline(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_Matching_updatedAt(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Matching_createdAt(ctx, field)
+			case "matchingResult":
+				return ec.fieldContext_Matching_matchingResult(ctx, field)
+			case "reviewed":
+				return ec.fieldContext_Matching_reviewed(ctx, field)
+			case "user":
+				return ec.fieldContext_Matching_user(ctx, field)
+			case "topic":
+				return ec.fieldContext_Matching_topic(ctx, field)
+			case "areas":
+				return ec.fieldContext_Matching_areas(ctx, field)
+			case "city":
+				return ec.fieldContext_Matching_city(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Matching", field.Name)
 		},
 	}
 	return fc, nil
@@ -13451,6 +15956,70 @@ func (ec *executionContext) fieldContext___Type_specifiedByURL(ctx context.Conte
 
 // region    **************************** input.gotpl *****************************
 
+func (ec *executionContext) unmarshalInputCitiesTopicsFilter(ctx context.Context, obj interface{}) (models.CitiesTopicsFilter, error) {
+	var it models.CitiesTopicsFilter
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"cityId"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "cityId":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("cityId"))
+			it.CityID, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputCreateCityTopicParam(ctx context.Context, obj interface{}) (models.CreateCityTopicParam, error) {
+	var it models.CreateCityTopicParam
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"topicIds", "cityId"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "topicIds":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("topicIds"))
+			it.TopicIds, err = ec.unmarshalNString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "cityId":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("cityId"))
+			it.CityID, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputCreateMatchingInvitationParam(ctx context.Context, obj interface{}) (models.CreateMatchingInvitationParam, error) {
 	var it models.CreateMatchingInvitationParam
 	asMap := map[string]interface{}{}
@@ -13579,6 +16148,34 @@ func (ec *executionContext) unmarshalInputCreateMatchingParam(ctx context.Contex
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputCreateUserJoinTopicParam(ctx context.Context, obj interface{}) (models.CreateUserJoinTopicParam, error) {
+	var it models.CreateUserJoinTopicParam
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"matchingId"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "matchingId":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("matchingId"))
+			it.MatchingID, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputGraphQLPaginator(ctx context.Context, obj interface{}) (graphqlutil.GraphQLPaginator, error) {
 	var it graphqlutil.GraphQLPaginator
 	asMap := map[string]interface{}{}
@@ -13606,6 +16203,42 @@ func (ec *executionContext) unmarshalInputGraphQLPaginator(ctx context.Context, 
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("page"))
 			it.Page, err = ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputHotTopicsFilter(ctx context.Context, obj interface{}) (models.HotTopicsFilter, error) {
+	var it models.HotTopicsFilter
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"cityId", "topicId"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "cityId":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("cityId"))
+			it.CityID, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "topicId":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("topicId"))
+			it.TopicID, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -13779,6 +16412,34 @@ func (ec *executionContext) unmarshalInputMatchingResultFilter(ctx context.Conte
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputRecentMatchingFilter(ctx context.Context, obj interface{}) (models.RecentMatchingFilter, error) {
+	var it models.RecentMatchingFilter
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"cityId"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "cityId":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("cityId"))
+			it.CityID, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputReviewMatchingParam(ctx context.Context, obj interface{}) (models.ReviewMatchingParam, error) {
 	var it models.ReviewMatchingParam
 	asMap := map[string]interface{}{}
@@ -13814,6 +16475,114 @@ func (ec *executionContext) unmarshalInputReviewMatchingParam(ctx context.Contex
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("comment"))
 			it.Comment, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputUpdateCityTopicParam(ctx context.Context, obj interface{}) (models.UpdateCityTopicParam, error) {
+	var it models.UpdateCityTopicParam
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"topicIds"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "topicIds":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("topicIds"))
+			it.TopicIds, err = ec.unmarshalNString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputUpdateHotTopicMetricsParam(ctx context.Context, obj interface{}) (models.UpdateHotTopicMetricsParam, error) {
+	var it models.UpdateHotTopicMetricsParam
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"topicId", "heat", "matched", "matching"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "topicId":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("topicId"))
+			it.TopicID, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "heat":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("heat"))
+			it.Heat, err = ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "matched":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("matched"))
+			it.Matched, err = ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "matching":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("matching"))
+			it.Matching, err = ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputUpdateHotTopicParam(ctx context.Context, obj interface{}) (models.UpdateHotTopicParam, error) {
+	var it models.UpdateHotTopicParam
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"topicMetrics"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "topicMetrics":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("topicMetrics"))
+			it.TopicMetrics, err = ec.unmarshalNUpdateHotTopicMetricsParam2ᚕᚖwhaleᚋpkgᚋmodelsᚐUpdateHotTopicMetricsParamᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -13986,6 +16755,106 @@ func (ec *executionContext) unmarshalInputUpdateMatchingQuotaParam(ctx context.C
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("remain"))
 			it.Remain, err = ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputUpdateRecentMatchingParam(ctx context.Context, obj interface{}) (models.UpdateRecentMatchingParam, error) {
+	var it models.UpdateRecentMatchingParam
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"matchingIds"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "matchingIds":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("matchingIds"))
+			it.MatchingIds, err = ec.unmarshalNString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputUpdateUserJoinTopicParam(ctx context.Context, obj interface{}) (models.UpdateUserJoinTopicParam, error) {
+	var it models.UpdateUserJoinTopicParam
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"matchingId"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "matchingId":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("matchingId"))
+			it.MatchingID, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputUserJoinTopicFilter(ctx context.Context, obj interface{}) (models.UserJoinTopicFilter, error) {
+	var it models.UserJoinTopicFilter
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"cityId", "topicId", "userId"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "cityId":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("cityId"))
+			it.CityID, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "topicId":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("topicId"))
+			it.TopicID, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "userId":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userId"))
+			it.UserID, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -14323,6 +17192,26 @@ func (ec *executionContext) _CityTopics(ctx context.Context, sel ast.SelectionSe
 				return innerFunc(ctx)
 
 			})
+		case "city":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._CityTopics_city(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -14471,22 +17360,42 @@ func (ec *executionContext) _HotTopicsInArea(ctx context.Context, sel ast.Select
 			out.Values[i] = ec._HotTopicsInArea_cityId(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "updatedAt":
 
 			out.Values[i] = ec._HotTopicsInArea_updatedAt(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "topicMetrics":
 
 			out.Values[i] = ec._HotTopicsInArea_topicMetrics(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
+		case "city":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._HotTopicsInArea_city(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -15657,10 +18566,55 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 				return ec._Mutation_reviewMatching(ctx, field)
 			})
 
+		case "updateRecentMatching":
+
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_updateRecentMatching(ctx, field)
+			})
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "createCityTopics":
+
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_createCityTopics(ctx, field)
+			})
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "updateCityTopics":
 
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_updateCityTopics(ctx, field)
+			})
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "updateHotTopicsInArea":
+
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_updateHotTopicsInArea(ctx, field)
+			})
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "updateUserJoinTopic":
+
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_updateUserJoinTopic(ctx, field)
+			})
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "createUserJoinTopic":
+
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_createUserJoinTopic(ctx, field)
 			})
 
 			if out.Values[i] == graphql.Null {
@@ -16199,6 +19153,75 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Concurrently(i, func() graphql.Marshaler {
 				return rrm(innerCtx)
 			})
+		case "recentMatchings":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_recentMatchings(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
+		case "recentMatchingsCount":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_recentMatchingsCount(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
+		case "recentMatching":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_recentMatching(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
 		case "cityTopics":
 			field := field
 
@@ -16337,6 +19360,75 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Concurrently(i, func() graphql.Marshaler {
 				return rrm(innerCtx)
 			})
+		case "userJoinTopics":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_userJoinTopics(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
+		case "userJoinTopicsCount":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_userJoinTopicsCount(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
+		case "userJoinTopic":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_userJoinTopic(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
 		case "_entities":
 			field := field
 
@@ -16395,6 +19487,129 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				return ec._Query___schema(ctx, field)
 			})
 
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var recentMatchingImplementors = []string{"RecentMatching"}
+
+func (ec *executionContext) _RecentMatching(ctx context.Context, sel ast.SelectionSet, obj *models.RecentMatching) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, recentMatchingImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("RecentMatching")
+		case "id":
+
+			out.Values[i] = ec._RecentMatching_id(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "cityId":
+
+			out.Values[i] = ec._RecentMatching_cityId(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "topicId":
+
+			out.Values[i] = ec._RecentMatching_topicId(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "matchingIds":
+
+			out.Values[i] = ec._RecentMatching_matchingIds(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "createdAt":
+
+			out.Values[i] = ec._RecentMatching_createdAt(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "updatedAt":
+
+			out.Values[i] = ec._RecentMatching_updatedAt(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "topic":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._RecentMatching_topic(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "city":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._RecentMatching_city(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "matchings":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._RecentMatching_matchings(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -16589,25 +19804,12 @@ func (ec *executionContext) _TopicMetrics(ctx context.Context, sel ast.Selection
 				atomic.AddUint32(&invalids, 1)
 			}
 		case "heat":
-			field := field
 
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._TopicMetrics_heat(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
+			out.Values[i] = ec._TopicMetrics_heat(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
 			}
-
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
 		case "topic":
 			field := field
 
@@ -16711,6 +19913,156 @@ func (ec *executionContext) _UserConfirmState(ctx context.Context, sel ast.Selec
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var userJoinTopicImplementors = []string{"UserJoinTopic"}
+
+func (ec *executionContext) _UserJoinTopic(ctx context.Context, sel ast.SelectionSet, obj *models.UserJoinTopic) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, userJoinTopicImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("UserJoinTopic")
+		case "id":
+
+			out.Values[i] = ec._UserJoinTopic_id(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "topicId":
+
+			out.Values[i] = ec._UserJoinTopic_topicId(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "cityId":
+
+			out.Values[i] = ec._UserJoinTopic_cityId(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "userId":
+
+			out.Values[i] = ec._UserJoinTopic_userId(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "latestMatchingId":
+
+			out.Values[i] = ec._UserJoinTopic_latestMatchingId(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "createdAt":
+
+			out.Values[i] = ec._UserJoinTopic_createdAt(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "updatedAt":
+
+			out.Values[i] = ec._UserJoinTopic_updatedAt(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "topic":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._UserJoinTopic_topic(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "city":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._UserJoinTopic_city(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "user":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._UserJoinTopic_user(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "matching":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._UserJoinTopic_matching(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -17289,6 +20641,11 @@ func (ec *executionContext) marshalNCityTopics2ᚖwhaleᚋpkgᚋmodelsᚐCityTop
 	return ec._CityTopics(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalNCreateCityTopicParam2whaleᚋpkgᚋmodelsᚐCreateCityTopicParam(ctx context.Context, v interface{}) (models.CreateCityTopicParam, error) {
+	res, err := ec.unmarshalInputCreateCityTopicParam(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalNCreateMatchingInvitationParam2whaleᚋpkgᚋmodelsᚐCreateMatchingInvitationParam(ctx context.Context, v interface{}) (models.CreateMatchingInvitationParam, error) {
 	res, err := ec.unmarshalInputCreateMatchingInvitationParam(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -17296,6 +20653,11 @@ func (ec *executionContext) unmarshalNCreateMatchingInvitationParam2whaleᚋpkg�
 
 func (ec *executionContext) unmarshalNCreateMatchingParam2whaleᚋpkgᚋmodelsᚐCreateMatchingParam(ctx context.Context, v interface{}) (models.CreateMatchingParam, error) {
 	res, err := ec.unmarshalInputCreateMatchingParam(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNCreateUserJoinTopicParam2whaleᚋpkgᚋmodelsᚐCreateUserJoinTopicParam(ctx context.Context, v interface{}) (models.CreateUserJoinTopicParam, error) {
+	res, err := ec.unmarshalInputCreateUserJoinTopicParam(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
@@ -17769,6 +21131,64 @@ func (ec *executionContext) marshalNMatchingState2whaleᚋpkgᚋmodelsᚐMatchin
 	return v
 }
 
+func (ec *executionContext) marshalNRecentMatching2whaleᚋpkgᚋmodelsᚐRecentMatching(ctx context.Context, sel ast.SelectionSet, v models.RecentMatching) graphql.Marshaler {
+	return ec._RecentMatching(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNRecentMatching2ᚕᚖwhaleᚋpkgᚋmodelsᚐRecentMatchingᚄ(ctx context.Context, sel ast.SelectionSet, v []*models.RecentMatching) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNRecentMatching2ᚖwhaleᚋpkgᚋmodelsᚐRecentMatching(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNRecentMatching2ᚖwhaleᚋpkgᚋmodelsᚐRecentMatching(ctx context.Context, sel ast.SelectionSet, v *models.RecentMatching) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._RecentMatching(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNResultCreatedBy2whaleᚋpkgᚋmodelsᚐResultCreatedBy(ctx context.Context, v interface{}) (models.ResultCreatedBy, error) {
 	var res models.ResultCreatedBy
 	err := res.UnmarshalGQL(v)
@@ -18020,6 +21440,38 @@ func (ec *executionContext) marshalNTopicMetrics2ᚕwhaleᚋpkgᚋmodelsᚐTopic
 	return ret
 }
 
+func (ec *executionContext) unmarshalNUpdateCityTopicParam2whaleᚋpkgᚋmodelsᚐUpdateCityTopicParam(ctx context.Context, v interface{}) (models.UpdateCityTopicParam, error) {
+	res, err := ec.unmarshalInputUpdateCityTopicParam(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNUpdateHotTopicMetricsParam2ᚕᚖwhaleᚋpkgᚋmodelsᚐUpdateHotTopicMetricsParamᚄ(ctx context.Context, v interface{}) ([]*models.UpdateHotTopicMetricsParam, error) {
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]*models.UpdateHotTopicMetricsParam, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNUpdateHotTopicMetricsParam2ᚖwhaleᚋpkgᚋmodelsᚐUpdateHotTopicMetricsParam(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalNUpdateHotTopicMetricsParam2ᚖwhaleᚋpkgᚋmodelsᚐUpdateHotTopicMetricsParam(ctx context.Context, v interface{}) (*models.UpdateHotTopicMetricsParam, error) {
+	res, err := ec.unmarshalInputUpdateHotTopicMetricsParam(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNUpdateHotTopicParam2whaleᚋpkgᚋmodelsᚐUpdateHotTopicParam(ctx context.Context, v interface{}) (models.UpdateHotTopicParam, error) {
+	res, err := ec.unmarshalInputUpdateHotTopicParam(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalNUpdateMatchingInvitationParam2whaleᚋpkgᚋmodelsᚐUpdateMatchingInvitationParam(ctx context.Context, v interface{}) (models.UpdateMatchingInvitationParam, error) {
 	res, err := ec.unmarshalInputUpdateMatchingInvitationParam(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -18032,6 +21484,16 @@ func (ec *executionContext) unmarshalNUpdateMatchingParam2whaleᚋpkgᚋmodels�
 
 func (ec *executionContext) unmarshalNUpdateMatchingQuotaParam2whaleᚋpkgᚋmodelsᚐUpdateMatchingQuotaParam(ctx context.Context, v interface{}) (models.UpdateMatchingQuotaParam, error) {
 	res, err := ec.unmarshalInputUpdateMatchingQuotaParam(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNUpdateRecentMatchingParam2whaleᚋpkgᚋmodelsᚐUpdateRecentMatchingParam(ctx context.Context, v interface{}) (models.UpdateRecentMatchingParam, error) {
+	res, err := ec.unmarshalInputUpdateRecentMatchingParam(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNUpdateUserJoinTopicParam2whaleᚋpkgᚋmodelsᚐUpdateUserJoinTopicParam(ctx context.Context, v interface{}) (models.UpdateUserJoinTopicParam, error) {
+	res, err := ec.unmarshalInputUpdateUserJoinTopicParam(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
@@ -18145,6 +21607,64 @@ func (ec *executionContext) marshalNUserConfirmState2ᚖwhaleᚋpkgᚋmodelsᚐU
 		return graphql.Null
 	}
 	return ec._UserConfirmState(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNUserJoinTopic2whaleᚋpkgᚋmodelsᚐUserJoinTopic(ctx context.Context, sel ast.SelectionSet, v models.UserJoinTopic) graphql.Marshaler {
+	return ec._UserJoinTopic(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNUserJoinTopic2ᚕᚖwhaleᚋpkgᚋmodelsᚐUserJoinTopicᚄ(ctx context.Context, sel ast.SelectionSet, v []*models.UserJoinTopic) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNUserJoinTopic2ᚖwhaleᚋpkgᚋmodelsᚐUserJoinTopic(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNUserJoinTopic2ᚖwhaleᚋpkgᚋmodelsᚐUserJoinTopic(ctx context.Context, sel ast.SelectionSet, v *models.UserJoinTopic) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._UserJoinTopic(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNUserMatchingCalenderParam2whaleᚋpkgᚋmodelsᚐUserMatchingCalenderParam(ctx context.Context, v interface{}) (models.UserMatchingCalenderParam, error) {
@@ -18553,6 +22073,14 @@ func (ec *executionContext) marshalOChatGroup2ᚖwhaleᚋpkgᚋmodelsᚐChatGrou
 	return ec._ChatGroup(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalOCitiesTopicsFilter2ᚖwhaleᚋpkgᚋmodelsᚐCitiesTopicsFilter(ctx context.Context, v interface{}) (*models.CitiesTopicsFilter, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputCitiesTopicsFilter(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalOGender2ᚖwhaleᚋpkgᚋmodelsᚐGender(ctx context.Context, v interface{}) (*models.Gender, error) {
 	if v == nil {
 		return nil, nil
@@ -18574,6 +22102,14 @@ func (ec *executionContext) unmarshalOGraphQLPaginator2ᚖgithubᚗcomᚋletjoy�
 		return nil, nil
 	}
 	res, err := ec.unmarshalInputGraphQLPaginator(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalOHotTopicsFilter2ᚖwhaleᚋpkgᚋmodelsᚐHotTopicsFilter(ctx context.Context, v interface{}) (*models.HotTopicsFilter, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputHotTopicsFilter(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
@@ -18832,6 +22368,14 @@ func (ec *executionContext) marshalOTime2ᚖtimeᚐTime(ctx context.Context, sel
 	}
 	res := graphql.MarshalTime(*v)
 	return res
+}
+
+func (ec *executionContext) unmarshalOUserJoinTopicFilter2ᚖwhaleᚋpkgᚋmodelsᚐUserJoinTopicFilter(ctx context.Context, v interface{}) (*models.UserJoinTopicFilter, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputUserJoinTopicFilter(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalOUserMatchingFilter2ᚖwhaleᚋpkgᚋmodelsᚐUserMatchingFilter(ctx context.Context, v interface{}) (*models.UserMatchingFilter, error) {

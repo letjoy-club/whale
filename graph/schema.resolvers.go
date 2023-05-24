@@ -29,6 +29,16 @@ func (r *cityTopicsResolver) Topics(ctx context.Context, obj *models.CityTopics)
 	}), nil
 }
 
+// City is the resolver for the city field.
+func (r *cityTopicsResolver) City(ctx context.Context, obj *models.CityTopics) (*models.Area, error) {
+	return &models.Area{Code: obj.CityID}, nil
+}
+
+// City is the resolver for the city field.
+func (r *hotTopicsInAreaResolver) City(ctx context.Context, obj *models.HotTopicsInArea) (*models.Area, error) {
+	return &models.Area{Code: obj.CityID}, nil
+}
+
 // Gender is the resolver for the gender field.
 func (r *matchingResolver) Gender(ctx context.Context, obj *models.Matching) (models.Gender, error) {
 	return models.Gender(obj.Gender), nil
@@ -235,6 +245,7 @@ func (r *mutationResolver) RefreshTopicMetrics(ctx context.Context) (*string, er
 	}
 
 	err := modelutil.RefreshHotTopic(ctx, time.Now().Add(time.Hour*24*-10))
+	midacontext.GetLoader[loader.Loader](ctx).HotTopics.ClearAll()
 	return nil, err
 }
 
@@ -333,11 +344,6 @@ func (r *topicResolver) FuzzyMatchingNum(ctx context.Context, obj *models.Topic,
 	return newCount, nil
 }
 
-// Heat is the resolver for the heat field.
-func (r *topicMetricsResolver) Heat(ctx context.Context, obj *models.TopicMetrics) (int, error) {
-	return obj.Matched*5 + obj.Matching*13, nil
-}
-
 // Topic is the resolver for the topic field.
 func (r *topicMetricsResolver) Topic(ctx context.Context, obj *models.TopicMetrics) (*models.Topic, error) {
 	return &models.Topic{ID: obj.ID}, nil
@@ -360,6 +366,9 @@ func (r *userResolver) MatchingQuota(ctx context.Context, obj *models.User) (*mo
 
 // CityTopics returns CityTopicsResolver implementation.
 func (r *Resolver) CityTopics() CityTopicsResolver { return &cityTopicsResolver{r} }
+
+// HotTopicsInArea returns HotTopicsInAreaResolver implementation.
+func (r *Resolver) HotTopicsInArea() HotTopicsInAreaResolver { return &hotTopicsInAreaResolver{r} }
 
 // Matching returns MatchingResolver implementation.
 func (r *Resolver) Matching() MatchingResolver { return &matchingResolver{r} }
@@ -394,6 +403,7 @@ func (r *Resolver) TopicMetrics() TopicMetricsResolver { return &topicMetricsRes
 func (r *Resolver) User() UserResolver { return &userResolver{r} }
 
 type cityTopicsResolver struct{ *Resolver }
+type hotTopicsInAreaResolver struct{ *Resolver }
 type matchingResolver struct{ *Resolver }
 type matchingInvitationResolver struct{ *Resolver }
 type matchingOfTopicResolver struct{ *Resolver }

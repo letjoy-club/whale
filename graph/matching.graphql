@@ -1,3 +1,11 @@
+input RecentMatchingFilter {
+  cityId: String
+}
+
+input UpdateRecentMatchingParam {
+  matchingIds: [String!]!
+}
+
 extend type Query {
   "【匹配系统】查看匹配"
   matching(id: String!): Matching!
@@ -51,6 +59,15 @@ extend type Query {
 
   "【匹配系统】待确认邀请数量"
   unconfirmedInvitationCount(userId: String): Summary!
+
+  "【匹配系统】最近匹配，管理端"
+  recentMatchings(paginator: GraphQLPaginator): [RecentMatching!]!
+
+  "【匹配系统】最近匹配总数，管理端"
+  recentMatchingsCount: Summary!
+
+  "【匹配系统】使用 id 获取最近的匹配"
+  recentMatching(id: String!): RecentMatching!
 }
 
 extend type Mutation {
@@ -80,4 +97,7 @@ extend type Mutation {
 
   "【匹配系统】打分"
   reviewMatching(matchingId: String!, param: ReviewMatchingParam!): String
+
+  "【匹配系统】更新最近的匹配"
+  updateRecentMatching(id: String!, param: UpdateRecentMatchingParam!): RecentMatching!
 }

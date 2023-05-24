@@ -120,6 +120,20 @@ type MatchingQuota struct {
 
 func (MatchingQuota) IsEntity() {}
 
+type MatchingDurationConstraint struct {
+	ID int `gorm:"primaryKey"`
+
+	UserID string `gorm:"index;type:varchar(32)"`
+
+	Total  int
+	Remain int
+
+	StartDate time.Time `gorm:"index"`
+	StopDate  time.Time `gorm:"index"`
+
+	UpdatedAt time.Time `gorm:"autoUpdateTime"`
+}
+
 type MatchingPreview struct {
 	UserID    string
 	Remark    string

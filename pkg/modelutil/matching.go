@@ -145,6 +145,15 @@ func CreateMatching(ctx context.Context, uid string, param models.CreateMatching
 		return nil, whalecode.ErrMatchingQuotaNotEnough
 	}
 
+	constraintThunk := midacontext.GetLoader[loader.Loader](ctx).MatchingDurationConstraint.Load(ctx, uid)
+	constraint, err := constraintThunk()
+	if err != nil {
+		return nil, err
+	}
+	if constraint.Remain <= 0 {
+		return nil, whalecode.ErrMatchingDurationQuotaNotEnough
+	}
+
 	users, err := hoopoe.GetUserByIDs(ctx, midacontext.GetServices(ctx).Hoopoe, []string{uid})
 	if err != nil {
 		return nil, err
@@ -201,11 +210,22 @@ func CreateMatching(ctx context.Context, uid string, param models.CreateMatching
 		}
 
 		MatchingQuota := dbquery.Use(tx).MatchingQuota
-		_, err = MatchingQuota.WithContext(ctx).Where(MatchingQuota.UserID.Eq(uid)).UpdateSimple(MatchingQuota.Remain.Add(-1))
+		_, err = MatchingQuota.WithContext(ctx).
+			Where(MatchingQuota.UserID.Eq(uid)).
+			UpdateSimple(MatchingQuota.Remain.Add(-1))
+		if err != nil {
+			return err
+		}
+
+		MatchingDurationConstraint := dbquery.Use(tx).MatchingDurationConstraint
+		_, err = MatchingDurationConstraint.WithContext(ctx).
+			Where(MatchingDurationConstraint.UserID.Eq(uid)).
+			UpdateSimple(MatchingDurationConstraint.Remain.Add(-1))
 		return err
 	})
 	if err == nil {
 		midacontext.GetLoader[loader.Loader](ctx).MatchingQuota.Clear(ctx, uid)
+		midacontext.GetLoader[loader.Loader](ctx).MatchingDurationConstraint.Clear(ctx, uid)
 	}
 	RecordUserJoinTopic(ctx, matching.TopicID, matching.CityID, matching.UserID, matching.ID)
 	return matching, err
@@ -219,6 +239,16 @@ func CreateMatchingInvitation(ctx context.Context, uid string, param models.Crea
 	}
 	if quota.Remain <= 0 {
 		return nil, whalecode.ErrMatchingQuotaNotEnough
+	}
+
+	constraintThunk := midacontext.GetLoader[loader.Loader](ctx).MatchingDurationConstraint.Load(ctx, uid)
+	constraint, err := constraintThunk()
+	if err != nil {
+		return nil, err
+	}
+
+	if constraint.Remain <= 0 {
+		return nil, whalecode.ErrMatchingDurationQuotaNotEnough
 	}
 
 	_, err = hoopoe.GetTopic(ctx, midacontext.GetServices(ctx).Hoopoe, param.TopicID)
@@ -258,14 +288,21 @@ func CreateMatchingInvitation(ctx context.Context, uid string, param models.Crea
 			return err
 		}
 		MatchingQuota := dbquery.Use(tx).MatchingQuota
-		_, err = MatchingQuota.WithContext(ctx).Where(MatchingQuota.UserID.Eq(uid)).UpdateSimple(MatchingQuota.Remain.Add(-1))
+		_, err = MatchingQuota.WithContext(ctx).Where(MatchingQuota.UserID.Eq(uid)).
+			UpdateSimple(MatchingQuota.Remain.Add(-1))
 		if err != nil {
 			return err
 		}
+		MatchingDurationConstraint := dbquery.Use(tx).MatchingDurationConstraint
+		_, err = MatchingDurationConstraint.
+			WithContext(ctx).
+			Where(MatchingDurationConstraint.ID.Eq(constraint.ID)).
+			UpdateSimple(MatchingDurationConstraint.Remain.Add(-1))
 		return nil
 	})
 
 	midacontext.GetLoader[loader.Loader](ctx).MatchingQuota.Clear(ctx, uid)
+	midacontext.GetLoader[loader.Loader](ctx).MatchingInvitation.Clear(ctx, uid)
 	return &invitation, nil
 }
 
@@ -337,7 +374,6 @@ func FinishMatching(ctx context.Context, matchingID string, uid string) error {
 			)
 		return err
 	})
-
 	for _, matching := range matchingResult.MatchingIDs {
 		midacontext.GetLoader[loader.Loader](ctx).Matching.Clear(ctx, matching)
 	}

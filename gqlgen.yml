@@ -95,3 +95,9 @@ models:
   CityTopics:
     model:
       - whale/pkg/models.CityTopics
+  UserJoinTopic:
+    model:
+      - whale/pkg/models.UserJoinTopic
+  RecentMatching:
+    model:
+      - whale/pkg/models.RecentMatching

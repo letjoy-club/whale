@@ -21,6 +21,7 @@ func Use(db *gorm.DB, opts ...gen.DOOption) *Query {
 		CityTopics:                  newCityTopics(db, opts...),
 		HotTopicsInArea:             newHotTopicsInArea(db, opts...),
 		Matching:                    newMatching(db, opts...),
+		MatchingDurationConstraint:  newMatchingDurationConstraint(db, opts...),
 		MatchingInvitation:          newMatchingInvitation(db, opts...),
 		MatchingQuota:               newMatchingQuota(db, opts...),
 		MatchingResult:              newMatchingResult(db, opts...),
@@ -37,6 +38,7 @@ type Query struct {
 	CityTopics                  cityTopics
 	HotTopicsInArea             hotTopicsInArea
 	Matching                    matching
+	MatchingDurationConstraint  matchingDurationConstraint
 	MatchingInvitation          matchingInvitation
 	MatchingQuota               matchingQuota
 	MatchingResult              matchingResult
@@ -54,6 +56,7 @@ func (q *Query) clone(db *gorm.DB) *Query {
 		CityTopics:                  q.CityTopics.clone(db),
 		HotTopicsInArea:             q.HotTopicsInArea.clone(db),
 		Matching:                    q.Matching.clone(db),
+		MatchingDurationConstraint:  q.MatchingDurationConstraint.clone(db),
 		MatchingInvitation:          q.MatchingInvitation.clone(db),
 		MatchingQuota:               q.MatchingQuota.clone(db),
 		MatchingResult:              q.MatchingResult.clone(db),
@@ -78,6 +81,7 @@ func (q *Query) ReplaceDB(db *gorm.DB) *Query {
 		CityTopics:                  q.CityTopics.replaceDB(db),
 		HotTopicsInArea:             q.HotTopicsInArea.replaceDB(db),
 		Matching:                    q.Matching.replaceDB(db),
+		MatchingDurationConstraint:  q.MatchingDurationConstraint.replaceDB(db),
 		MatchingInvitation:          q.MatchingInvitation.replaceDB(db),
 		MatchingQuota:               q.MatchingQuota.replaceDB(db),
 		MatchingResult:              q.MatchingResult.replaceDB(db),
@@ -92,6 +96,7 @@ type queryCtx struct {
 	CityTopics                  ICityTopicsDo
 	HotTopicsInArea             IHotTopicsInAreaDo
 	Matching                    IMatchingDo
+	MatchingDurationConstraint  IMatchingDurationConstraintDo
 	MatchingInvitation          IMatchingInvitationDo
 	MatchingQuota               IMatchingQuotaDo
 	MatchingResult              IMatchingResultDo
@@ -106,6 +111,7 @@ func (q *Query) WithContext(ctx context.Context) *queryCtx {
 		CityTopics:                  q.CityTopics.WithContext(ctx),
 		HotTopicsInArea:             q.HotTopicsInArea.WithContext(ctx),
 		Matching:                    q.Matching.WithContext(ctx),
+		MatchingDurationConstraint:  q.MatchingDurationConstraint.WithContext(ctx),
 		MatchingInvitation:          q.MatchingInvitation.WithContext(ctx),
 		MatchingQuota:               q.MatchingQuota.WithContext(ctx),
 		MatchingResult:              q.MatchingResult.WithContext(ctx),

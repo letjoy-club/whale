@@ -28,6 +28,15 @@ type ChatGroup struct {
 
 func (ChatGroup) IsEntity() {}
 
+type CitiesTopicsFilter struct {
+	CityID *string `json:"cityId,omitempty"`
+}
+
+type CreateCityTopicParam struct {
+	TopicIds []string `json:"topicIds"`
+	CityID   string   `json:"cityId"`
+}
+
 type CreateMatchingInvitationParam struct {
 	InviteeID string   `json:"inviteeId"`
 	Remark    string   `json:"remark"`
@@ -43,6 +52,15 @@ type CreateMatchingParam struct {
 	Gender   Gender     `json:"gender"`
 	Remark   *string    `json:"remark,omitempty"`
 	Deadline *time.Time `json:"deadline,omitempty"`
+}
+
+type CreateUserJoinTopicParam struct {
+	MatchingID string `json:"matchingId"`
+}
+
+type HotTopicsFilter struct {
+	CityID  *string `json:"cityId,omitempty"`
+	TopicID *string `json:"topicId,omitempty"`
 }
 
 type MatchingFilter struct {
@@ -66,6 +84,10 @@ type MatchingResultFilter struct {
 	UserID *string    `json:"userId,omitempty"`
 	Before *time.Time `json:"before,omitempty"`
 	After  *time.Time `json:"after,omitempty"`
+}
+
+type RecentMatchingFilter struct {
+	CityID *string `json:"cityId,omitempty"`
 }
 
 type ReviewMatchingParam struct {
@@ -95,6 +117,21 @@ type Topic struct {
 
 func (Topic) IsEntity() {}
 
+type UpdateCityTopicParam struct {
+	TopicIds []string `json:"topicIds"`
+}
+
+type UpdateHotTopicMetricsParam struct {
+	TopicID  string `json:"topicId"`
+	Heat     int    `json:"heat"`
+	Matched  int    `json:"matched"`
+	Matching int    `json:"matching"`
+}
+
+type UpdateHotTopicParam struct {
+	TopicMetrics []*UpdateHotTopicMetricsParam `json:"topicMetrics"`
+}
+
 type UpdateMatchingInvitationParam struct {
 	CreatedAt *time.Time `json:"createdAt,omitempty"`
 	TopicID   *string    `json:"topicId,omitempty"`
@@ -118,6 +155,14 @@ type UpdateMatchingQuotaParam struct {
 	Remain *int `json:"remain,omitempty"`
 }
 
+type UpdateRecentMatchingParam struct {
+	MatchingIds []string `json:"matchingIds"`
+}
+
+type UpdateUserJoinTopicParam struct {
+	MatchingID string `json:"matchingId"`
+}
+
 type User struct {
 	ID            string         `json:"id"`
 	MatchingQuota *MatchingQuota `json:"matchingQuota"`
@@ -128,6 +173,12 @@ func (User) IsEntity() {}
 type UserConfirmState struct {
 	UserID string                     `json:"userId"`
 	State  MatchingResultConfirmState `json:"state"`
+}
+
+type UserJoinTopicFilter struct {
+	CityID  *string `json:"cityId,omitempty"`
+	TopicID *string `json:"topicId,omitempty"`
+	UserID  *string `json:"userId,omitempty"`
 }
 
 type UserMatchingCalenderParam struct {

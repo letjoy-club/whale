@@ -48,6 +48,7 @@ func RefreshHotTopic(ctx context.Context, before time.Time) error {
 			DoUpdates: clause.AssignmentColumns([]string{HotTopicsInArea.TopicMetrics.ColumnName().String()}),
 		}).
 		Create(hotTopics...)
+		// Heat is the resolver for the heat field.
 	fmt.Println("update/create hot topics:", len(hotTopics))
 	return err
 }
@@ -64,9 +65,16 @@ func topicMetrics(matchings []*models.Matching) []models.TopicMetrics {
 		}
 		topicMetrics[m.TopicID] = tm
 	})
+
+	lo.ForEach(matchings, func(m *models.Matching, i int) {
+		tm := topicMetrics[m.TopicID]
+		tm.Heat = 5*tm.Matched + 13*tm.Matching + 100
+		topicMetrics[m.TopicID] = tm
+	})
+
 	tms := lo.Values(topicMetrics)
 	sort.Slice(tms, func(i, j int) bool {
-		return tms[i].Total() > tms[j].Total()
+		return tms[i].Heat > tms[j].Heat
 	})
 	return tms
 }

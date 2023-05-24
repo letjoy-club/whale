@@ -294,6 +294,38 @@ func (r *mutationResolver) ReviewMatching(ctx context.Context, matchingID string
 	return nil, err
 }
 
+// UpdateRecentMatching is the resolver for the updateRecentMatching field.
+func (r *mutationResolver) UpdateRecentMatching(ctx context.Context, id string, param models.UpdateRecentMatchingParam) (*models.RecentMatching, error) {
+	token := midacontext.GetClientToken(ctx)
+	if !token.IsAdmin() {
+		return nil, midacode.ErrNotPermitted
+	}
+	thunk := midacontext.GetLoader[loader.Loader](ctx).RecentMatching.Load(ctx, id)
+	recentMatching, err := thunk()
+	if err != nil {
+		return nil, err
+	}
+
+	matchingsThunk := midacontext.GetLoader[loader.Loader](ctx).Matching.LoadMany(ctx, recentMatching.MatchingIDs)
+	matchings, errors := matchingsThunk()
+	if len(errors) > 0 {
+		return nil, multierr.Combine(errors...)
+	}
+
+	for _, matching := range matchings {
+		if recentMatching.CityID != matching.CityID || recentMatching.TopicID != matching.TopicID {
+			return nil, whalecode.ErrMatchingNotMatchWithTopic
+		}
+	}
+	db := dbutil.GetDB(ctx)
+	RecentMatching := dbquery.Use(db).RecentMatching
+	if _, err := RecentMatching.WithContext(ctx).Where(RecentMatching.ID.Eq(id)).UpdateSimple(); err != nil {
+		return nil, err
+	}
+	midacontext.GetLoader[loader.Loader](ctx).RecentMatching.Clear(ctx, id)
+	return midacontext.GetLoader[loader.Loader](ctx).RecentMatching.Load(ctx, id)()
+}
+
 // Matching is the resolver for the matching field.
 func (r *queryResolver) Matching(ctx context.Context, id string) (*models.Matching, error) {
 	token := midacontext.GetClientToken(ctx)
@@ -758,4 +790,46 @@ func (r *queryResolver) UnconfirmedInvitationCount(ctx context.Context, userID *
 		return nil, err
 	}
 	return &models.Summary{Count: int(count)}, nil
+}
+
+// RecentMatchings is the resolver for the recentMatchings field.
+func (r *queryResolver) RecentMatchings(ctx context.Context, paginator *graphqlutil.GraphQLPaginator) ([]*models.RecentMatching, error) {
+	token := midacontext.GetClientToken(ctx)
+	if !token.IsAdmin() {
+		return nil, midacode.ErrNotPermitted
+	}
+	pager := graphqlutil.GetPager(paginator)
+	db := dbutil.GetDB(ctx)
+	RecentMatching := dbquery.Use(db).RecentMatching
+	recentMatchingIDs := []string{}
+	err := RecentMatching.WithContext(ctx).
+		Limit(pager.Limit()).Offset(pager.Offset()).
+		Order(RecentMatching.ID.Desc()).Pluck(RecentMatching.ID, &recentMatchingIDs)
+	if err != nil {
+		return nil, err
+	}
+	thunk := midacontext.GetLoader[loader.Loader](ctx).RecentMatching.LoadMany(ctx, recentMatchingIDs)
+	recentMatchings, errors := thunk()
+	if len(errors) > 0 {
+		return nil, multierr.Combine(errors...)
+	}
+	return recentMatchings, nil
+}
+
+// RecentMatchingsCount is the resolver for the recentMatchingsCount field.
+func (r *queryResolver) RecentMatchingsCount(ctx context.Context) (*models.Summary, error) {
+	token := midacontext.GetClientToken(ctx)
+	if !token.IsAdmin() {
+		return nil, midacode.ErrNotPermitted
+	}
+	db := dbutil.GetDB(ctx)
+	RecentMatching := dbquery.Use(db).RecentMatching
+	count, err := RecentMatching.WithContext(ctx).Count()
+	return &models.Summary{Count: int(count)}, err
+}
+
+// RecentMatching is the resolver for the recentMatching field.
+func (r *queryResolver) RecentMatching(ctx context.Context, id string) (*models.RecentMatching, error) {
+	thunk := midacontext.GetLoader[loader.Loader](ctx).RecentMatching.Load(ctx, id)
+	return thunk()
 }

@@ -258,6 +258,7 @@ type HotTopicsInArea {
 
   # query
   topicMetrics: [TopicMetrics!]!
+  city: Area!
 }
 
 type TopicMetrics {
@@ -277,6 +278,7 @@ type CityTopics {
 
   # query
   topics: [Topic!]!
+  city: Area!
 }
 
 input UserMatchingCalenderParam {

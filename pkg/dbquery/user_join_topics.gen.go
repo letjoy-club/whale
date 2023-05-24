@@ -32,8 +32,8 @@ func newUserJoinTopic(db *gorm.DB, opts ...gen.DOOption) userJoinTopic {
 	_userJoinTopic.UserID = field.NewString(tableName, "user_id")
 	_userJoinTopic.LatestMatchingID = field.NewString(tableName, "latest_matching_id")
 	_userJoinTopic.Times = field.NewInt(tableName, "times")
-	_userJoinTopic.UpdatedAt = field.NewInt(tableName, "updated_at")
-	_userJoinTopic.CreatedAt = field.NewInt(tableName, "created_at")
+	_userJoinTopic.UpdatedAt = field.NewTime(tableName, "updated_at")
+	_userJoinTopic.CreatedAt = field.NewTime(tableName, "created_at")
 
 	_userJoinTopic.fillFieldMap()
 
@@ -50,8 +50,8 @@ type userJoinTopic struct {
 	UserID           field.String
 	LatestMatchingID field.String
 	Times            field.Int
-	UpdatedAt        field.Int
-	CreatedAt        field.Int
+	UpdatedAt        field.Time
+	CreatedAt        field.Time
 
 	fieldMap map[string]field.Expr
 }
@@ -74,8 +74,8 @@ func (u *userJoinTopic) updateTableName(table string) *userJoinTopic {
 	u.UserID = field.NewString(table, "user_id")
 	u.LatestMatchingID = field.NewString(table, "latest_matching_id")
 	u.Times = field.NewInt(table, "times")
-	u.UpdatedAt = field.NewInt(table, "updated_at")
-	u.CreatedAt = field.NewInt(table, "created_at")
+	u.UpdatedAt = field.NewTime(table, "updated_at")
+	u.CreatedAt = field.NewTime(table, "created_at")
 
 	u.fillFieldMap()
 

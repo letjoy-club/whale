@@ -29,6 +29,7 @@ func main() {
 		&models.UserJoinTopic{},
 		&models.RecentMatching{},
 
+		&models.MatchingDurationConstraint{},
 		&models.MatchingInvitation{},
 		&models.MatchingQuota{},
 		&models.MatchingResultConfirmAction{},

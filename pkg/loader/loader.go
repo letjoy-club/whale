@@ -3,7 +3,6 @@ package loader
 import (
 	"context"
 	"time"
-	"whale/pkg/dbquery"
 	"whale/pkg/models"
 
 	"github.com/graph-gophers/dataloader/v7"
@@ -14,38 +13,48 @@ import (
 )
 
 type Loader struct {
-	Matching           *dataloader.Loader[string, *models.Matching]
-	MatchingInvitation *dataloader.Loader[string, *models.MatchingInvitation]
-	MatchingQuota      *dataloader.Loader[string, *models.MatchingQuota]
-	MatchingResult     *dataloader.Loader[int, *models.MatchingResult]
-	MatchingReviewed   *dataloader.Loader[string, MatchingReviewed]
+	Matching                   *dataloader.Loader[string, *models.Matching]
+	MatchingInvitation         *dataloader.Loader[string, *models.MatchingInvitation]
+	MatchingQuota              *dataloader.Loader[string, *models.MatchingQuota]
+	MatchingResult             *dataloader.Loader[int, *models.MatchingResult]
+	MatchingReviewed           *dataloader.Loader[string, MatchingReviewed]
+	MatchingDurationConstraint *dataloader.Loader[string, *models.MatchingDurationConstraint]
 
-	CityTopicMatchings  *dataloader.Loader[CityTopicKey, CityTopicMatchings]
+	UserJoinTopic  *dataloader.Loader[int, *models.UserJoinTopic]
+	RecentMatching *dataloader.Loader[string, *models.RecentMatching]
+
+	// 从 recentMatching 中查询最近的 city, topic 对应的 matching id 信息
+	CityTopicMatchings *dataloader.Loader[CityTopicKey, CityTopicMatchings]
+	// 从 matching 表中获取最近的 topic 匹配中/已匹配数量
 	CityTopicRequestNum *dataloader.Loader[string, CityTopicRequestNum]
+	// 首屏的话题推荐
+	CityTopics *dataloader.Loader[string, *models.CityTopics]
 
 	UserProfile        *dataloader.Loader[string, UserProfile]
 	UserAvatarNickname *dataloader.Loader[string, UserAvatarNickname]
-	HotTopics          *dataloader.Loader[string, *models.HotTopicsInArea]
+	// 查询城市的热门话题
+	HotTopics *dataloader.Loader[string, *models.HotTopicsInArea]
 }
 
 func NewLoader(db *gorm.DB) *Loader {
 	return &Loader{
 		CityTopicMatchings:  NewCityTopicMatchingLoader(db),
 		CityTopicRequestNum: NewCityTopicRequestNumLoader(db),
+		CityTopics:          NewCityTopicLoader(db),
+		HotTopics:           NewHotTopicLoader(db),
 
-		Matching:           NewMatchingLoader(db),
-		MatchingInvitation: NewMatchingInvitationLoader(db),
-		MatchingQuota:      NewMatchingQuotaLoader(db),
+		Matching:                   NewMatchingLoader(db),
+		MatchingInvitation:         NewMatchingInvitationLoader(db),
+		MatchingQuota:              NewMatchingQuotaLoader(db),
+		MatchingResult:             NewMatchingResultLoader(db),
+		MatchingReviewed:           NewMatchingReviewedLoader(db),
+		MatchingDurationConstraint: NewMatchingDurationConstraintLoader(db),
 
-		MatchingResult:     NEwMatchingResultLoader(db),
-		MatchingReviewed:   NewMatchingReviewedLoader(db),
 		UserProfile:        NewUserProfileLoader(db),
 		UserAvatarNickname: NewUserAvatarNicknameLoader(db),
-		HotTopics: NewSingleLoader(db, func(ctx context.Context, keys []string) ([]*models.HotTopicsInArea, error) {
-			HotTopicsInArea := dbquery.Use(db).HotTopicsInArea
-			topics, err := HotTopicsInArea.WithContext(ctx).Where(HotTopicsInArea.CityID.In(keys...)).Find()
-			return topics, err
-		}, func(k map[string]*models.HotTopicsInArea, v *models.HotTopicsInArea) { k[v.CityID] = v }, time.Second*60),
+		UserJoinTopic:      NewUserJoinTopicLoader(db),
+
+		RecentMatching: NewRecentMatchingLoader(db),
 	}
 }
 

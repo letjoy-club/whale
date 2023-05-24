@@ -103,7 +103,9 @@ func NewCityTopicMatchingLoader(db *gorm.DB) *dataloader.Loader[CityTopicKey, Ci
 			})
 		}
 		if len(newRecentMatchings) > 0 {
-			CreateCityTopicMatchings(ctx, newRecentMatchings)
+			if err := CreateCityTopicMatchings(ctx, newRecentMatchings); err != nil {
+				return nil, err
+			}
 		}
 		return lo.Map(append(recentMatchings, newRecentMatchings...), func(rm *models.RecentMatching, i int) CityTopicMatchings {
 			return CityTopicMatchings{
