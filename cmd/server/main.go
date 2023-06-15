@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"flag"
 	"fmt"
 	"log"
@@ -20,11 +19,14 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/letjoy-club/mida-tool/authenticator"
 	"github.com/letjoy-club/mida-tool/dbutil"
+	"github.com/letjoy-club/mida-tool/graphqlutil"
 	"github.com/letjoy-club/mida-tool/midacode"
 	"github.com/letjoy-club/mida-tool/midacontext"
 	"github.com/letjoy-club/mida-tool/proxy"
+	"github.com/letjoy-club/mida-tool/qcloudutil/clsutil"
 	"github.com/letjoy-club/mida-tool/redisutil"
-	"github.com/vektah/gqlparser/v2/gqlerror"
+	"github.com/letjoy-club/mida-tool/tracerutil"
+	"go.opentelemetry.io/otel/trace"
 )
 
 func main() {
@@ -35,10 +37,15 @@ func main() {
 
 	flag.Parse()
 
-	conf := whaleconf.ReadConf(*confPath)
-	db := conf.DB()
-	redis := conf.Redis()
+	whaleConf := whaleconf.ReadConf(*confPath)
+	db := whaleConf.DB()
+	redis := whaleConf.Redis()
 	loader := loader.NewLoader(db)
+	cls := whaleConf.CLS()
+
+	tp := whaleConf.Trace()
+	defer func() { tp.Shutdown(context.Background()) }()
+	tr := tp.Tracer("whale-graph")
 
 	gqlConf := graph.Config{Resolvers: &graph.Resolver{}}
 	gqlConf.Directives.AdminOnly = func(ctx context.Context, obj interface{}, next graphql.Resolver) (interface{}, error) {
@@ -52,40 +59,26 @@ func main() {
 	srv := handler.NewDefaultServer(graph.NewExecutableSchema(gqlConf))
 	srv.AroundOperations(func(ctx context.Context, next graphql.OperationHandler) graphql.ResponseHandler {
 		oc := graphql.GetOperationContext(ctx)
+		opName := "unknown"
+		if oc.OperationName != "" {
+			opName = oc.OperationName
+		}
+		ctx, span := tr.Start(ctx, "whale."+opName, trace.WithSpanKind(trace.SpanKindServer))
+		defer span.End()
 		fmt.Printf("RawQuery: %s\n", oc.RawQuery)
 		return next(ctx)
 	})
-	srv.SetErrorPresenter(func(ctx context.Context, e error) *gqlerror.Error {
-		var ok bool
-		var midaErr midacode.Error2
-		tmpErr := e
-
-		for {
-			tmpErr = errors.Unwrap(tmpErr)
-			if tmpErr == nil {
-				break
-			}
-			midaErr, ok = tmpErr.(midacode.Error2)
-			if ok {
-				break
-			}
-		}
-		err := graphql.DefaultErrorPresenter(ctx, e)
-		err.Extensions = map[string]interface{}{"cn": midaErr.CN()}
-		return err
-	})
+	srv.SetErrorPresenter(graphqlutil.ErrorPresenter)
 
 	r := chi.NewRouter()
 
-	secret := []byte(conf.Secret)
+	secret := []byte(whaleConf.Secret)
 	auth := authenticator.Authenticator{Key: secret}
 
-	adminToken, _ := auth.SignID("1000")
-	fmt.Println("Admin Token: ", adminToken)
-
 	services := midacontext.Services{
-		Hoopoe: midacontext.NewServices(conf.ServicesSetting.Hoopoe, "1000"),
-		Smew:   midacontext.NewServices(conf.ServicesSetting.Smew, "1000"),
+		Hoopoe: midacontext.NewServices(whaleConf.ServiceConf.Hoopoe, "1000"),
+		Smew:   midacontext.NewServices(whaleConf.ServiceConf.Smew, "1000"),
+		Scream: midacontext.NewServices(whaleConf.ServiceConf.Scream, "1000"),
 	}
 
 	r.Use(func(next http.Handler) http.Handler {
@@ -108,11 +101,13 @@ func main() {
 			}
 
 			ctx = dbutil.WithDB(ctx, db)
+			ctx = clsutil.WithGraphLogger(ctx, cls, whaleConf.QCloud.CLSConf.TopicID, "whale")
 			ctx = redisutil.WithRedis(ctx, redis)
 			ctx = midacontext.WithLoader(ctx, loader)
 			ctx = midacontext.WithServices(ctx, services)
 			ctx = midacontext.WithClientToken(ctx, token)
 			ctx = midacontext.WithAuthenticator(ctx, auth)
+			ctx = tracerutil.WithSpanContext(ctx, r.Header)
 
 			r = r.WithContext(ctx)
 

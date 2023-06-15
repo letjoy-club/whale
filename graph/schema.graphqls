@@ -188,6 +188,7 @@ type MatchingQuota @key(fields: "userId") {
   userId: String!
   remain: Int!
   total: Int!
+  matchingNum: Int!
   createdAt: Time! @adminOnly
   updatedAt: Time! @adminOnly
 }

@@ -2,9 +2,11 @@ package modelutil
 
 import (
 	"context"
+	"fmt"
 	"time"
 	"whale/pkg/dbquery"
 	"whale/pkg/gqlient/hoopoe"
+	"whale/pkg/gqlient/scream"
 	"whale/pkg/gqlient/smew"
 	"whale/pkg/loader"
 	"whale/pkg/models"
@@ -187,7 +189,7 @@ func CreateMatching(ctx context.Context, uid string, param models.CreateMatching
 	// 如果有找到，或者其他数据库错误
 	notFoundErr := midacode.ItemCustomNotFound(err, midacode.ErrItemNotFound)
 	if notFoundErr != midacode.ErrItemNotFound {
-		return nil, whalecode.ErrCannotPerformActionWhenChatGroupAlreadyCreated
+		return nil, whalecode.ErrTopicIsAlreadyInMatching
 	}
 
 	matching := &models.Matching{
@@ -212,7 +214,10 @@ func CreateMatching(ctx context.Context, uid string, param models.CreateMatching
 		MatchingQuota := dbquery.Use(tx).MatchingQuota
 		_, err = MatchingQuota.WithContext(ctx).
 			Where(MatchingQuota.UserID.Eq(uid)).
-			UpdateSimple(MatchingQuota.Remain.Add(-1))
+			UpdateSimple(
+				MatchingQuota.Remain.Add(-1),
+				MatchingQuota.MatchingNum.Add(1),
+			)
 		if err != nil {
 			return err
 		}
@@ -289,7 +294,10 @@ func CreateMatchingInvitation(ctx context.Context, uid string, param models.Crea
 		}
 		MatchingQuota := dbquery.Use(tx).MatchingQuota
 		_, err = MatchingQuota.WithContext(ctx).Where(MatchingQuota.UserID.Eq(uid)).
-			UpdateSimple(MatchingQuota.Remain.Add(-1))
+			UpdateSimple(
+				MatchingQuota.Remain.Add(-1),
+				MatchingQuota.InvitationNum.Add(1),
+			)
 		if err != nil {
 			return err
 		}
@@ -298,11 +306,26 @@ func CreateMatchingInvitation(ctx context.Context, uid string, param models.Crea
 			WithContext(ctx).
 			Where(MatchingDurationConstraint.ID.Eq(constraint.ID)).
 			UpdateSimple(MatchingDurationConstraint.Remain.Add(-1))
-		return nil
+		return err
 	})
 
 	midacontext.GetLoader[loader.Loader](ctx).MatchingQuota.Clear(ctx, uid)
 	midacontext.GetLoader[loader.Loader](ctx).MatchingInvitation.Clear(ctx, uid)
+
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = scream.InvitationCreated(ctx, midacontext.GetServices(ctx).Scream, scream.InvitationCreatedParam{
+		InvitationId: invitation.ID,
+		InviterId:    uid,
+		InviteeId:    param.InviteeID,
+		TopicId:      param.TopicID,
+		AreaIds:      []string{param.CityID},
+	})
+	if err != nil {
+		fmt.Println("failed to create invitation notification:", err)
+	}
 	return &invitation, nil
 }
 

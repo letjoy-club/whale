@@ -29,6 +29,8 @@ func newMatchingQuota(db *gorm.DB, opts ...gen.DOOption) matchingQuota {
 	_matchingQuota.UserID = field.NewString(tableName, "user_id")
 	_matchingQuota.Remain = field.NewInt(tableName, "remain")
 	_matchingQuota.Total = field.NewInt(tableName, "total")
+	_matchingQuota.MatchingNum = field.NewInt(tableName, "matching_num")
+	_matchingQuota.InvitationNum = field.NewInt(tableName, "invitation_num")
 	_matchingQuota.CreatedAt = field.NewTime(tableName, "created_at")
 	_matchingQuota.UpdatedAt = field.NewTime(tableName, "updated_at")
 
@@ -40,12 +42,14 @@ func newMatchingQuota(db *gorm.DB, opts ...gen.DOOption) matchingQuota {
 type matchingQuota struct {
 	matchingQuotaDo matchingQuotaDo
 
-	ALL       field.Asterisk
-	UserID    field.String
-	Remain    field.Int
-	Total     field.Int
-	CreatedAt field.Time
-	UpdatedAt field.Time
+	ALL           field.Asterisk
+	UserID        field.String
+	Remain        field.Int
+	Total         field.Int
+	MatchingNum   field.Int
+	InvitationNum field.Int
+	CreatedAt     field.Time
+	UpdatedAt     field.Time
 
 	fieldMap map[string]field.Expr
 }
@@ -65,6 +69,8 @@ func (m *matchingQuota) updateTableName(table string) *matchingQuota {
 	m.UserID = field.NewString(table, "user_id")
 	m.Remain = field.NewInt(table, "remain")
 	m.Total = field.NewInt(table, "total")
+	m.MatchingNum = field.NewInt(table, "matching_num")
+	m.InvitationNum = field.NewInt(table, "invitation_num")
 	m.CreatedAt = field.NewTime(table, "created_at")
 	m.UpdatedAt = field.NewTime(table, "updated_at")
 
@@ -91,10 +97,12 @@ func (m *matchingQuota) GetFieldByName(fieldName string) (field.OrderExpr, bool)
 }
 
 func (m *matchingQuota) fillFieldMap() {
-	m.fieldMap = make(map[string]field.Expr, 5)
+	m.fieldMap = make(map[string]field.Expr, 7)
 	m.fieldMap["user_id"] = m.UserID
 	m.fieldMap["remain"] = m.Remain
 	m.fieldMap["total"] = m.Total
+	m.fieldMap["matching_num"] = m.MatchingNum
+	m.fieldMap["invitation_num"] = m.InvitationNum
 	m.fieldMap["created_at"] = m.CreatedAt
 	m.fieldMap["updated_at"] = m.UpdatedAt
 }

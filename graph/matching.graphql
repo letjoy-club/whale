@@ -61,10 +61,10 @@ extend type Query {
   unconfirmedInvitationCount(userId: String): Summary!
 
   "【匹配系统】最近匹配，管理端"
-  recentMatchings(paginator: GraphQLPaginator): [RecentMatching!]!
+  recentMatchings(filter: RecentMatchingFilter, paginator: GraphQLPaginator): [RecentMatching!]!
 
   "【匹配系统】最近匹配总数，管理端"
-  recentMatchingsCount: Summary!
+  recentMatchingsCount(filter: RecentMatchingFilter): Summary!
 
   "【匹配系统】使用 id 获取最近的匹配"
   recentMatching(id: String!): RecentMatching!
@@ -98,6 +98,9 @@ extend type Mutation {
   "【匹配系统】打分"
   reviewMatching(matchingId: String!, param: ReviewMatchingParam!): String
 
-  "【匹配系统】更新最近的匹配"
+  "【匹配系统】更新最近的匹配，管理端"
   updateRecentMatching(id: String!, param: UpdateRecentMatchingParam!): RecentMatching!
+
+  "【匹配系统】增加到最近的匹配中，管理端"
+  addMatchingToRecent(matchingId: String!): RecentMatching!
 }

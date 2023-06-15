@@ -162,11 +162,12 @@ type ComplexityRoot struct {
 	}
 
 	MatchingQuota struct {
-		CreatedAt func(childComplexity int) int
-		Remain    func(childComplexity int) int
-		Total     func(childComplexity int) int
-		UpdatedAt func(childComplexity int) int
-		UserID    func(childComplexity int) int
+		CreatedAt   func(childComplexity int) int
+		MatchingNum func(childComplexity int) int
+		Remain      func(childComplexity int) int
+		Total       func(childComplexity int) int
+		UpdatedAt   func(childComplexity int) int
+		UserID      func(childComplexity int) int
 	}
 
 	MatchingResult struct {
@@ -198,6 +199,7 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
+		AddMatchingToRecent       func(childComplexity int, matchingID string) int
 		CancelMatching            func(childComplexity int, matchingID string) int
 		CancelMatchingInvitation  func(childComplexity int, invitationID string) int
 		CheckAndCreateChatGroup   func(childComplexity int, matchingID string) int
@@ -243,8 +245,8 @@ type ComplexityRoot struct {
 		MatchingsCount              func(childComplexity int, filter *models.MatchingFilter) int
 		PreviewMatchingsOfTopic     func(childComplexity int, cityID string, topicID string, limit *int) int
 		RecentMatching              func(childComplexity int, id string) int
-		RecentMatchings             func(childComplexity int, paginator *graphqlutil.GraphQLPaginator) int
-		RecentMatchingsCount        func(childComplexity int) int
+		RecentMatchings             func(childComplexity int, filter *models.RecentMatchingFilter, paginator *graphqlutil.GraphQLPaginator) int
+		RecentMatchingsCount        func(childComplexity int, filter *models.RecentMatchingFilter) int
 		UnconfirmedInvitationCount  func(childComplexity int, userID *string) int
 		UnconfirmedInvitations      func(childComplexity int, userID *string) int
 		UnconfirmedUserMatchings    func(childComplexity int, userID *string) int
@@ -398,6 +400,7 @@ type MutationResolver interface {
 	FinishMatching(ctx context.Context, matchingID string) (*string, error)
 	ReviewMatching(ctx context.Context, matchingID string, param models.ReviewMatchingParam) (*string, error)
 	UpdateRecentMatching(ctx context.Context, id string, param models.UpdateRecentMatchingParam) (*models.RecentMatching, error)
+	AddMatchingToRecent(ctx context.Context, matchingID string) (*models.RecentMatching, error)
 	CreateCityTopics(ctx context.Context, param models.CreateCityTopicParam) (*models.CityTopics, error)
 	UpdateCityTopics(ctx context.Context, cityID string, param models.UpdateCityTopicParam) (*models.CityTopics, error)
 	UpdateHotTopicsInArea(ctx context.Context, cityID string, param models.UpdateHotTopicParam) (*models.HotTopicsInArea, error)
@@ -427,8 +430,8 @@ type QueryResolver interface {
 	PreviewMatchingsOfTopic(ctx context.Context, cityID string, topicID string, limit *int) ([]*models.Matching, error)
 	UnconfirmedInvitations(ctx context.Context, userID *string) ([]*models.MatchingInvitation, error)
 	UnconfirmedInvitationCount(ctx context.Context, userID *string) (*models.Summary, error)
-	RecentMatchings(ctx context.Context, paginator *graphqlutil.GraphQLPaginator) ([]*models.RecentMatching, error)
-	RecentMatchingsCount(ctx context.Context) (*models.Summary, error)
+	RecentMatchings(ctx context.Context, filter *models.RecentMatchingFilter, paginator *graphqlutil.GraphQLPaginator) ([]*models.RecentMatching, error)
+	RecentMatchingsCount(ctx context.Context, filter *models.RecentMatchingFilter) (*models.Summary, error)
 	RecentMatching(ctx context.Context, id string) (*models.RecentMatching, error)
 	CityTopics(ctx context.Context, cityID string) (*models.CityTopics, error)
 	CitiesTopics(ctx context.Context, filter *models.CitiesTopicsFilter, paginator *graphqlutil.GraphQLPaginator) ([]*models.CityTopics, error)
@@ -988,6 +991,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.MatchingQuota.CreatedAt(childComplexity), true
 
+	case "MatchingQuota.matchingNum":
+		if e.complexity.MatchingQuota.MatchingNum == nil {
+			break
+		}
+
+		return e.complexity.MatchingQuota.MatchingNum(childComplexity), true
+
 	case "MatchingQuota.remain":
 		if e.complexity.MatchingQuota.Remain == nil {
 			break
@@ -1169,6 +1179,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.MatchingResultConfirmAction.UserID(childComplexity), true
+
+	case "Mutation.addMatchingToRecent":
+		if e.complexity.Mutation.AddMatchingToRecent == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_addMatchingToRecent_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.AddMatchingToRecent(childComplexity, args["matchingId"].(string)), true
 
 	case "Mutation.cancelMatching":
 		if e.complexity.Mutation.CancelMatching == nil {
@@ -1674,14 +1696,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.RecentMatchings(childComplexity, args["paginator"].(*graphqlutil.GraphQLPaginator)), true
+		return e.complexity.Query.RecentMatchings(childComplexity, args["filter"].(*models.RecentMatchingFilter), args["paginator"].(*graphqlutil.GraphQLPaginator)), true
 
 	case "Query.recentMatchingsCount":
 		if e.complexity.Query.RecentMatchingsCount == nil {
 			break
 		}
 
-		return e.complexity.Query.RecentMatchingsCount(childComplexity), true
+		args, err := ec.field_Query_recentMatchingsCount_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.RecentMatchingsCount(childComplexity, args["filter"].(*models.RecentMatchingFilter)), true
 
 	case "Query.unconfirmedInvitationCount":
 		if e.complexity.Query.UnconfirmedInvitationCount == nil {
@@ -2316,6 +2343,21 @@ func (ec *executionContext) field_Entity_findUserByID_args(ctx context.Context, 
 		}
 	}
 	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_addMatchingToRecent_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["matchingId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("matchingId"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["matchingId"] = arg0
 	return args, nil
 }
 
@@ -3183,18 +3225,42 @@ func (ec *executionContext) field_Query_recentMatching_args(ctx context.Context,
 	return args, nil
 }
 
-func (ec *executionContext) field_Query_recentMatchings_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Query_recentMatchingsCount_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *graphqlutil.GraphQLPaginator
-	if tmp, ok := rawArgs["paginator"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("paginator"))
-		arg0, err = ec.unmarshalOGraphQLPaginator2ᚖgithubᚗcomᚋletjoyᚑclubᚋmidaᚑtoolᚋgraphqlutilᚐGraphQLPaginator(ctx, tmp)
+	var arg0 *models.RecentMatchingFilter
+	if tmp, ok := rawArgs["filter"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
+		arg0, err = ec.unmarshalORecentMatchingFilter2ᚖwhaleᚋpkgᚋmodelsᚐRecentMatchingFilter(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["paginator"] = arg0
+	args["filter"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_recentMatchings_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *models.RecentMatchingFilter
+	if tmp, ok := rawArgs["filter"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
+		arg0, err = ec.unmarshalORecentMatchingFilter2ᚖwhaleᚋpkgᚋmodelsᚐRecentMatchingFilter(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["filter"] = arg0
+	var arg1 *graphqlutil.GraphQLPaginator
+	if tmp, ok := rawArgs["paginator"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("paginator"))
+		arg1, err = ec.unmarshalOGraphQLPaginator2ᚖgithubᚗcomᚋletjoyᚑclubᚋmidaᚑtoolᚋgraphqlutilᚐGraphQLPaginator(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["paginator"] = arg1
 	return args, nil
 }
 
@@ -4135,6 +4201,8 @@ func (ec *executionContext) fieldContext_Entity_findMatchingQuotaByUserID(ctx co
 				return ec.fieldContext_MatchingQuota_remain(ctx, field)
 			case "total":
 				return ec.fieldContext_MatchingQuota_total(ctx, field)
+			case "matchingNum":
+				return ec.fieldContext_MatchingQuota_matchingNum(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_MatchingQuota_createdAt(ctx, field)
 			case "updatedAt":
@@ -7064,6 +7132,50 @@ func (ec *executionContext) fieldContext_MatchingQuota_total(ctx context.Context
 	return fc, nil
 }
 
+func (ec *executionContext) _MatchingQuota_matchingNum(ctx context.Context, field graphql.CollectedField, obj *models.MatchingQuota) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MatchingQuota_matchingNum(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MatchingNum, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MatchingQuota_matchingNum(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MatchingQuota",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _MatchingQuota_createdAt(ctx context.Context, field graphql.CollectedField, obj *models.MatchingQuota) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_MatchingQuota_createdAt(ctx, field)
 	if err != nil {
@@ -9256,6 +9368,81 @@ func (ec *executionContext) fieldContext_Mutation_updateRecentMatching(ctx conte
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_addMatchingToRecent(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_addMatchingToRecent(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().AddMatchingToRecent(rctx, fc.Args["matchingId"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*models.RecentMatching)
+	fc.Result = res
+	return ec.marshalNRecentMatching2ᚖwhaleᚋpkgᚋmodelsᚐRecentMatching(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_addMatchingToRecent(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_RecentMatching_id(ctx, field)
+			case "cityId":
+				return ec.fieldContext_RecentMatching_cityId(ctx, field)
+			case "topicId":
+				return ec.fieldContext_RecentMatching_topicId(ctx, field)
+			case "matchingIds":
+				return ec.fieldContext_RecentMatching_matchingIds(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_RecentMatching_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_RecentMatching_updatedAt(ctx, field)
+			case "topic":
+				return ec.fieldContext_RecentMatching_topic(ctx, field)
+			case "city":
+				return ec.fieldContext_RecentMatching_city(ctx, field)
+			case "matchings":
+				return ec.fieldContext_RecentMatching_matchings(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type RecentMatching", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_addMatchingToRecent_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Mutation_createCityTopics(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Mutation_createCityTopics(ctx, field)
 	if err != nil {
@@ -10215,6 +10402,8 @@ func (ec *executionContext) fieldContext_Query_userMatchingQuota(ctx context.Con
 				return ec.fieldContext_MatchingQuota_remain(ctx, field)
 			case "total":
 				return ec.fieldContext_MatchingQuota_total(ctx, field)
+			case "matchingNum":
+				return ec.fieldContext_MatchingQuota_matchingNum(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_MatchingQuota_createdAt(ctx, field)
 			case "updatedAt":
@@ -11368,7 +11557,7 @@ func (ec *executionContext) _Query_recentMatchings(ctx context.Context, field gr
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().RecentMatchings(rctx, fc.Args["paginator"].(*graphqlutil.GraphQLPaginator))
+		return ec.resolvers.Query().RecentMatchings(rctx, fc.Args["filter"].(*models.RecentMatchingFilter), fc.Args["paginator"].(*graphqlutil.GraphQLPaginator))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -11443,7 +11632,7 @@ func (ec *executionContext) _Query_recentMatchingsCount(ctx context.Context, fie
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().RecentMatchingsCount(rctx)
+		return ec.resolvers.Query().RecentMatchingsCount(rctx, fc.Args["filter"].(*models.RecentMatchingFilter))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -11473,6 +11662,17 @@ func (ec *executionContext) fieldContext_Query_recentMatchingsCount(ctx context.
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Summary", field.Name)
 		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_recentMatchingsCount_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
 	}
 	return fc, nil
 }
@@ -13499,6 +13699,8 @@ func (ec *executionContext) fieldContext_User_matchingQuota(ctx context.Context,
 				return ec.fieldContext_MatchingQuota_remain(ctx, field)
 			case "total":
 				return ec.fieldContext_MatchingQuota_total(ctx, field)
+			case "matchingNum":
+				return ec.fieldContext_MatchingQuota_matchingNum(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_MatchingQuota_createdAt(ctx, field)
 			case "updatedAt":
@@ -15974,10 +16176,11 @@ func (ec *executionContext) unmarshalInputCitiesTopicsFilter(ctx context.Context
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("cityId"))
-			it.CityID, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.CityID = data
 		}
 	}
 
@@ -16002,18 +16205,20 @@ func (ec *executionContext) unmarshalInputCreateCityTopicParam(ctx context.Conte
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("topicIds"))
-			it.TopicIds, err = ec.unmarshalNString2ᚕstringᚄ(ctx, v)
+			data, err := ec.unmarshalNString2ᚕstringᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.TopicIds = data
 		case "cityId":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("cityId"))
-			it.CityID, err = ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.CityID = data
 		}
 	}
 
@@ -16038,42 +16243,47 @@ func (ec *executionContext) unmarshalInputCreateMatchingInvitationParam(ctx cont
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("inviteeId"))
-			it.InviteeID, err = ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.InviteeID = data
 		case "remark":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("remark"))
-			it.Remark, err = ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Remark = data
 		case "topicId":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("topicId"))
-			it.TopicID, err = ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.TopicID = data
 		case "cityId":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("cityId"))
-			it.CityID, err = ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.CityID = data
 		case "areaIds":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("areaIds"))
-			it.AreaIds, err = ec.unmarshalNString2ᚕstringᚄ(ctx, v)
+			data, err := ec.unmarshalNString2ᚕstringᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.AreaIds = data
 		}
 	}
 
@@ -16098,50 +16308,56 @@ func (ec *executionContext) unmarshalInputCreateMatchingParam(ctx context.Contex
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("topicId"))
-			it.TopicID, err = ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.TopicID = data
 		case "areaIds":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("areaIds"))
-			it.AreaIds, err = ec.unmarshalNString2ᚕstringᚄ(ctx, v)
+			data, err := ec.unmarshalNString2ᚕstringᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.AreaIds = data
 		case "cityId":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("cityId"))
-			it.CityID, err = ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.CityID = data
 		case "gender":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("gender"))
-			it.Gender, err = ec.unmarshalNGender2whaleᚋpkgᚋmodelsᚐGender(ctx, v)
+			data, err := ec.unmarshalNGender2whaleᚋpkgᚋmodelsᚐGender(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Gender = data
 		case "remark":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("remark"))
-			it.Remark, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Remark = data
 		case "deadline":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("deadline"))
-			it.Deadline, err = ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Deadline = data
 		}
 	}
 
@@ -16166,10 +16382,11 @@ func (ec *executionContext) unmarshalInputCreateUserJoinTopicParam(ctx context.C
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("matchingId"))
-			it.MatchingID, err = ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.MatchingID = data
 		}
 	}
 
@@ -16194,18 +16411,20 @@ func (ec *executionContext) unmarshalInputGraphQLPaginator(ctx context.Context, 
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("size"))
-			it.Size, err = ec.unmarshalOInt2ᚖint(ctx, v)
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Size = data
 		case "page":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("page"))
-			it.Page, err = ec.unmarshalOInt2ᚖint(ctx, v)
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Page = data
 		}
 	}
 
@@ -16230,18 +16449,20 @@ func (ec *executionContext) unmarshalInputHotTopicsFilter(ctx context.Context, o
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("cityId"))
-			it.CityID, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.CityID = data
 		case "topicId":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("topicId"))
-			it.TopicID, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.TopicID = data
 		}
 	}
 
@@ -16266,58 +16487,65 @@ func (ec *executionContext) unmarshalInputMatchingFilter(ctx context.Context, ob
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("before"))
-			it.Before, err = ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Before = data
 		case "after":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
-			it.After, err = ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.After = data
 		case "topicId":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("topicId"))
-			it.TopicID, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.TopicID = data
 		case "state":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("state"))
-			it.State, err = ec.unmarshalOMatchingState2ᚖwhaleᚋpkgᚋmodelsᚐMatchingState(ctx, v)
+			data, err := ec.unmarshalOMatchingState2ᚖwhaleᚋpkgᚋmodelsᚐMatchingState(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.State = data
 		case "cityId":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("cityId"))
-			it.CityID, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.CityID = data
 		case "userId":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userId"))
-			it.UserID, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.UserID = data
 		case "keyword":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("keyword"))
-			it.Keyword, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Keyword = data
 		}
 	}
 
@@ -16342,26 +16570,29 @@ func (ec *executionContext) unmarshalInputMatchingInvitationFilter(ctx context.C
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userId"))
-			it.UserID, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.UserID = data
 		case "before":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("before"))
-			it.Before, err = ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Before = data
 		case "after":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
-			it.After, err = ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.After = data
 		}
 	}
 
@@ -16386,26 +16617,29 @@ func (ec *executionContext) unmarshalInputMatchingResultFilter(ctx context.Conte
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userId"))
-			it.UserID, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.UserID = data
 		case "before":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("before"))
-			it.Before, err = ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Before = data
 		case "after":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
-			it.After, err = ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.After = data
 		}
 	}
 
@@ -16430,10 +16664,11 @@ func (ec *executionContext) unmarshalInputRecentMatchingFilter(ctx context.Conte
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("cityId"))
-			it.CityID, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.CityID = data
 		}
 	}
 
@@ -16458,26 +16693,29 @@ func (ec *executionContext) unmarshalInputReviewMatchingParam(ctx context.Contex
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("toUserId"))
-			it.ToUserID, err = ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.ToUserID = data
 		case "score":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("score"))
-			it.Score, err = ec.unmarshalNInt2int(ctx, v)
+			data, err := ec.unmarshalNInt2int(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Score = data
 		case "comment":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("comment"))
-			it.Comment, err = ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Comment = data
 		}
 	}
 
@@ -16502,10 +16740,11 @@ func (ec *executionContext) unmarshalInputUpdateCityTopicParam(ctx context.Conte
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("topicIds"))
-			it.TopicIds, err = ec.unmarshalNString2ᚕstringᚄ(ctx, v)
+			data, err := ec.unmarshalNString2ᚕstringᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.TopicIds = data
 		}
 	}
 
@@ -16530,34 +16769,38 @@ func (ec *executionContext) unmarshalInputUpdateHotTopicMetricsParam(ctx context
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("topicId"))
-			it.TopicID, err = ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.TopicID = data
 		case "heat":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("heat"))
-			it.Heat, err = ec.unmarshalNInt2int(ctx, v)
+			data, err := ec.unmarshalNInt2int(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Heat = data
 		case "matched":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("matched"))
-			it.Matched, err = ec.unmarshalNInt2int(ctx, v)
+			data, err := ec.unmarshalNInt2int(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Matched = data
 		case "matching":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("matching"))
-			it.Matching, err = ec.unmarshalNInt2int(ctx, v)
+			data, err := ec.unmarshalNInt2int(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Matching = data
 		}
 	}
 
@@ -16582,10 +16825,11 @@ func (ec *executionContext) unmarshalInputUpdateHotTopicParam(ctx context.Contex
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("topicMetrics"))
-			it.TopicMetrics, err = ec.unmarshalNUpdateHotTopicMetricsParam2ᚕᚖwhaleᚋpkgᚋmodelsᚐUpdateHotTopicMetricsParamᚄ(ctx, v)
+			data, err := ec.unmarshalNUpdateHotTopicMetricsParam2ᚕᚖwhaleᚋpkgᚋmodelsᚐUpdateHotTopicMetricsParamᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.TopicMetrics = data
 		}
 	}
 
@@ -16610,42 +16854,47 @@ func (ec *executionContext) unmarshalInputUpdateMatchingInvitationParam(ctx cont
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAt"))
-			it.CreatedAt, err = ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.CreatedAt = data
 		case "topicId":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("topicId"))
-			it.TopicID, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.TopicID = data
 		case "inviteeId":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("inviteeId"))
-			it.InviteeID, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.InviteeID = data
 		case "cityId":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("cityId"))
-			it.CityID, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.CityID = data
 		case "remark":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("remark"))
-			it.Remark, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Remark = data
 		}
 	}
 
@@ -16670,58 +16919,65 @@ func (ec *executionContext) unmarshalInputUpdateMatchingParam(ctx context.Contex
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("topicId"))
-			it.TopicID, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.TopicID = data
 		case "areaIds":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("areaIds"))
-			it.AreaIds, err = ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.AreaIds = data
 		case "cityId":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("cityId"))
-			it.CityID, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.CityID = data
 		case "gender":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("gender"))
-			it.Gender, err = ec.unmarshalOGender2ᚖwhaleᚋpkgᚋmodelsᚐGender(ctx, v)
+			data, err := ec.unmarshalOGender2ᚖwhaleᚋpkgᚋmodelsᚐGender(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Gender = data
 		case "remark":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("remark"))
-			it.Remark, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Remark = data
 		case "createdAt":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAt"))
-			it.CreatedAt, err = ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.CreatedAt = data
 		case "deadline":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("deadline"))
-			it.Deadline, err = ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Deadline = data
 		}
 	}
 
@@ -16746,18 +17002,20 @@ func (ec *executionContext) unmarshalInputUpdateMatchingQuotaParam(ctx context.C
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("total"))
-			it.Total, err = ec.unmarshalOInt2ᚖint(ctx, v)
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Total = data
 		case "remain":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("remain"))
-			it.Remain, err = ec.unmarshalOInt2ᚖint(ctx, v)
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Remain = data
 		}
 	}
 
@@ -16782,10 +17040,11 @@ func (ec *executionContext) unmarshalInputUpdateRecentMatchingParam(ctx context.
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("matchingIds"))
-			it.MatchingIds, err = ec.unmarshalNString2ᚕstringᚄ(ctx, v)
+			data, err := ec.unmarshalNString2ᚕstringᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.MatchingIds = data
 		}
 	}
 
@@ -16810,10 +17069,11 @@ func (ec *executionContext) unmarshalInputUpdateUserJoinTopicParam(ctx context.C
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("matchingId"))
-			it.MatchingID, err = ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.MatchingID = data
 		}
 	}
 
@@ -16838,26 +17098,29 @@ func (ec *executionContext) unmarshalInputUserJoinTopicFilter(ctx context.Contex
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("cityId"))
-			it.CityID, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.CityID = data
 		case "topicId":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("topicId"))
-			it.TopicID, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.TopicID = data
 		case "userId":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userId"))
-			it.UserID, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.UserID = data
 		}
 	}
 
@@ -16882,26 +17145,29 @@ func (ec *executionContext) unmarshalInputUserMatchingCalenderParam(ctx context.
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("before"))
-			it.Before, err = ec.unmarshalNTime2timeᚐTime(ctx, v)
+			data, err := ec.unmarshalNTime2timeᚐTime(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Before = data
 		case "after":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
-			it.After, err = ec.unmarshalNTime2timeᚐTime(ctx, v)
+			data, err := ec.unmarshalNTime2timeᚐTime(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.After = data
 		case "otherUserId":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("otherUserId"))
-			it.OtherUserID, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.OtherUserID = data
 		}
 	}
 
@@ -16926,18 +17192,20 @@ func (ec *executionContext) unmarshalInputUserMatchingFilter(ctx context.Context
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("state"))
-			it.State, err = ec.unmarshalOMatchingState2ᚖwhaleᚋpkgᚋmodelsᚐMatchingState(ctx, v)
+			data, err := ec.unmarshalOMatchingState2ᚖwhaleᚋpkgᚋmodelsᚐMatchingState(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.State = data
 		case "states":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("states"))
-			it.States, err = ec.unmarshalOMatchingState2ᚕwhaleᚋpkgᚋmodelsᚐMatchingStateᚄ(ctx, v)
+			data, err := ec.unmarshalOMatchingState2ᚕwhaleᚋpkgᚋmodelsᚐMatchingStateᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.States = data
 		}
 	}
 
@@ -16962,18 +17230,20 @@ func (ec *executionContext) unmarshalInputUserMatchingInTheDayParam(ctx context.
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("dayStr"))
-			it.DayStr, err = ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.DayStr = data
 		case "otherUserId":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("otherUserId"))
-			it.OtherUserID, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.OtherUserID = data
 		}
 	}
 
@@ -18123,6 +18393,13 @@ func (ec *executionContext) _MatchingQuota(ctx context.Context, sel ast.Selectio
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "matchingNum":
+
+			out.Values[i] = ec._MatchingQuota_matchingNum(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "createdAt":
 
 			out.Values[i] = ec._MatchingQuota_createdAt(ctx, field, obj)
@@ -18570,6 +18847,15 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_updateRecentMatching(ctx, field)
+			})
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "addMatchingToRecent":
+
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_addMatchingToRecent(ctx, field)
 			})
 
 			if out.Values[i] == graphql.Null {
@@ -22288,6 +22574,14 @@ func (ec *executionContext) marshalOMatchingState2ᚖwhaleᚋpkgᚋmodelsᚐMatc
 		return graphql.Null
 	}
 	return v
+}
+
+func (ec *executionContext) unmarshalORecentMatchingFilter2ᚖwhaleᚋpkgᚋmodelsᚐRecentMatchingFilter(ctx context.Context, v interface{}) (*models.RecentMatchingFilter, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputRecentMatchingFilter(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalOString2string(ctx context.Context, v interface{}) (string, error) {

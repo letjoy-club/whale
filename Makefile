@@ -25,4 +25,7 @@ smew-genqlient:
 hoopoe-genqlient:
 	cd pkg/gqlient/hoopoe && make schema && make gen
 
+scream-genqlient:
+	cd pkg/gqlient/scream && make schema && make gen
+
 .PHONY: build

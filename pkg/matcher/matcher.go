@@ -2,13 +2,17 @@ package matcher
 
 import (
 	"context"
+	"fmt"
 	"time"
 	"whale/pkg/dbquery"
+	"whale/pkg/gqlient/scream"
+	"whale/pkg/loader"
 	"whale/pkg/models"
 
 	"github.com/letjoy-club/mida-tool/dbutil"
 	"github.com/letjoy-club/mida-tool/logger"
 	"github.com/letjoy-club/mida-tool/midacode"
+	"github.com/letjoy-club/mida-tool/midacontext"
 	"github.com/samber/lo"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -136,5 +140,57 @@ func NewMatchingResult(ctx context.Context, matchings []*models.Matching) (*mode
 	if err != nil {
 		return nil, err
 	}
-	return matchingResult, err
+	areaIDs := []string{matchings[0].CityID}
+	_, err = scream.MatchingGroupCreated(ctx, midacontext.GetServices(ctx).Scream, scream.MatchingGroupCreatedParam{
+		MatchingId: matchingResult.MatchingIDs[0],
+		UserId:     userIDs[0],
+		PartnerId:  userIDs[1],
+		TopicId:    matchingResult.TopicID,
+		AreaIds:    areaIDs,
+	})
+	if err != nil {
+		fmt.Println("err", err)
+	}
+	_, err = scream.MatchingGroupCreated(ctx, midacontext.GetServices(ctx).Scream, scream.MatchingGroupCreatedParam{
+		MatchingId: matchingResult.MatchingIDs[1],
+		UserId:     userIDs[1],
+		PartnerId:  userIDs[0],
+		TopicId:    matchingResult.TopicID,
+		AreaIds:    areaIDs,
+	})
+	if err != nil {
+		fmt.Println("err", err)
+	}
+	thunk := midacontext.GetLoader[loader.Loader](ctx).UserAvatarNickname.LoadMany(ctx, userIDs)
+	users, _ := thunk()
+	if len(users) > 0 {
+		_, err = scream.SendUserNotification(ctx,
+			midacontext.GetServices(ctx).Scream,
+			scream.UserNotificationKindMatched,
+			userIDs[1],
+			map[string]interface{}{
+				"userName":   users[0].Nickname,
+				"userId":     users[0].ID,
+				"matchingId": matchingResult.MatchingIDs[0],
+			},
+		)
+		if err != nil {
+			fmt.Println("err", err)
+		}
+		_, err = scream.SendUserNotification(ctx,
+			midacontext.GetServices(ctx).Scream,
+			scream.UserNotificationKindMatched,
+			userIDs[0],
+			map[string]interface{}{
+				"userName":   users[1].Nickname,
+				"userId":     users[1].ID,
+				"matchingId": matchingResult.MatchingIDs[1],
+			},
+		)
+		if err != nil {
+			fmt.Println("err", err)
+		}
+	}
+
+	return matchingResult, nil
 }

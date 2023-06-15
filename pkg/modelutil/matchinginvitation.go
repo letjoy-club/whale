@@ -2,8 +2,10 @@ package modelutil
 
 import (
 	"context"
+	"fmt"
 	"time"
 	"whale/pkg/dbquery"
+	"whale/pkg/gqlient/scream"
 	"whale/pkg/loader"
 	"whale/pkg/models"
 	"whale/pkg/whalecode"
@@ -118,6 +120,26 @@ func RejectMatchingInvitation(ctx context.Context, invitation *models.MatchingIn
 	MatchingQuota := dbquery.Use(db).MatchingQuota
 	if _, err := MatchingQuota.WithContext(ctx).Where(MatchingQuota.UserID.Eq(invitation.UserID)).UpdateSimple(MatchingQuota.Remain.Add(1)); err != nil {
 		return err
+	}
+
+	thunk := midacontext.GetLoader[loader.Loader](ctx).UserAvatarNickname.Load(ctx, invitation.InviteeID)
+	invitee, err := thunk()
+	if err == nil {
+		_, err = scream.SendUserNotification(ctx,
+			midacontext.GetServices(ctx).Scream,
+			scream.UserNotificationKindInvitationdenied,
+			invitation.UserID,
+			map[string]interface{}{
+				"userName":     invitee.Nickname,
+				"userId":       invitee.ID,
+				"invitationId": invitation.ID,
+			},
+		)
+		if err != nil {
+			fmt.Println("err", err)
+		}
+	} else {
+		fmt.Println("err", err)
 	}
 
 	midacontext.GetLoader[loader.Loader](ctx).MatchingInvitation.Clear(ctx, invitation.ID)

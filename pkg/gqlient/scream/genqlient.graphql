@@ -1,0 +1,11 @@
+mutation MatchingGroupCreated($param: MatchingGroupCreatedParam!) {
+  matchingGroupCreated(param: $param)
+}
+
+mutation InvitationCreated($param: InvitationCreatedParam!) {
+  invitationCreated(param: $param)
+}
+
+mutation SendUserNotification($kind: UserNotificationKind!, $recipentId: String!, $param: Map!) {
+  sendUserNotification(kind: $kind, recipentId: $recipentId, param: $param)
+}

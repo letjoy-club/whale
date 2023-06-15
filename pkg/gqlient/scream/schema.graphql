@@ -1,0 +1,294 @@
+directive @extends on OBJECT | INTERFACE
+
+directive @external on FIELD_DEFINITION | OBJECT
+
+directive @inaccessible on SCALAR | OBJECT | FIELD_DEFINITION | ARGUMENT_DEFINITION | INTERFACE | UNION | ENUM | ENUM_VALUE | INPUT_OBJECT | INPUT_FIELD_DEFINITION
+
+directive @key(fields: _FieldSet!, resolvable: Boolean = true) on OBJECT | INTERFACE
+
+directive @link(import: [String!], url: String!) on SCHEMA
+
+directive @override(from: String!) on FIELD_DEFINITION
+
+directive @provides(fields: _FieldSet!) on FIELD_DEFINITION
+
+directive @requires(fields: _FieldSet!) on FIELD_DEFINITION
+
+directive @shareable on OBJECT | FIELD_DEFINITION
+
+"""
+The @specifiedBy built-in directive is used within the type system definition
+language to provide a scalar specification URL for specifying the behavior of
+custom scalar types.
+"""
+directive @specifiedBy(url: String!) on SCALAR
+
+directive @tag(
+  name: String!
+) on FIELD_DEFINITION | INTERFACE | OBJECT | UNION | ARGUMENT_DEFINITION | SCALAR | ENUM | ENUM_VALUE | INPUT_OBJECT | INPUT_FIELD_DEFINITION
+
+scalar _Any
+
+scalar _FieldSet
+
+type _Service {
+  sdl: String
+}
+
+scalar AreaCode
+
+input GraphQLPaginator {
+  page: Int
+  size: Int
+}
+
+input InvitationCreatedParam {
+  invitationId: String!
+  inviterId: String!
+  inviteeId: String!
+  topicId: String!
+  areaIds: [String!]!
+}
+
+type InvitationNotification {
+  id: Int!
+  inviteeId: String!
+  eventType: NotificationEvent!
+  invitationId: String!
+  tryCount: Int!
+  success: Boolean!
+  updatedAt: Time!
+  createdAt: Time!
+  histories: [InvitationNotificationHistory!]!
+}
+
+input InvitationNotificationFilter {
+  id: Int
+  userId: String
+  inviteeId: String
+  invitationId: String
+  success: Boolean
+}
+
+type InvitationNotificationHistory {
+  id: Int!
+  invitationNotificationId: Int!
+  inviteeId: String!
+  via: NotifyVia!
+  error: String!
+  durationMS: Int!
+  createdAt: Time!
+}
+
+scalar Map
+
+input MatchingGroupCreatedParam {
+  matchingId: String!
+  userId: String!
+  partnerId: String!
+  topicId: String!
+  areaIds: [String!]!
+}
+
+type MatchingNotification {
+  id: Int!
+  userId: String!
+  eventType: NotificationEvent!
+  matchingId: String!
+  tryCount: Int!
+  success: Boolean!
+  updatedAt: Time!
+  createdAt: Time!
+  histories: [MatchingNotificationHistory!]!
+}
+
+input MatchingNotificationFilter {
+  id: Int
+  userId: String
+  matchingId: String
+  success: Boolean
+}
+
+type MatchingNotificationHistory {
+  id: Int!
+  matchingNotificationId: Int!
+  userId: String!
+  via: NotifyVia!
+  error: String!
+  durationMS: Int!
+  createdAt: Time!
+}
+
+type Mutation {
+  matchingGroupCreated(param: MatchingGroupCreatedParam!): String
+  matchingGroupCanceled(matchingIds: [String!]!): String
+  invitationCreated(param: InvitationCreatedParam!): String
+  invitationCanceled(invitationIds: [String!]!): String
+  startMatchingGroupCreatedNotification(id: Int!): String
+  startInvitationNotification(id: Int!): String
+  startNotification: String
+  sendSMSVerification(phoneNumber: String!, userId: String!, code: String!): String
+
+  """
+  【通知】所有消息设为已读
+  """
+  markAllUserNotificationsAsRead(userId: String, category: NotificationCategory!): String!
+
+  """
+  【通知】将消息设为已读
+  """
+  markUserNofiticationAsRead(notificationId: String!): String!
+
+  """
+  【通知】删除消息
+  """
+  deleteUserNotification(notificationId: String!): String!
+
+  """
+  【通知】内部调用
+  - 匹配成功 param: { "userId": "", "userName": "", "matchingId": "" }
+  - 匹配被拒绝 param: { "userId": "", "userName": "", "matchingId": "" }
+  - 匹配超时 param: { "matchingId": "" }
+  - 邀请被拒 param: { "userId": "", "userName": "", "invitationId": "" }
+  - 官方消息 param: { }
+  - 举报已提交 param: { "userId":"", "userName": "" }
+  - 举报生效 param: { "userId": "", "userName": "" }
+  """
+  sendUserNotification(kind: UserNotificationKind!, recipentId: String!, param: Map!): String!
+}
+
+enum NotificationCategory {
+  Matching
+  Invitation
+  Official
+}
+
+enum NotificationEvent {
+  MatchingGroupCreated
+  InvitationCreated
+}
+
+enum NotifyVia {
+  Push
+  SMS
+  Wechat
+}
+
+type Query {
+  """
+  【通知】列出所有信息
+  """
+  userNotifications(userId: String, filter: UserNotificationFilter, paginator: GraphQLPaginator): [UserNotification!]!
+
+  """
+  【通知】列出所有信息数量，管理端
+  """
+  userNotificationsCount(userId: String, filter: UserNotificationFilter): Summary!
+
+  """
+  【通知】信息数量
+  """
+  userNotificationSummary(userId: String): UserNotificationSummary!
+
+  """
+  【通知】管理端接口，短信验证码历史
+  """
+  smsVerificationHistories(paginator: GraphQLPaginator): [SMSVerificationHistory!]!
+
+  """
+  【通知】管理端接口，短信验证码历史数量
+  """
+  smsVerificationHistoriesCount: Summary!
+  matchingNotification(id: Int!): MatchingNotification!
+  matchingNotifications(filter: MatchingNotificationFilter, paginator: GraphQLPaginator): [MatchingNotification!]!
+  matchingNotificationsCount(filter: MatchingNotificationFilter): Summary!
+  matchingNotificationHistories(paginator: GraphQLPaginator): [MatchingNotificationHistory!]!
+  matchingNotificationHistoriesCount: Summary!
+  invitationNotification(id: Int!): InvitationNotification!
+  invitationNotifications(filter: InvitationNotificationFilter, paginator: GraphQLPaginator): [InvitationNotification!]!
+  invitationNotificationsCount(filter: InvitationNotificationFilter): Summary!
+  invitationNotificationHistories(paginator: GraphQLPaginator): [InvitationNotificationHistory!]!
+  invitationNotificationHistoriesCount: Summary!
+  _service: _Service!
+}
+
+type SMSVerificationHistory {
+  id: Int!
+  userId: String!
+  phoneNumber: String!
+  error: String!
+  code: String!
+  params: [TemplateKeyValue!]!
+  createdAt: Time!
+}
+
+type Summary {
+  count: Int!
+}
+
+type TemplateKeyValue {
+  key: String!
+  value: String!
+}
+
+scalar Time
+
+type UserNotification {
+  id: String!
+  userId: String!
+  category: NotificationCategory!
+  kind: UserNotificationKind!
+  messageTemplate: String!
+  params: [TemplateKeyValue!]!
+  read: Boolean!
+  message: String
+  createdAt: Time!
+}
+
+input UserNotificationFilter {
+  category: NotificationCategory
+}
+
+enum UserNotificationKind {
+  """
+  【匹配】匹配到用户
+  """
+  Matched
+
+  """
+  【匹配】被拒绝
+  """
+  MatchingDenied
+
+  """
+  【匹配】超时
+  """
+  MatchingTimeout
+
+  """
+  【邀请】邀请被拒
+  """
+  InvitationDenied
+
+  """
+  【官方】欢迎消息
+  """
+  WelcomeMessage
+
+  """
+  【官方】举报生效
+  """
+  ReportAccepted
+
+  """
+  【官方】收到举报
+  """
+  ReportRecieved
+}
+
+type UserNotificationSummary {
+  invitationUnread: Int!
+  matchingUnread: Int!
+  officialUnread: Int!
+  allUnread: Int!
+}
