@@ -10,7 +10,7 @@ require (
 	github.com/go-sql-driver/mysql v1.7.0
 	github.com/goccy/go-yaml v1.11.0
 	github.com/graph-gophers/dataloader/v7 v7.1.0
-	github.com/letjoy-club/mida-tool v0.3.7
+	github.com/letjoy-club/mida-tool v0.3.12
 	github.com/redis/go-redis/v9 v9.0.3
 	github.com/samber/lo v1.38.1
 	github.com/stretchr/testify v1.8.3
@@ -27,8 +27,6 @@ require (
 )
 
 require (
-	github.com/alexflint/go-arg v1.4.2 // indirect
-	github.com/alexflint/go-scalar v1.0.0 // indirect
 	github.com/cenkalti/backoff/v4 v4.2.1 // indirect
 	github.com/felixge/httpsnoop v1.0.3 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
@@ -42,7 +40,6 @@ require (
 	google.golang.org/genproto v0.0.0-20230306155012-7f2fa6fef1f4 // indirect
 	google.golang.org/grpc v1.55.0 // indirect
 	google.golang.org/protobuf v1.30.0 // indirect
-	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
 
 require (

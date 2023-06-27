@@ -33,7 +33,7 @@ func AcceptMatchingInvitation(ctx context.Context, invitation *models.MatchingIn
 	MatchingResult := dbquery.Use(db).MatchingResult
 
 	m1 := models.Matching{
-		ID:             shortid.New("m_", 8),
+		ID:             shortid.NewWithTime("m_", 6),
 		TopicID:        invitation.TopicID,
 		UserID:         invitation.UserID,
 		CityID:         invitation.CityID,
@@ -45,7 +45,7 @@ func AcceptMatchingInvitation(ctx context.Context, invitation *models.MatchingIn
 		State:          string(models.MatchingStateMatched),
 	}
 	m2 := models.Matching{
-		ID:             shortid.New("m_", 8),
+		ID:             shortid.NewWithTime("m_", 6),
 		TopicID:        invitation.TopicID,
 		UserID:         invitation.InviteeID,
 		CityID:         invitation.CityID,

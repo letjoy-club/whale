@@ -1,3 +1,5 @@
+directive @adminOnly on FIELD_DEFINITION
+
 directive @extends on OBJECT | INTERFACE
 
 directive @external on FIELD_DEFINITION | OBJECT
@@ -95,11 +97,14 @@ input AddTopicCategoryParam {
   """类别名"""
   name: String!
 
-  """可见地区"""
-  visibleArea: AreaIDList
+  """类别描述"""
+  desc: String!
 
   """话题颜色"""
   defaultColor: String
+
+  """是否限时"""
+  timeLimited: Boolean!
 
   """是否可用"""
   enable: Boolean!
@@ -113,7 +118,7 @@ input AddTopicParam {
   subtitle: String
 
   """类别"""
-  categoryId: Int
+  category: String!
 
   """话题颜色"""
   color: String
@@ -121,11 +126,20 @@ input AddTopicParam {
   """话题描述"""
   desc: String
 
+  """开始时间"""
+  startAt: Time
+
+  """结束时间"""
+  endAt: Time
+
   """可见地区"""
-  visibleArea: AreaIDList
+  visibleArea: [String!]
 
   """封面URL"""
   frontCover: String
+
+  """排序"""
+  sequence: Int
 
   """是否可用"""
   enable: Boolean!
@@ -161,10 +175,10 @@ type Area {
   enabled: Boolean!
 
   """下级地区"""
-  children: [Area!]!
+  children: [Area!]
 
   """上级地区"""
-  parent: Area!
+  parent: Area
 }
 
 scalar AreaCode
@@ -182,6 +196,72 @@ input AreaFilter {
 
 scalar AreaIDList
 
+type Blacklist {
+  """黑名单ID列表"""
+  blacklistIds: [String!]
+
+  """黑名单用户列表"""
+  blockUsers: [User!]
+}
+
+input BlockUserParam {
+  """用户封禁时长(分钟)"""
+  userBlockDuration: Int
+
+  """匹配封禁时长(分钟)"""
+  matchingBlockDuration: Int
+
+  """聊天封禁时长(分钟)"""
+  chatBlockDuration: Int
+}
+
+input CityFilter {
+  name: String
+}
+
+input CreateTopicOptionConfig {
+  timeWeight: Int!
+  threshold: Int!
+  properties: [TopicOptionPropertyParam!]
+}
+
+enum DictCategory {
+  """职业"""
+  Career
+
+  """MBTI"""
+  Mbti
+}
+
+type DictData {
+  """编码"""
+  code: String!
+
+  """字典分类"""
+  category: String!
+
+  """字典分类描述"""
+  categoryDesc: String
+
+  """字典项"""
+  item: String!
+
+  """字典项描述"""
+  itemDesc: String!
+
+  """层级"""
+  level: Int!
+
+  """上级选项编码"""
+  parentCode: String
+
+  """上级选项"""
+  parent: DictData
+
+  """下级选项"""
+  children: [DictData!]
+}
+
 type Entity {
   findAreaByCode(code: AreaCode!): Area!
   findTagByID(id: String!): Tag!
@@ -192,6 +272,14 @@ type Entity {
 type ErrorDesc {
   code: String!
   cn: String!
+}
+
+enum ExtraOptionKey {
+  None
+  Singer
+  Concert
+  POI
+  City
 }
 
 input FeishuLoginParam {
@@ -238,6 +326,9 @@ type LoginResult {
 
   """是否新注册用户"""
   isNew: Boolean!
+
+  """协议是否勾选"""
+  agreementChecked: Boolean!
 }
 
 scalar Map
@@ -285,9 +376,6 @@ type Mutation {
     longitude: String!
   ): Area!
 
-  """【地区】刷新地区信息Redis缓存"""
-  refreshAreaCache: String
-
   """关注"""
   follow(
     """被关注人的ID"""
@@ -325,7 +413,7 @@ type Mutation {
   updatePersonalTag(
     """个人所有标签ID列表"""
     tagIds: [String!]!
-  ): String
+  ): String @deprecated(reason: "暂不使用，无法保证代码正确")
 
   """【标签】新增标签"""
   addTag(param: AddTagParam!): String
@@ -435,55 +523,31 @@ type Mutation {
     id: Int!
   ): String
 
-  """【话题】添加话题"""
-  addTopic(param: AddTopicParam): String
+  """【话题】添加话题类别，管理端使用"""
+  addTopicCategory(param: AddTopicCategoryParam!): String
 
-  """【话题】添加话题类别"""
-  addTopicCategory(param: AddTopicCategoryParam): String
+  """【话题】添加话题，管理端使用"""
+  addTopic(param: AddTopicParam!): String
 
-  """【话题】修改话题副标题"""
-  topicSetSubtitle(
-    """话题ID"""
-    id: String!
+  """【话题】用户自定义话题"""
+  userCustomTopic(param: UserCustomTopicParam!): String
 
-    """副标题"""
-    subtitle: String!
+  """【话题】话题类别更新，管理端使用"""
+  updateTopicCategory(
+    """类别ID"""
+    id: Int!
+
+    """修改参数"""
+    param: UpdateTopicCategoryParam!
   ): String
 
-  """【话题】修改话题封面"""
-  topicSetFrontCover(
+  """【话题】话题更新，管理端使用"""
+  updateTopic(
     """话题ID"""
     id: String!
 
-    """封面URL"""
-    frontCover: String!
-  ): String
-
-  """【话题】修改话题可见地区"""
-  topicSetVisibleArea(
-    """话题ID"""
-    id: String!
-
-    """可见地区"""
-    visibleArea: AreaIDList
-  ): String
-
-  """【话题】修改话题颜色"""
-  topicSetColor(
-    """话题ID"""
-    id: String!
-
-    """话题颜色"""
-    color: String!
-  ): String
-
-  """【话题】修改话题颜色"""
-  topicSetDesc(
-    """话题ID"""
-    id: String!
-
-    """话题描述"""
-    desc: String!
+    """修改参数"""
+    param: UpdateTopicParam!
   ): String
 
   """【话题】将话题设为可用"""
@@ -497,53 +561,17 @@ type Mutation {
     """话题ID"""
     id: String!
   ): String
-
-  """【话题】修改话题类别可见地区"""
-  topicCategorySetVisibleArea(
-    """话题类别ID"""
-    id: Int!
-
-    """可见地区"""
-    visibleArea: AreaIDList
-  ): String
-
-  """【话题】修改话题类别默认颜色"""
-  topicCategorySetDefaultColor(
-    """话题类别ID"""
-    id: Int!
-
-    """话题类别默认颜色"""
-    defaultColor: String!
-  ): String
-
-  """【话题】将话题类别设为可用"""
-  enableTopicCategory(
-    """话题类别ID"""
-    id: Int!
-
-    """是否启用该类别下的所有话题"""
-    enableTopic: Boolean!
-  ): String
-
-  """【话题】将话题类别设为不可用：此时关联的话题也全部变得不可用"""
-  disableTopicCategory(
-    """话题类别ID"""
-    id: Int!
-  ): String
-
-  """【话题】删除话题类别"""
-  removeTopicCategory(
-    """话题类别ID"""
-    id: Int!
-  ): String
-
-  """【话题】刷新话题信息Redis缓存"""
-  refreshTopicCache: String
+  createTopicOptionConfig(topicId: String!, param: CreateTopicOptionConfig!): TopicOptionConfig!
+  updateTopicOptionConfig(topicId: String!, param: UpdateTopicOptionConfig!): TopicOptionConfig!
+  deleteTopicOptionConfig(topicId: String!): String!
 
   """【用户】小程序登录"""
   miniAppLogin(
     """小程序登录code"""
     code: String!
+
+    """城市编码"""
+    cityId: String
 
     """邀请人，非必填"""
     inviterId: String
@@ -551,6 +579,45 @@ type Mutation {
     """邀请渠道：miniapp——小程序转发；QR——二维码"""
     channel: String
   ): LoginResult!
+
+  """【用户】勾选协议"""
+  checkAgreement: String
+
+  """【用户】用户初始化——可看做小程序注册接口"""
+  userInit(
+    """待修改参数"""
+    param: UserInitParam!
+
+    """邀请人，非必填"""
+    inviterId: String
+  ): String
+
+  """【用户】更新手机号"""
+  updatePhone(
+    """用户ID，管理端请求时必填"""
+    userId: String
+
+    """手机号"""
+    phone: String!
+  ): String
+
+  """【用户】更新用户信息"""
+  updateUserInfo(
+    """用户ID，管理端使用必填"""
+    userId: String
+
+    """待修改参数"""
+    param: UserInfoUpdateParam!
+  ): String
+
+  """【用户】更新用户资料"""
+  updateUserProfile(
+    """用户ID，管理端使用必填"""
+    userId: String
+
+    """待修改参数"""
+    param: UserProfileUpdateParam!
+  ): String
 
   """【用户】修改用户信息"""
   userSetProfile(
@@ -568,7 +635,7 @@ type Mutation {
 
     """备注"""
     remark: String
-  ): String
+  ): String @deprecated(reason: "use updateUserInfo instead")
 
   """【用户】修改用户昵称"""
   userSetNickname(
@@ -577,7 +644,7 @@ type Mutation {
 
     """昵称，最长20个字符"""
     nickname: String!
-  ): String
+  ): String @deprecated(reason: "use updateUserInfo instead")
 
   """【用户】修改用户头像"""
   userSetAvatar(
@@ -586,7 +653,7 @@ type Mutation {
 
     """头像url"""
     avatarUrl: String!
-  ): String
+  ): String @deprecated(reason: "use updateUserInfo instead")
 
   """【用户】修改用户封面背景"""
   userSetBackground(
@@ -595,7 +662,7 @@ type Mutation {
 
     """封面背景url"""
     backgroundUrl: String!
-  ): String
+  ): String @deprecated(reason: "use updateUserInfo instead")
 
   """【用户】昵称修改审核，管理端使用"""
   userNicknameAudit(
@@ -639,7 +706,25 @@ type Mutation {
     userId: String!
   ): String
 
-  """【用户】用户举报"""
+  """【黑名单】添加黑名单"""
+  userAddBlacklist(
+    """被加入黑名单的人"""
+    blockId: String!
+
+    """操作人，管理端使用"""
+    userId: String
+  ): String
+
+  """【黑名单】移出黑名单"""
+  userRemoveBlacklist(
+    """被移出黑名单的人"""
+    blockId: String!
+
+    """操作人，管理端使用"""
+    userId: String
+  ): String
+
+  """【举报】用户举报"""
   userReport(
     """匹配ID"""
     matchingId: String!
@@ -651,37 +736,90 @@ type Mutation {
     reason: [String!]!
   ): String
 
-  """【用户】用户封禁"""
+  """【举报】处理举报，管理端使用"""
+  handleReport(
+    """举报记录ID"""
+    id: Int!
+
+    """举报处理结果"""
+    result: String!
+
+    """惩罚方式"""
+    punishment: String!
+
+    """封禁时长，当punishment=CustomBlock时生效"""
+    blockDuration: Int
+  ): String
+
+  """【封禁】用户封禁，管理端使用"""
   blockUser(
     """用户ID"""
     userId: String!
 
-    """封禁时长(小时)"""
-    blockDuration: Int!
+    """请求参数"""
+    param: BlockUserParam!
   ): String
 
-  """【用户】用户解封"""
+  """【封禁】用户解封，管理端使用"""
   unblockUser(
     """用户ID"""
     userId: String!
+
+    """
+    解封范围，为空时表示全部解封，选项包括：
+    用户封禁：userBlock
+    匹配封禁：matchingBlock
+    聊天封禁：chatBlock
+    """
+    unblockScopes: [String!]
   ): String
 }
 
 type Query {
   """【通用】健康检查"""
   healthCheck: String!
+
+  """【字典】按类别查询"""
+  dictItemsByCategory(
+    """类别"""
+    category: DictCategory!
+
+    """层级，默认1，用于树状结构查询指定层级数据"""
+    level: Int
+  ): [DictData!]
+
+  """【字典】下级字典项查询"""
+  dictChildItems(code: String!): [DictData!]
+
+  """【字典】字典项详情查询"""
+  dictItem(code: String!): DictData!
   listAdminAccount: [AdminAccount!]!
   isAdminLogined: Boolean
   adminAccount(id: String!): AdminAccount!
 
-  """【通用】根据地区代码查询地区信息"""
+  """【地区】根据地区代码查询地区信息"""
   area(
     """地区代码"""
     code: AreaCode!
   ): Area!
 
-  """【通用】地区列表查询"""
+  """【地区】地区列表查询"""
   areas(filter: AreaFilter): [Area!]!
+
+  """【地区】查询城市列表"""
+  cities(filter: CityFilter): [Area!]!
+
+  """【地区】根据城市 ids 查询城市列表（depth = 1），地区可能不存在"""
+  citiesByIds(ids: [AreaCode!]!): [Area]!
+
+  """【地区】根据地区 ids 查询地区列表，地区可能不存在"""
+  areasByIds(ids: [AreaCode!]!): [Area]!
+
+  """【地区】上线地区列表"""
+  enabledAreas: [Area!]!
+
+  """【地区】获取地区的下级地区列表"""
+  childAreas(code: AreaCode!): [Area!]!
 
   """用户对他人的关注情况"""
   userFollowState(
@@ -805,27 +943,36 @@ type Query {
 
   """【话题】类别查询"""
   topicCategory(
-    """类别ID"""
-    id: Int!
+    """类别名称"""
+    name: String!
   ): TopicCategory!
 
   """【话题】类别列表查询"""
   topicCategories(
-    """地区"""
-    area: AreaCode
-
     """是否可用，管理端可用，其他情况默认为TRUE"""
     enable: Boolean
   ): [TopicCategory!]!
 
   """【话题】类别列表查询"""
   topicCategoriesCount(
-    """地区"""
-    area: AreaCode
-
     """是否可用，管理端可用，其他情况默认为TRUE"""
     enable: Boolean
   ): Summary!
+
+  """【话题】根据类别查询话题"""
+  topicsByCategory(
+    """类别ID"""
+    category: String!
+
+    """城市"""
+    cityId: String
+
+    """是否可用，管理端可用，其他情况默认为TRUE"""
+    enable: Boolean
+
+    """分页"""
+    paginator: GraphQLPaginator
+  ): [Topic!]!
 
   """【话题】话题查询"""
   topic(
@@ -844,6 +991,18 @@ type Query {
 
   """【话题】列表查询数量，管理端功能"""
   topicsCount(filter: TopicFilter): Summary!
+  topicOptionConfig(topicId: String!): TopicOptionConfig
+  topicOptionConfigs(filter: TopicOptionConfigFilter, paginator: GraphQLPaginator): [TopicOptionConfig!]!
+  topicOptionConfigsCount(filter: TopicOptionConfigFilter): Summary!
+  singer(id: Int!): Singer!
+  singers(filter: SingerFilter, paginator: GraphQLPaginator): [Singer!]!
+  singersCount(filter: SingerFilter): Summary!
+
+  """【用户】周活跃"""
+  weeklyActive(
+    """城市ID"""
+    cityId: String
+  ): Summary!
 
   """【用户】获取用户信息"""
   user(
@@ -857,14 +1016,27 @@ type Query {
     ids: [String!]!
   ): [User!]!
 
+  """【用户】根据ID批量获取用户，管理端使用，用户可以不存在"""
+  getUserByIdsV2(ids: [String!]!): [User]!
+
   """【用户】 我的信息"""
   myProfile: User!
+
+  """【用户】 用户信息完整性检查"""
+  userInfoCompletenessCheck(
+    """用户ID，管理端使用"""
+    userId: String
+  ): UserInfoCompleteness!
 
   """【用户】用户搜索，管理端功能"""
   users(filter: UserFilter, paginator: GraphQLPaginator): [User!]!
 
   """【用户】用户搜索结果数量，管理端功能"""
   usersCount(filter: UserFilter): Summary!
+  userStatistics(
+    """统计日期"""
+    date: String!
+  ): UserStatsInfo!
 
   """【用户】待审核昵称列表查询"""
   nicknameReviews(paginator: GraphQLPaginator): [UserNicknameReview!]!
@@ -881,11 +1053,20 @@ type Query {
     operatorId: String
   ): UserLike
 
-  """获取用户黑名单列表"""
+  """【黑名单】获取黑名单列表"""
   userBlacklist(
-    """用户ID，管理端必填"""
+    """用户ID，管理端使用"""
     userId: String
-  ): [String!]
+  ): Blacklist!
+
+  """【黑名单】判断是否在黑名单中"""
+  isInBlacklist(
+    """被移出黑名单的人"""
+    blockId: String!
+
+    """操作人，管理端使用"""
+    userId: String
+  ): Boolean!
 
   """【举报】是否已举报"""
   userReportState(
@@ -898,8 +1079,52 @@ type Query {
     """举报人用户ID，管理端使用"""
     reporterId: String
   ): Boolean!
+
+  """【举报】举报记录查询"""
+  userReport(reportId: Int!): UserReport!
+
+  """【举报】举报记录查询，管理端使用"""
+  userReports(
+    """过滤条件"""
+    filter: UserReportFilter
+
+    """分页组件"""
+    paginator: GraphQLPaginator
+  ): [UserReport!]!
+
+  """【举报】举报记录总数量，管理端使用"""
+  userReportsCount(
+    """过滤条件"""
+    filter: UserReportFilter
+  ): Summary!
+
+  """【封禁】封禁记录查询，只查询180天内的封禁记录，管理端使用"""
+  userBlockRecords(
+    """用户ID"""
+    userId: String!
+
+    """分页组件"""
+    paginator: GraphQLPaginator
+  ): [UserBlockRecord!]!
+
+  """【封禁】封禁记录总数查询，只查询180天内的封禁记录，管理端使用"""
+  userBlockRecordsCount(
+    """用户ID"""
+    userId: String!
+  ): Summary!
   _entities(representations: [_Any!]!): [_Entity]!
   _service: _Service!
+}
+
+type Singer {
+  id: Int!
+  name: String!
+  image: String!
+  createdAt: Time!
+}
+
+input SingerFilter {
+  name: String
 }
 
 type Summary {
@@ -1006,11 +1231,14 @@ type Topic {
   """副标题"""
   subtitle: String
 
+  """类别"""
+  category: String!
+
   """封面图片URL"""
   frontCover: String
 
   """可见地区，列表为空表示全区域可见"""
-  visibleArea: AreaIDList
+  visibleArea: [String!]
 
   """话题颜色"""
   color: String
@@ -1018,19 +1246,37 @@ type Topic {
   """话题描述"""
   desc: String
 
+  """开始时间"""
+  startAt: Time
+
+  """结束时间"""
+  endAt: Time
+
+  """排序"""
+  sequence: Int
+
   """是否可用"""
   enable: Boolean!
+
+  """创建人"""
+  createdBy: User!
+
+  """是否有进阶的匹配配置"""
+  hasConfig: Boolean!
+
+  """图片配置"""
+  imageConfigs: [TopicImageConfig!]
 }
 
 type TopicCategory {
   """类别ID"""
   id: Int!
 
-  """名称"""
+  """分类名称"""
   name: String!
 
-  """可见地区，列表为空表示全区域可见"""
-  visibleArea: AreaIDList
+  """类别描述"""
+  desc: String!
 
   """话题颜色"""
   defaultColor: String
@@ -1047,8 +1293,120 @@ input TopicFilter {
   enable: Boolean
 }
 
+type TopicImageConfig {
+  """ID"""
+  id: Int!
+
+  """话题ID"""
+  topicId: String!
+
+  """图片类型，如：icon/background"""
+  imageType: String!
+
+  """图片URL"""
+  imageUrl: String!
+
+  """是否失效"""
+  Enable: Boolean!
+}
+
+type TopicOption {
+  name: String!
+  value: Int!
+}
+
+type TopicOptionConfig {
+  topicId: String!
+  timeWeight: Int!
+  threshold: Int!
+  properties: [TopicOptionProperty!]!
+}
+
+input TopicOptionConfigFilter {
+  topicId: String
+}
+
+input TopicOptionParam {
+  name: String!
+  value: Int!
+}
+
+type TopicOptionProperty {
+  id: String!
+  name: String!
+  weight: Int!
+  comparable: Boolean!
+  enabled: Boolean!
+  maxSelection: Int!
+  defaultSelectAll: Boolean!
+  options: [TopicOption!]!
+  extraOptionKey: ExtraOptionKey!
+  required: Boolean!
+}
+
+input TopicOptionPropertyParam {
+  id: String!
+  name: String!
+  weight: Int!
+  comparable: Boolean!
+  defaultSelectAll: Boolean!
+  maxSelection: Int!
+  options: [TopicOptionParam!]!
+  extraOptionKey: ExtraOptionKey!
+  required: Boolean!
+}
+
 input UpdateAdminAccountParam {
   enabled: Boolean
+}
+
+input UpdateTopicCategoryParam {
+  """类别描述"""
+  desc: String
+
+  """话题默认颜色"""
+  defaultColor: String
+
+  """是否可用"""
+  enable: Boolean
+}
+
+input UpdateTopicOptionConfig {
+  timeWeight: Int
+  threshold: Int
+  properties: [TopicOptionPropertyParam!]
+}
+
+input UpdateTopicParam {
+  """话题名"""
+  name: String
+
+  """副标题"""
+  subtitle: String
+
+  """话题颜色"""
+  color: String
+
+  """话题描述"""
+  desc: String
+
+  """开始时间"""
+  startAt: Time
+
+  """结束时间"""
+  endAt: Time
+
+  """可见地区"""
+  visibleArea: [String!]
+
+  """封面URL"""
+  frontCover: String
+
+  """排序"""
+  sequence: Int
+
+  """是否可用"""
+  enable: Boolean
 }
 
 type User {
@@ -1057,6 +1415,9 @@ type User {
 
   """昵称"""
   nickname: String
+
+  """手机号"""
+  phone: String
 
   """头像URL"""
   avatar: String
@@ -1070,11 +1431,17 @@ type User {
   """生日"""
   birthday: String
 
+  """微信openID"""
+  openId: String!
+
   """注册时间"""
   createdAt: Time!
 
-  """微信openID"""
-  openId: String!
+  """上次登录时间"""
+  lastLoginTime: Time
+
+  """remark"""
+  remark: String
 
   """年龄"""
   age: Int
@@ -1095,10 +1462,88 @@ type User {
   followingNum: Int!
 
   """是否封禁"""
-  blocked: Boolean!
+  blocked: Boolean! @deprecated(reason: "not enough, use field blockInfo instead")
+
+  """用户封禁信息"""
+  blockInfo: UserBlockInfo!
 
   """用户标签"""
   tags: [Tag!]
+
+  """用户资料"""
+  profile: UserProfile!
+
+  """当前所在地区"""
+  currLoc: String
+}
+
+type UserBlockInfo {
+  """是否用户封禁，封禁则整个APP无法使用"""
+  userBlocked: Boolean!
+
+  """用户封禁截止时间，userBlocked=true时存在值"""
+  userBlockUntil: Time
+
+  """是否匹配封禁，封禁则无法加入新的匹配"""
+  matchingBlocked: Boolean!
+
+  """匹配封禁截止时间，matchingBlocked=true时存在值"""
+  matchingBlockUntil: Time
+
+  """是否聊天封禁，封禁则无法发送消息"""
+  chatBlocked: Boolean!
+
+  """聊天封禁截止时间，chatBlocked=true时存在值"""
+  chatBlockUntil: Time
+}
+
+type UserBlockRecord {
+  """ID"""
+  id: Int!
+
+  """用户ID"""
+  userId: String!
+
+  """操作类型：封禁/解封"""
+  operation: String!
+
+  """操作范围"""
+  blockScope: String!
+
+  """原因"""
+  reason: String!
+
+  """封禁截止时间，仅对封禁操作有效"""
+  blockUntil: Time
+
+  """关联的ID，如举报ID"""
+  relatedInfo: String
+
+  """操作人"""
+  operateBy: String!
+
+  """创建时间"""
+  createdAt: Time!
+}
+
+input UserCustomTopicParam {
+  """话题名"""
+  name: String!
+
+  """话题描述"""
+  desc: String
+
+  """话题颜色"""
+  color: String
+
+  """开始时间"""
+  startAt: Time!
+
+  """结束时间"""
+  endAt: Time!
+
+  """话题显示城市"""
+  cityId: String
 }
 
 input UserFilter {
@@ -1140,6 +1585,54 @@ type UserImageReview {
   url: String!
 }
 
+type UserInfoCompleteness {
+  """信息是否全部填写"""
+  filled: Boolean!
+
+  """
+  未填写的字段列表，filled=false时有值
+  - nickname: 昵称
+  - avatar: 头像
+  - gender: 性别
+  - birthday: 生日
+  """
+  unfilledFields: [String!]
+}
+
+input UserInfoUpdateParam {
+  """昵称"""
+  nickname: String
+
+  """性别，M-男性/F-女性"""
+  gender: String
+
+  """生日，格式yyyyMMdd"""
+  birthday: String
+
+  """头像url"""
+  avatarUrl: String
+
+  """封面背景url"""
+  backgroundUrl: String
+
+  """备注"""
+  remark: String
+}
+
+input UserInitParam {
+  """昵称"""
+  nickname: String!
+
+  """性别，M-男性/F-女性"""
+  gender: String!
+
+  """生日，格式yyyyMMdd"""
+  birthday: String!
+
+  """头像url"""
+  avatarUrl: String!
+}
+
 type UserLike {
   """是否点赞"""
   like: Boolean!
@@ -1157,5 +1650,108 @@ type UserNicknameReview {
 
   """昵称"""
   nickname: String!
+}
+
+type UserProfile {
+  """职业"""
+  career: String
+
+  """职业对象信息"""
+  careerInfo: DictData
+
+  """家乡城市"""
+  city: String
+
+  """家乡城市对象信息"""
+  cityInfo: Area
+
+  """学校"""
+  school: String
+
+  """MBTI"""
+  mbti: String
+
+  """微信号"""
+  wechatNo: String
+
+  """星座"""
+  constellation: String
+}
+
+input UserProfileUpdateParam {
+  """职业"""
+  careerId: String
+
+  """家乡城市"""
+  cityId: String
+
+  """学校"""
+  school: String
+
+  """MBTI"""
+  mbti: String
+
+  """微信号"""
+  wechatNo: String
+}
+
+type UserReport {
+  """举报记录ID"""
+  id: Int!
+
+  """举报关联的匹配ID"""
+  matchingId: String!
+
+  """被举报人ID"""
+  userId: String!
+
+  """举报人ID"""
+  reporterId: String!
+
+  """举报原因"""
+  reason: [String!]!
+
+  """是否已处理"""
+  processed: Boolean!
+
+  """处理结果"""
+  result: String
+
+  """备注"""
+  remark: String
+}
+
+input UserReportFilter {
+  """被举报人ID"""
+  userId: String
+
+  """举报人ID"""
+  reporterId: String
+
+  """匹配ID"""
+  matchingId: String
+
+  """是否已处理"""
+  processed: Boolean!
+}
+
+type UserStatsInfo {
+  """总用户数"""
+  totalNum: Int!
+
+  """总有效用户数"""
+  totalValidNum: Int!
+
+  """新增用户数"""
+  growthNum: Int!
+
+  """新增有效用户数"""
+  growthValidNum: Int!
+
+  """新增邀请用户数"""
+  growthInvitedNum: Int!
+
+  """活跃用户数"""
+  activeNum: Int!
 }
 

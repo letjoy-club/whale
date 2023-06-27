@@ -7,6 +7,9 @@ var (
 	ErrMatchingAlreadyCanceled       = midacode.NewError("MATCHING_ALREADY_CANCELED", "匹配已经取消", midacode.LogLevelWarn)
 	ErrMatchingStateShouldBeMatched  = midacode.NewError("MATCHING_STATE_SHOULD_BE_MATCHED", "匹配状态应该为已匹配", midacode.LogLevelWarn)
 	ErrMatchingStateShouldBeMatching = midacode.NewError("MATCHING_STATE_SHOULD_BE_MATCHING", "匹配状态应该为匹配中", midacode.LogLevelWarn)
+	ErrDayRangeNumInvalid            = midacode.NewError("DAY_RANGE_NUM_INVALID", "日期区间不成对", midacode.LogLevelWarn)
+	ErrDayRangeInvalid               = midacode.NewError("DAY_RANGE_INVALID", "日期区间不正确", midacode.LogLevelWarn)
+	ErrDayRangeDateFormatInvalid     = midacode.NewError("DAY_RANGE_DATE_FORMAT_INVALID", "日期区间日期格式不正确", midacode.LogLevelWarn)
 	ErrResourceBusy                  = midacode.NewError("RESOURCE_BUSY", "资源繁忙", midacode.LogLevelWarn)
 
 	ErrCannotInviteSelf         = midacode.NewError("CANNOT_INVITE_SELF", "不能邀请自己", midacode.LogLevelWarn)

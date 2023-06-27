@@ -6,6 +6,56 @@ input UpdateRecentMatchingParam {
   matchingIds: [String!]!
 }
 
+input CreateMatchingParam {
+  topicId: String!
+
+  areaIds: [String!]!
+  cityId: String!
+  gender: Gender!
+
+  remark: String
+
+  deadline: Time
+}
+
+input CreateMatchingParamV2 {
+  topicId: String!
+
+  areaIds: [String!]!
+  cityId: String!
+  gender: Gender!
+
+  "特定日期区间，格式 yyyyMMdd，一定要包含两个字符串，字符串区间为闭区间"
+  dayRange: [String!]!
+
+  "特定时间区间，如果不限，则长度为0"
+  preferredPeriods: [DatePeriod!]!
+
+  "匹配属性"
+  properties: [MatchingPropertyParam!]!
+
+  remark: String
+
+  deadline: Time
+}
+
+input MatchingPropertyParam {
+  id: String!
+  values: [String!]!
+}
+
+input UpdateMatchingParam {
+  topicId: String
+
+  areaIds: [String!]
+  cityId: String
+  gender: Gender
+  remark: String
+  createdAt: Time
+
+  deadline: Time
+}
+
 extend type Query {
   "【匹配系统】查看匹配"
   matching(id: String!): Matching!
@@ -22,10 +72,18 @@ extend type Query {
   ): [CalendarEvent!]!
 
   "【匹配系统】查看当天的活动日历"
-  userMatchingsInTheDay("用户 id 不需要传" userId: String, param: UserMatchingInTheDayParam!): [MatchingResult!]!
+  userMatchingsInTheDay(
+    "用户 id 不需要传"
+    userId: String
+    param: UserMatchingInTheDayParam!
+  ): [MatchingResult!]!
 
   "【匹配系统】使用 chatGroupId 查匹配结果"
-  matchingResultByChatGroupId("用户 id 不用传，只在管理端使用" userId: String, chatGroupId: String!): MatchingResult!
+  matchingResultByChatGroupId(
+    "用户 id 不用传，只在管理端使用"
+    userId: String
+    chatGroupId: String!
+  ): MatchingResult!
 
   "【匹配系统】匹配查询，管理端用"
   matchings(filter: MatchingFilter, paginator: GraphQLPaginator): [Matching!]!
@@ -37,13 +95,20 @@ extend type Query {
   matchingResult(id: Int!): MatchingResult!
 
   "【匹配系统】匹配结果列表，管理端用"
-  matchingResults(filter: MatchingResultFilter, paginator: GraphQLPaginator): [MatchingResult!]!
+  matchingResults(
+    filter: MatchingResultFilter
+    paginator: GraphQLPaginator
+  ): [MatchingResult!]!
 
   "【匹配系统】匹配结果数量，管理端用"
   matchingResultsCount(filter: MatchingResultFilter): Summary!
 
   "【匹配系统】用户匹配"
-  userMatchings(userId: String, filter: UserMatchingFilter, paginator: GraphQLPaginator): [Matching!]!
+  userMatchings(
+    userId: String
+    filter: UserMatchingFilter
+    paginator: GraphQLPaginator
+  ): [Matching!]!
 
   "【匹配系统】未确认的用户匹配"
   unconfirmedUserMatchings(userId: String): [Matching!]!
@@ -52,7 +117,11 @@ extend type Query {
   userMatchingsCount(userId: String, filter: UserMatchingFilter): Summary!
 
   "【匹配系统】预览话题下的用匹配"
-  previewMatchingsOfTopic(cityId: String!, topicId: String!, limit: Int): [MatchingOfTopic!]!
+  previewMatchingsOfTopic(
+    cityId: String!
+    topicId: String!
+    limit: Int
+  ): [MatchingOfTopic!]!
 
   "【匹配系统】待确认邀请（邀请我的）"
   unconfirmedInvitations(userId: String): [MatchingInvitation!]
@@ -61,7 +130,10 @@ extend type Query {
   unconfirmedInvitationCount(userId: String): Summary!
 
   "【匹配系统】最近匹配，管理端"
-  recentMatchings(filter: RecentMatchingFilter, paginator: GraphQLPaginator): [RecentMatching!]!
+  recentMatchings(
+    filter: RecentMatchingFilter
+    paginator: GraphQLPaginator
+  ): [RecentMatching!]!
 
   "【匹配系统】最近匹配总数，管理端"
   recentMatchingsCount(filter: RecentMatchingFilter): Summary!
@@ -74,17 +146,31 @@ extend type Mutation {
   "【匹配系统】创建匹配"
   createMatching(userId: String, param: CreateMatchingParam!): Matching!
 
+  "【匹配系统】创建匹配V2"
+  createMatchingV2(userId: String, param: CreateMatchingParamV2!): Matching!
+
   "【匹配系统】更新匹配，管理端使用"
   updateMatching(matchingId: String!, param: UpdateMatchingParam!): Matching!
 
   "【匹配系统】更新匹配配额，管理端使用"
-  updateMatchingQuota(userId: String!, param: UpdateMatchingQuotaParam!): String!
+  updateMatchingQuota(
+    userId: String!
+    param: UpdateMatchingQuotaParam!
+  ): String!
 
   "【匹配系统】确认/拒绝匹配结果"
-  confirmMatchingResult(userId: String, matchingId: String!, reject: Boolean!): String
+  confirmMatchingResult(
+    userId: String
+    matchingId: String!
+    reject: Boolean!
+  ): String
 
   "【匹配系统】确认/拒绝匹配结果 v2"
-  confirmMatchingResultV2(userId: String, matchingId: String!, confirm: Boolean!): String
+  confirmMatchingResultV2(
+    userId: String
+    matchingId: String!
+    confirm: Boolean!
+  ): String
 
   "【匹配系统】取消匹配"
   cancelMatching(matchingId: String!): String
@@ -99,8 +185,14 @@ extend type Mutation {
   reviewMatching(matchingId: String!, param: ReviewMatchingParam!): String
 
   "【匹配系统】更新最近的匹配，管理端"
-  updateRecentMatching(id: String!, param: UpdateRecentMatchingParam!): RecentMatching!
+  updateRecentMatching(
+    id: String!
+    param: UpdateRecentMatchingParam!
+  ): RecentMatching!
 
   "【匹配系统】增加到最近的匹配中，管理端"
   addMatchingToRecent(matchingId: String!): RecentMatching!
+
+  "【匹配系统】测试匹配分数"
+  getMatchingScore(id1: String!, id2: String!): EvaluatorResult!
 }

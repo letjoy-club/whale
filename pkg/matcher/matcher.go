@@ -8,6 +8,7 @@ import (
 	"whale/pkg/gqlient/scream"
 	"whale/pkg/loader"
 	"whale/pkg/models"
+	"whale/pkg/modelutil"
 
 	"github.com/letjoy-club/mida-tool/dbutil"
 	"github.com/letjoy-club/mida-tool/logger"
@@ -100,7 +101,7 @@ func NewMatchingResult(ctx context.Context, matchings []*models.Matching) (*mode
 	matchingIDs := make([]string, len(matchings))
 	for i := range matchings {
 		matchingIDs[i] = matchings[i].ID
-		states[i] = models.MatchingResultConfirmStateUnconfirmed.String()
+		states[i] = models.MatchingResultConfirmStateConfirmed.String()
 		userIDs[i] = matchings[i].UserID
 	}
 
@@ -137,9 +138,17 @@ func NewMatchingResult(ctx context.Context, matchings []*models.Matching) (*mode
 		}
 		return nil
 	})
+
 	if err != nil {
 		return nil, err
 	}
+
+	err = modelutil.CheckMatchingResultAndCreateChatGroup(ctx, matchingResult)
+	if err != nil {
+		fmt.Println("failed to create chat group", err)
+	}
+
+	// 通知
 	areaIDs := []string{matchings[0].CityID}
 	_, err = scream.MatchingGroupCreated(ctx, midacontext.GetServices(ctx).Scream, scream.MatchingGroupCreatedParam{
 		MatchingId: matchingResult.MatchingIDs[0],
@@ -149,7 +158,7 @@ func NewMatchingResult(ctx context.Context, matchings []*models.Matching) (*mode
 		AreaIds:    areaIDs,
 	})
 	if err != nil {
-		fmt.Println("err", err)
+		fmt.Println("failed send notification: create matching group err", err)
 	}
 	_, err = scream.MatchingGroupCreated(ctx, midacontext.GetServices(ctx).Scream, scream.MatchingGroupCreatedParam{
 		MatchingId: matchingResult.MatchingIDs[1],

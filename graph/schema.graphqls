@@ -29,6 +29,12 @@ extend type ChatGroup @key(fields: "id") {
   id: String! @external
 }
 
+type EvaluatorResult {
+  score: Int!
+  timeScore: Int!
+  properties: [Int!]!
+}
+
 type SimpleAvatarUser {
   avatar: String!
   nickname: String!
@@ -62,6 +68,23 @@ enum ResultCreatedBy {
   Invitation
 }
 
+enum DatePeriod {
+  "不限"
+  Unlimited
+  "周末"
+  Weekend
+  "周末下午"
+  WeekendAfternoon
+  "周末晚上"
+  WeekendNight
+  "工作日"
+  Workday
+  "工作日下午"
+  WorkdayAfternoon
+  "工作日晚上"
+  WorkdayNight
+}
+
 type Matching @key(fields: "id") {
   id: String!
   topicId: String!
@@ -76,6 +99,13 @@ type Matching @key(fields: "id") {
   inChatGroup: Boolean!
   remark: String!
 
+  "特定日期区间，格式 20060102"
+  dayRange: [String!]!
+  "优先时间段"
+  preferredPeriods: [DatePeriod!]!
+  "其它键值对属性"
+  properties: [MatchingProperty!]!
+
   deadline: Time! @adminOnly
   updatedAt: Time! @adminOnly
   createdAt: Time!
@@ -88,6 +118,11 @@ type Matching @key(fields: "id") {
   topic: Topic!
   areas: [Area!]!
   city: Area!
+}
+
+type MatchingProperty {
+  id: String!
+  values: [String!]!
 }
 
 enum Gender {
@@ -316,30 +351,6 @@ input MatchingResultFilter {
 type Query {
   "【匹配系统】内部专有"
   chatGroupByResultId(resultId: Int!): ChatGroup!
-}
-
-input CreateMatchingParam {
-  topicId: String!
-
-  areaIds: [String!]!
-  cityId: String!
-  gender: Gender!
-
-  remark: String
-
-  deadline: Time
-}
-
-input UpdateMatchingParam {
-  topicId: String
-
-  areaIds: [String!]
-  cityId: String
-  gender: Gender
-  remark: String
-  createdAt: Time
-
-  deadline: Time
 }
 
 input UserMatchingFilter {

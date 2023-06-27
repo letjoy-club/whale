@@ -26,3 +26,43 @@ query GetArea($id: AreaCode!) {
     depth
   }
 }
+
+fragment TopicOptionConfigFields on TopicOptionConfig {
+  topicId
+  timeWeight
+  threshold
+  properties {
+    id
+    required
+    name
+    weight
+    comparable
+    enabled
+    maxSelection
+    defaultSelectAll
+    options {
+      name
+      value
+    }
+    extraOptionKey
+  }
+}
+
+query GetTopicConfigOption($topicId: String!) {
+  topicOptionConfig(topicId: $topicId) {
+    ...TopicOptionConfigFields
+  }
+}
+
+query GetTopicConfigOptions {
+  topicOptionConfigs {
+    ...TopicOptionConfigFields
+  }
+}
+
+query GetTopics {
+  topics {
+    id
+    name
+  }
+}

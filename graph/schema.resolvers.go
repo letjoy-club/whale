@@ -48,6 +48,13 @@ func (r *matchingResolver) State(ctx context.Context, obj *models.Matching) (mod
 	return models.MatchingState(obj.State), nil
 }
 
+// PreferredPeriods is the resolver for the preferredPeriods field.
+func (r *matchingResolver) PreferredPeriods(ctx context.Context, obj *models.Matching) ([]models.DatePeriod, error) {
+	return lo.Map(obj.PreferredPeriods, func(p string, i int) models.DatePeriod {
+		return models.DatePeriod(p)
+	}), nil
+}
+
 // MatchingResult is the resolver for the matchingResult field.
 func (r *matchingResolver) MatchingResult(ctx context.Context, obj *models.Matching) (*models.MatchingResult, error) {
 	token := midacontext.GetClientToken(ctx)

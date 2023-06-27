@@ -2,6 +2,7 @@ package models
 
 import (
 	"time"
+	"whale/pkg/whalecode"
 
 	"gorm.io/gorm"
 )
@@ -23,12 +24,88 @@ type Matching struct {
 	ResultID        int
 	Remark          string `gorm:"type:varchar(64)"`
 
+	// 特定日期区间，格式 20060102
+	DayRange []string `gorm:"serializer:json;type:json"`
+	// 优先时间段
+	PreferredPeriods []string           `gorm:"serializer:json;type:json"`
+	Properties       []MatchingProperty `gorm:"serializer:json;type:json"`
+
 	FinishedAt *time.Time
 	MatchedAt  *time.Time
 
 	Deadline  time.Time
 	CreatedAt time.Time `gorm:"autoCreateTime;index"`
 	UpdatedAt time.Time `gorm:"autoUpdateTime"`
+}
+
+func (m *Matching) BeforeSave(db *gorm.DB) error {
+	if m.DayRange != nil {
+		if len(m.DayRange) == 0 {
+			return nil
+		}
+		if len(m.DayRange) != 2 {
+			return whalecode.ErrDayRangeNumInvalid
+		}
+		if m.DayRange[0] > m.DayRange[1] {
+			return whalecode.ErrDayRangeNumInvalid
+		}
+		if _, err := time.Parse("20060102", m.DayRange[0]); err != nil {
+			return whalecode.ErrDayRangeDateFormatInvalid
+		}
+		if _, err := time.Parse("20060102", m.DayRange[1]); err != nil {
+			return whalecode.ErrDayRangeDateFormatInvalid
+		}
+	}
+	return nil
+}
+
+func (m *Matching) HasSpecificDay(day string) bool {
+	if len(m.DayRange) != 2 {
+		return false
+	}
+	if day >= m.DayRange[0] && day <= m.DayRange[1] {
+		return true
+	}
+	return false
+}
+
+func (m *Matching) AfterFind(tx *gorm.DB) error {
+	if m.RejectedUserIDs == nil {
+		m.RejectedUserIDs = []string{}
+	}
+	if m.Properties == nil {
+		m.Properties = []MatchingProperty{}
+	}
+	if m.PreferredPeriods == nil {
+		m.PreferredPeriods = []string{}
+	}
+	if m.DayRange == nil {
+		m.DayRange = []string{}
+	}
+	return nil
+}
+
+func (m *Matching) GetProperty(id string) []string {
+	for _, p := range m.Properties {
+		if p.ID == id {
+			return p.Values
+		}
+	}
+	return []string{}
+}
+
+func (m *Matching) GetSingleValueProperty(id string) string {
+	for _, p := range m.Properties {
+		if p.ID == id && len(p.Values) > 0 {
+			return p.Values[0]
+		}
+	}
+	return ""
+}
+
+type MatchingProperty struct {
+	ID     string   `json:"id"`
+	Values []string `json:"values"`
 }
 
 type MatchingReview struct {

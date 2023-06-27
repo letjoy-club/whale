@@ -59,6 +59,8 @@ models:
   MatchingPreview:
     model:
       - whale/pkg/models.Matching
+  MatchingProperty:
+    model: ["whale/pkg/models.MatchingProperty"]
   MatchingResult:
     model:
       - whale/pkg/models.MatchingResult
@@ -86,6 +88,8 @@ models:
         resolver: true
       recentUsers:
         resolver: true
+  EvaluatorResult:
+    model: [ "whale/pkg/matcher.EvaluatorResult" ]
   HotTopicsInArea:
     model:
       - whale/pkg/models.HotTopicsInArea

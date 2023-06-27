@@ -12,6 +12,7 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+	"whale/pkg/matcher"
 	"whale/pkg/models"
 
 	"github.com/99designs/gqlgen/graphql"
@@ -92,6 +93,12 @@ type ComplexityRoot struct {
 		FindUserByID              func(childComplexity int, id string) int
 	}
 
+	EvaluatorResult struct {
+		Properties func(childComplexity int) int
+		Score      func(childComplexity int) int
+		TimeScore  func(childComplexity int) int
+	}
+
 	HotTopicsInArea struct {
 		City         func(childComplexity int) int
 		CityID       func(childComplexity int) int
@@ -100,25 +107,28 @@ type ComplexityRoot struct {
 	}
 
 	Matching struct {
-		AreaIDs         func(childComplexity int) int
-		Areas           func(childComplexity int) int
-		City            func(childComplexity int) int
-		CityID          func(childComplexity int) int
-		CreatedAt       func(childComplexity int) int
-		Deadline        func(childComplexity int) int
-		Gender          func(childComplexity int) int
-		ID              func(childComplexity int) int
-		InChatGroup     func(childComplexity int) int
-		MatchingResult  func(childComplexity int) int
-		RejectedUserIDs func(childComplexity int) int
-		Remark          func(childComplexity int) int
-		Reviewed        func(childComplexity int) int
-		State           func(childComplexity int) int
-		Topic           func(childComplexity int) int
-		TopicID         func(childComplexity int) int
-		UpdatedAt       func(childComplexity int) int
-		User            func(childComplexity int) int
-		UserID          func(childComplexity int) int
+		AreaIDs          func(childComplexity int) int
+		Areas            func(childComplexity int) int
+		City             func(childComplexity int) int
+		CityID           func(childComplexity int) int
+		CreatedAt        func(childComplexity int) int
+		DayRange         func(childComplexity int) int
+		Deadline         func(childComplexity int) int
+		Gender           func(childComplexity int) int
+		ID               func(childComplexity int) int
+		InChatGroup      func(childComplexity int) int
+		MatchingResult   func(childComplexity int) int
+		PreferredPeriods func(childComplexity int) int
+		Properties       func(childComplexity int) int
+		RejectedUserIDs  func(childComplexity int) int
+		Remark           func(childComplexity int) int
+		Reviewed         func(childComplexity int) int
+		State            func(childComplexity int) int
+		Topic            func(childComplexity int) int
+		TopicID          func(childComplexity int) int
+		UpdatedAt        func(childComplexity int) int
+		User             func(childComplexity int) int
+		UserID           func(childComplexity int) int
 	}
 
 	MatchingInvitation struct {
@@ -159,6 +169,11 @@ type ComplexityRoot struct {
 		Remark func(childComplexity int) int
 		User   func(childComplexity int) int
 		UserID func(childComplexity int) int
+	}
+
+	MatchingProperty struct {
+		ID     func(childComplexity int) int
+		Values func(childComplexity int) int
 	}
 
 	MatchingQuota struct {
@@ -209,8 +224,10 @@ type ComplexityRoot struct {
 		CreateCityTopics          func(childComplexity int, param models.CreateCityTopicParam) int
 		CreateMatching            func(childComplexity int, userID *string, param models.CreateMatchingParam) int
 		CreateMatchingInvitation  func(childComplexity int, userID *string, param models.CreateMatchingInvitationParam) int
+		CreateMatchingV2          func(childComplexity int, userID *string, param models.CreateMatchingParamV2) int
 		CreateUserJoinTopic       func(childComplexity int, param models.CreateUserJoinTopicParam) int
 		FinishMatching            func(childComplexity int, matchingID string) int
+		GetMatchingScore          func(childComplexity int, id1 string, id2 string) int
 		RefreshTopicMetrics       func(childComplexity int) int
 		ReviewMatching            func(childComplexity int, matchingID string, param models.ReviewMatchingParam) int
 		StartMatching             func(childComplexity int) int
@@ -344,6 +361,8 @@ type MatchingResolver interface {
 	Gender(ctx context.Context, obj *models.Matching) (models.Gender, error)
 	State(ctx context.Context, obj *models.Matching) (models.MatchingState, error)
 
+	PreferredPeriods(ctx context.Context, obj *models.Matching) ([]models.DatePeriod, error)
+
 	MatchingResult(ctx context.Context, obj *models.Matching) (*models.MatchingResult, error)
 	Reviewed(ctx context.Context, obj *models.Matching) (bool, error)
 	User(ctx context.Context, obj *models.Matching) (*models.User, error)
@@ -391,6 +410,7 @@ type MutationResolver interface {
 	ConfirmMatchingInvitation(ctx context.Context, userID *string, invitationID string, confirm bool) (*string, error)
 	UpdateMatchingInvitation(ctx context.Context, invitationID string, param models.UpdateMatchingInvitationParam) (*models.MatchingInvitation, error)
 	CreateMatching(ctx context.Context, userID *string, param models.CreateMatchingParam) (*models.Matching, error)
+	CreateMatchingV2(ctx context.Context, userID *string, param models.CreateMatchingParamV2) (*models.Matching, error)
 	UpdateMatching(ctx context.Context, matchingID string, param models.UpdateMatchingParam) (*models.Matching, error)
 	UpdateMatchingQuota(ctx context.Context, userID string, param models.UpdateMatchingQuotaParam) (string, error)
 	ConfirmMatchingResult(ctx context.Context, userID *string, matchingID string, reject bool) (*string, error)
@@ -401,6 +421,7 @@ type MutationResolver interface {
 	ReviewMatching(ctx context.Context, matchingID string, param models.ReviewMatchingParam) (*string, error)
 	UpdateRecentMatching(ctx context.Context, id string, param models.UpdateRecentMatchingParam) (*models.RecentMatching, error)
 	AddMatchingToRecent(ctx context.Context, matchingID string) (*models.RecentMatching, error)
+	GetMatchingScore(ctx context.Context, id1 string, id2 string) (*matcher.EvaluatorResult, error)
 	CreateCityTopics(ctx context.Context, param models.CreateCityTopicParam) (*models.CityTopics, error)
 	UpdateCityTopics(ctx context.Context, cityID string, param models.UpdateCityTopicParam) (*models.CityTopics, error)
 	UpdateHotTopicsInArea(ctx context.Context, cityID string, param models.UpdateHotTopicParam) (*models.HotTopicsInArea, error)
@@ -606,6 +627,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Entity.FindUserByID(childComplexity, args["id"].(string)), true
 
+	case "EvaluatorResult.properties":
+		if e.complexity.EvaluatorResult.Properties == nil {
+			break
+		}
+
+		return e.complexity.EvaluatorResult.Properties(childComplexity), true
+
+	case "EvaluatorResult.score":
+		if e.complexity.EvaluatorResult.Score == nil {
+			break
+		}
+
+		return e.complexity.EvaluatorResult.Score(childComplexity), true
+
+	case "EvaluatorResult.timeScore":
+		if e.complexity.EvaluatorResult.TimeScore == nil {
+			break
+		}
+
+		return e.complexity.EvaluatorResult.TimeScore(childComplexity), true
+
 	case "HotTopicsInArea.city":
 		if e.complexity.HotTopicsInArea.City == nil {
 			break
@@ -669,6 +711,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Matching.CreatedAt(childComplexity), true
 
+	case "Matching.dayRange":
+		if e.complexity.Matching.DayRange == nil {
+			break
+		}
+
+		return e.complexity.Matching.DayRange(childComplexity), true
+
 	case "Matching.deadline":
 		if e.complexity.Matching.Deadline == nil {
 			break
@@ -703,6 +752,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Matching.MatchingResult(childComplexity), true
+
+	case "Matching.preferredPeriods":
+		if e.complexity.Matching.PreferredPeriods == nil {
+			break
+		}
+
+		return e.complexity.Matching.PreferredPeriods(childComplexity), true
+
+	case "Matching.properties":
+		if e.complexity.Matching.Properties == nil {
+			break
+		}
+
+		return e.complexity.Matching.Properties(childComplexity), true
 
 	case "Matching.rejectedUserIds":
 		if e.complexity.Matching.RejectedUserIDs == nil {
@@ -983,6 +1046,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.MatchingPreview.UserID(childComplexity), true
+
+	case "MatchingProperty.id":
+		if e.complexity.MatchingProperty.ID == nil {
+			break
+		}
+
+		return e.complexity.MatchingProperty.ID(childComplexity), true
+
+	case "MatchingProperty.values":
+		if e.complexity.MatchingProperty.Values == nil {
+			break
+		}
+
+		return e.complexity.MatchingProperty.Values(childComplexity), true
 
 	case "MatchingQuota.createdAt":
 		if e.complexity.MatchingQuota.CreatedAt == nil {
@@ -1300,6 +1377,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.CreateMatchingInvitation(childComplexity, args["userId"].(*string), args["param"].(models.CreateMatchingInvitationParam)), true
 
+	case "Mutation.createMatchingV2":
+		if e.complexity.Mutation.CreateMatchingV2 == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createMatchingV2_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.CreateMatchingV2(childComplexity, args["userId"].(*string), args["param"].(models.CreateMatchingParamV2)), true
+
 	case "Mutation.createUserJoinTopic":
 		if e.complexity.Mutation.CreateUserJoinTopic == nil {
 			break
@@ -1323,6 +1412,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.FinishMatching(childComplexity, args["matchingId"].(string)), true
+
+	case "Mutation.getMatchingScore":
+		if e.complexity.Mutation.GetMatchingScore == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_getMatchingScore_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.GetMatchingScore(childComplexity, args["id1"].(string), args["id2"].(string)), true
 
 	case "Mutation.refreshTopicMetrics":
 		if e.complexity.Mutation.RefreshTopicMetrics == nil {
@@ -2147,11 +2248,13 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputCreateCityTopicParam,
 		ec.unmarshalInputCreateMatchingInvitationParam,
 		ec.unmarshalInputCreateMatchingParam,
+		ec.unmarshalInputCreateMatchingParamV2,
 		ec.unmarshalInputCreateUserJoinTopicParam,
 		ec.unmarshalInputGraphQLPaginator,
 		ec.unmarshalInputHotTopicsFilter,
 		ec.unmarshalInputMatchingFilter,
 		ec.unmarshalInputMatchingInvitationFilter,
+		ec.unmarshalInputMatchingPropertyParam,
 		ec.unmarshalInputMatchingResultFilter,
 		ec.unmarshalInputRecentMatchingFilter,
 		ec.unmarshalInputReviewMatchingParam,
@@ -2544,6 +2647,30 @@ func (ec *executionContext) field_Mutation_createMatchingInvitation_args(ctx con
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_createMatchingV2_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["userId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userId"))
+		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["userId"] = arg0
+	var arg1 models.CreateMatchingParamV2
+	if tmp, ok := rawArgs["param"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("param"))
+		arg1, err = ec.unmarshalNCreateMatchingParamV22whaleᚋpkgᚋmodelsᚐCreateMatchingParamV2(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["param"] = arg1
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_createMatching_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -2595,6 +2722,30 @@ func (ec *executionContext) field_Mutation_finishMatching_args(ctx context.Conte
 		}
 	}
 	args["matchingId"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_getMatchingScore_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id1"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id1"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id1"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["id2"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id2"))
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id2"] = arg1
 	return args, nil
 }
 
@@ -4120,6 +4271,12 @@ func (ec *executionContext) fieldContext_Entity_findMatchingByID(ctx context.Con
 				return ec.fieldContext_Matching_inChatGroup(ctx, field)
 			case "remark":
 				return ec.fieldContext_Matching_remark(ctx, field)
+			case "dayRange":
+				return ec.fieldContext_Matching_dayRange(ctx, field)
+			case "preferredPeriods":
+				return ec.fieldContext_Matching_preferredPeriods(ctx, field)
+			case "properties":
+				return ec.fieldContext_Matching_properties(ctx, field)
 			case "deadline":
 				return ec.fieldContext_Matching_deadline(ctx, field)
 			case "updatedAt":
@@ -4347,6 +4504,138 @@ func (ec *executionContext) fieldContext_Entity_findUserByID(ctx context.Context
 	if fc.Args, err = ec.field_Entity_findUserByID_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EvaluatorResult_score(ctx context.Context, field graphql.CollectedField, obj *matcher.EvaluatorResult) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EvaluatorResult_score(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Score, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EvaluatorResult_score(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EvaluatorResult",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EvaluatorResult_timeScore(ctx context.Context, field graphql.CollectedField, obj *matcher.EvaluatorResult) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EvaluatorResult_timeScore(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TimeScore, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EvaluatorResult_timeScore(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EvaluatorResult",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EvaluatorResult_properties(ctx context.Context, field graphql.CollectedField, obj *matcher.EvaluatorResult) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EvaluatorResult_properties(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Properties, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]int)
+	fc.Result = res
+	return ec.marshalNInt2ᚕintᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EvaluatorResult_properties(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EvaluatorResult",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
 	}
 	return fc, nil
 }
@@ -4998,6 +5287,144 @@ func (ec *executionContext) fieldContext_Matching_remark(ctx context.Context, fi
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Matching_dayRange(ctx context.Context, field graphql.CollectedField, obj *models.Matching) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Matching_dayRange(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DayRange, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Matching_dayRange(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Matching",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Matching_preferredPeriods(ctx context.Context, field graphql.CollectedField, obj *models.Matching) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Matching_preferredPeriods(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Matching().PreferredPeriods(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]models.DatePeriod)
+	fc.Result = res
+	return ec.marshalNDatePeriod2ᚕwhaleᚋpkgᚋmodelsᚐDatePeriodᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Matching_preferredPeriods(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Matching",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type DatePeriod does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Matching_properties(ctx context.Context, field graphql.CollectedField, obj *models.Matching) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Matching_properties(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Properties, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]models.MatchingProperty)
+	fc.Result = res
+	return ec.marshalNMatchingProperty2ᚕwhaleᚋpkgᚋmodelsᚐMatchingPropertyᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Matching_properties(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Matching",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_MatchingProperty_id(ctx, field)
+			case "values":
+				return ec.fieldContext_MatchingProperty_values(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type MatchingProperty", field.Name)
 		},
 	}
 	return fc, nil
@@ -7000,6 +7427,94 @@ func (ec *executionContext) fieldContext_MatchingPreview_user(ctx context.Contex
 	return fc, nil
 }
 
+func (ec *executionContext) _MatchingProperty_id(ctx context.Context, field graphql.CollectedField, obj *models.MatchingProperty) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MatchingProperty_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MatchingProperty_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MatchingProperty",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MatchingProperty_values(ctx context.Context, field graphql.CollectedField, obj *models.MatchingProperty) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MatchingProperty_values(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Values, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MatchingProperty_values(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MatchingProperty",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _MatchingQuota_userId(ctx context.Context, field graphql.CollectedField, obj *models.MatchingQuota) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_MatchingQuota_userId(ctx, field)
 	if err != nil {
@@ -8806,6 +9321,12 @@ func (ec *executionContext) fieldContext_Mutation_createMatching(ctx context.Con
 				return ec.fieldContext_Matching_inChatGroup(ctx, field)
 			case "remark":
 				return ec.fieldContext_Matching_remark(ctx, field)
+			case "dayRange":
+				return ec.fieldContext_Matching_dayRange(ctx, field)
+			case "preferredPeriods":
+				return ec.fieldContext_Matching_preferredPeriods(ctx, field)
+			case "properties":
+				return ec.fieldContext_Matching_properties(ctx, field)
 			case "deadline":
 				return ec.fieldContext_Matching_deadline(ctx, field)
 			case "updatedAt":
@@ -8836,6 +9357,107 @@ func (ec *executionContext) fieldContext_Mutation_createMatching(ctx context.Con
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_createMatching_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_createMatchingV2(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_createMatchingV2(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().CreateMatchingV2(rctx, fc.Args["userId"].(*string), fc.Args["param"].(models.CreateMatchingParamV2))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*models.Matching)
+	fc.Result = res
+	return ec.marshalNMatching2ᚖwhaleᚋpkgᚋmodelsᚐMatching(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_createMatchingV2(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Matching_id(ctx, field)
+			case "topicId":
+				return ec.fieldContext_Matching_topicId(ctx, field)
+			case "userId":
+				return ec.fieldContext_Matching_userId(ctx, field)
+			case "areaIds":
+				return ec.fieldContext_Matching_areaIds(ctx, field)
+			case "cityId":
+				return ec.fieldContext_Matching_cityId(ctx, field)
+			case "gender":
+				return ec.fieldContext_Matching_gender(ctx, field)
+			case "state":
+				return ec.fieldContext_Matching_state(ctx, field)
+			case "rejectedUserIds":
+				return ec.fieldContext_Matching_rejectedUserIds(ctx, field)
+			case "inChatGroup":
+				return ec.fieldContext_Matching_inChatGroup(ctx, field)
+			case "remark":
+				return ec.fieldContext_Matching_remark(ctx, field)
+			case "dayRange":
+				return ec.fieldContext_Matching_dayRange(ctx, field)
+			case "preferredPeriods":
+				return ec.fieldContext_Matching_preferredPeriods(ctx, field)
+			case "properties":
+				return ec.fieldContext_Matching_properties(ctx, field)
+			case "deadline":
+				return ec.fieldContext_Matching_deadline(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_Matching_updatedAt(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Matching_createdAt(ctx, field)
+			case "matchingResult":
+				return ec.fieldContext_Matching_matchingResult(ctx, field)
+			case "reviewed":
+				return ec.fieldContext_Matching_reviewed(ctx, field)
+			case "user":
+				return ec.fieldContext_Matching_user(ctx, field)
+			case "topic":
+				return ec.fieldContext_Matching_topic(ctx, field)
+			case "areas":
+				return ec.fieldContext_Matching_areas(ctx, field)
+			case "city":
+				return ec.fieldContext_Matching_city(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Matching", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_createMatchingV2_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return
 	}
@@ -8901,6 +9523,12 @@ func (ec *executionContext) fieldContext_Mutation_updateMatching(ctx context.Con
 				return ec.fieldContext_Matching_inChatGroup(ctx, field)
 			case "remark":
 				return ec.fieldContext_Matching_remark(ctx, field)
+			case "dayRange":
+				return ec.fieldContext_Matching_dayRange(ctx, field)
+			case "preferredPeriods":
+				return ec.fieldContext_Matching_preferredPeriods(ctx, field)
+			case "properties":
+				return ec.fieldContext_Matching_properties(ctx, field)
 			case "deadline":
 				return ec.fieldContext_Matching_deadline(ctx, field)
 			case "updatedAt":
@@ -9437,6 +10065,69 @@ func (ec *executionContext) fieldContext_Mutation_addMatchingToRecent(ctx contex
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_addMatchingToRecent_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_getMatchingScore(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_getMatchingScore(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().GetMatchingScore(rctx, fc.Args["id1"].(string), fc.Args["id2"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*matcher.EvaluatorResult)
+	fc.Result = res
+	return ec.marshalNEvaluatorResult2ᚖwhaleᚋpkgᚋmatcherᚐEvaluatorResult(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_getMatchingScore(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "score":
+				return ec.fieldContext_EvaluatorResult_score(ctx, field)
+			case "timeScore":
+				return ec.fieldContext_EvaluatorResult_timeScore(ctx, field)
+			case "properties":
+				return ec.fieldContext_EvaluatorResult_properties(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type EvaluatorResult", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_getMatchingScore_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return
 	}
@@ -10321,6 +11012,12 @@ func (ec *executionContext) fieldContext_Query_matching(ctx context.Context, fie
 				return ec.fieldContext_Matching_inChatGroup(ctx, field)
 			case "remark":
 				return ec.fieldContext_Matching_remark(ctx, field)
+			case "dayRange":
+				return ec.fieldContext_Matching_dayRange(ctx, field)
+			case "preferredPeriods":
+				return ec.fieldContext_Matching_preferredPeriods(ctx, field)
+			case "properties":
+				return ec.fieldContext_Matching_properties(ctx, field)
 			case "deadline":
 				return ec.fieldContext_Matching_deadline(ctx, field)
 			case "updatedAt":
@@ -10732,6 +11429,12 @@ func (ec *executionContext) fieldContext_Query_matchings(ctx context.Context, fi
 				return ec.fieldContext_Matching_inChatGroup(ctx, field)
 			case "remark":
 				return ec.fieldContext_Matching_remark(ctx, field)
+			case "dayRange":
+				return ec.fieldContext_Matching_dayRange(ctx, field)
+			case "preferredPeriods":
+				return ec.fieldContext_Matching_preferredPeriods(ctx, field)
+			case "properties":
+				return ec.fieldContext_Matching_properties(ctx, field)
 			case "deadline":
 				return ec.fieldContext_Matching_deadline(ctx, field)
 			case "updatedAt":
@@ -11127,6 +11830,12 @@ func (ec *executionContext) fieldContext_Query_userMatchings(ctx context.Context
 				return ec.fieldContext_Matching_inChatGroup(ctx, field)
 			case "remark":
 				return ec.fieldContext_Matching_remark(ctx, field)
+			case "dayRange":
+				return ec.fieldContext_Matching_dayRange(ctx, field)
+			case "preferredPeriods":
+				return ec.fieldContext_Matching_preferredPeriods(ctx, field)
+			case "properties":
+				return ec.fieldContext_Matching_properties(ctx, field)
 			case "deadline":
 				return ec.fieldContext_Matching_deadline(ctx, field)
 			case "updatedAt":
@@ -11222,6 +11931,12 @@ func (ec *executionContext) fieldContext_Query_unconfirmedUserMatchings(ctx cont
 				return ec.fieldContext_Matching_inChatGroup(ctx, field)
 			case "remark":
 				return ec.fieldContext_Matching_remark(ctx, field)
+			case "dayRange":
+				return ec.fieldContext_Matching_dayRange(ctx, field)
+			case "preferredPeriods":
+				return ec.fieldContext_Matching_preferredPeriods(ctx, field)
+			case "properties":
+				return ec.fieldContext_Matching_properties(ctx, field)
 			case "deadline":
 				return ec.fieldContext_Matching_deadline(ctx, field)
 			case "updatedAt":
@@ -13008,6 +13723,12 @@ func (ec *executionContext) fieldContext_RecentMatching_matchings(ctx context.Co
 				return ec.fieldContext_Matching_inChatGroup(ctx, field)
 			case "remark":
 				return ec.fieldContext_Matching_remark(ctx, field)
+			case "dayRange":
+				return ec.fieldContext_Matching_dayRange(ctx, field)
+			case "preferredPeriods":
+				return ec.fieldContext_Matching_preferredPeriods(ctx, field)
+			case "properties":
+				return ec.fieldContext_Matching_properties(ctx, field)
 			case "deadline":
 				return ec.fieldContext_Matching_deadline(ctx, field)
 			case "updatedAt":
@@ -14319,6 +15040,12 @@ func (ec *executionContext) fieldContext_UserJoinTopic_matching(ctx context.Cont
 				return ec.fieldContext_Matching_inChatGroup(ctx, field)
 			case "remark":
 				return ec.fieldContext_Matching_remark(ctx, field)
+			case "dayRange":
+				return ec.fieldContext_Matching_dayRange(ctx, field)
+			case "preferredPeriods":
+				return ec.fieldContext_Matching_preferredPeriods(ctx, field)
+			case "properties":
+				return ec.fieldContext_Matching_properties(ctx, field)
 			case "deadline":
 				return ec.fieldContext_Matching_deadline(ctx, field)
 			case "updatedAt":
@@ -16364,6 +17091,107 @@ func (ec *executionContext) unmarshalInputCreateMatchingParam(ctx context.Contex
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputCreateMatchingParamV2(ctx context.Context, obj interface{}) (models.CreateMatchingParamV2, error) {
+	var it models.CreateMatchingParamV2
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"topicId", "areaIds", "cityId", "gender", "dayRange", "preferredPeriods", "properties", "remark", "deadline"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "topicId":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("topicId"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TopicID = data
+		case "areaIds":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("areaIds"))
+			data, err := ec.unmarshalNString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AreaIds = data
+		case "cityId":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("cityId"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CityID = data
+		case "gender":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("gender"))
+			data, err := ec.unmarshalNGender2whaleᚋpkgᚋmodelsᚐGender(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Gender = data
+		case "dayRange":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("dayRange"))
+			data, err := ec.unmarshalNString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.DayRange = data
+		case "preferredPeriods":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("preferredPeriods"))
+			data, err := ec.unmarshalNDatePeriod2ᚕwhaleᚋpkgᚋmodelsᚐDatePeriodᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.PreferredPeriods = data
+		case "properties":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("properties"))
+			data, err := ec.unmarshalNMatchingPropertyParam2ᚕᚖwhaleᚋpkgᚋmodelsᚐMatchingPropertyParamᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Properties = data
+		case "remark":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("remark"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Remark = data
+		case "deadline":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("deadline"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Deadline = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputCreateUserJoinTopicParam(ctx context.Context, obj interface{}) (models.CreateUserJoinTopicParam, error) {
 	var it models.CreateUserJoinTopicParam
 	asMap := map[string]interface{}{}
@@ -16593,6 +17421,44 @@ func (ec *executionContext) unmarshalInputMatchingInvitationFilter(ctx context.C
 				return it, err
 			}
 			it.After = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputMatchingPropertyParam(ctx context.Context, obj interface{}) (models.MatchingPropertyParam, error) {
+	var it models.MatchingPropertyParam
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"id", "values"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "id":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ID = data
+		case "values":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("values"))
+			data, err := ec.unmarshalNString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Values = data
 		}
 	}
 
@@ -17615,6 +18481,48 @@ func (ec *executionContext) _Entity(ctx context.Context, sel ast.SelectionSet) g
 	return out
 }
 
+var evaluatorResultImplementors = []string{"EvaluatorResult"}
+
+func (ec *executionContext) _EvaluatorResult(ctx context.Context, sel ast.SelectionSet, obj *matcher.EvaluatorResult) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, evaluatorResultImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("EvaluatorResult")
+		case "score":
+
+			out.Values[i] = ec._EvaluatorResult_score(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "timeScore":
+
+			out.Values[i] = ec._EvaluatorResult_timeScore(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "properties":
+
+			out.Values[i] = ec._EvaluatorResult_properties(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var hotTopicsInAreaImplementors = []string{"HotTopicsInArea"}
 
 func (ec *executionContext) _HotTopicsInArea(ctx context.Context, sel ast.SelectionSet, obj *models.HotTopicsInArea) graphql.Marshaler {
@@ -17779,6 +18687,40 @@ func (ec *executionContext) _Matching(ctx context.Context, sel ast.SelectionSet,
 		case "remark":
 
 			out.Values[i] = ec._Matching_remark(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "dayRange":
+
+			out.Values[i] = ec._Matching_dayRange(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "preferredPeriods":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Matching_preferredPeriods(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "properties":
+
+			out.Values[i] = ec._Matching_properties(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
@@ -18362,6 +19304,41 @@ func (ec *executionContext) _MatchingPreview(ctx context.Context, sel ast.Select
 	return out
 }
 
+var matchingPropertyImplementors = []string{"MatchingProperty"}
+
+func (ec *executionContext) _MatchingProperty(ctx context.Context, sel ast.SelectionSet, obj *models.MatchingProperty) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, matchingPropertyImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("MatchingProperty")
+		case "id":
+
+			out.Values[i] = ec._MatchingProperty_id(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "values":
+
+			out.Values[i] = ec._MatchingProperty_values(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var matchingQuotaImplementors = []string{"MatchingQuota", "_Entity"}
 
 func (ec *executionContext) _MatchingQuota(ctx context.Context, sel ast.SelectionSet, obj *models.MatchingQuota) graphql.Marshaler {
@@ -18789,6 +19766,15 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "createMatchingV2":
+
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_createMatchingV2(ctx, field)
+			})
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "updateMatching":
 
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
@@ -18856,6 +19842,15 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_addMatchingToRecent(ctx, field)
+			})
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "getMatchingScore":
+
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_getMatchingScore(ctx, field)
 			})
 
 			if out.Values[i] == graphql.Null {
@@ -20942,9 +21937,99 @@ func (ec *executionContext) unmarshalNCreateMatchingParam2whaleᚋpkgᚋmodels�
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) unmarshalNCreateMatchingParamV22whaleᚋpkgᚋmodelsᚐCreateMatchingParamV2(ctx context.Context, v interface{}) (models.CreateMatchingParamV2, error) {
+	res, err := ec.unmarshalInputCreateMatchingParamV2(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalNCreateUserJoinTopicParam2whaleᚋpkgᚋmodelsᚐCreateUserJoinTopicParam(ctx context.Context, v interface{}) (models.CreateUserJoinTopicParam, error) {
 	res, err := ec.unmarshalInputCreateUserJoinTopicParam(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNDatePeriod2whaleᚋpkgᚋmodelsᚐDatePeriod(ctx context.Context, v interface{}) (models.DatePeriod, error) {
+	var res models.DatePeriod
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNDatePeriod2whaleᚋpkgᚋmodelsᚐDatePeriod(ctx context.Context, sel ast.SelectionSet, v models.DatePeriod) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) unmarshalNDatePeriod2ᚕwhaleᚋpkgᚋmodelsᚐDatePeriodᚄ(ctx context.Context, v interface{}) ([]models.DatePeriod, error) {
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]models.DatePeriod, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNDatePeriod2whaleᚋpkgᚋmodelsᚐDatePeriod(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalNDatePeriod2ᚕwhaleᚋpkgᚋmodelsᚐDatePeriodᚄ(ctx context.Context, sel ast.SelectionSet, v []models.DatePeriod) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNDatePeriod2whaleᚋpkgᚋmodelsᚐDatePeriod(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNEvaluatorResult2whaleᚋpkgᚋmatcherᚐEvaluatorResult(ctx context.Context, sel ast.SelectionSet, v matcher.EvaluatorResult) graphql.Marshaler {
+	return ec._EvaluatorResult(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNEvaluatorResult2ᚖwhaleᚋpkgᚋmatcherᚐEvaluatorResult(ctx context.Context, sel ast.SelectionSet, v *matcher.EvaluatorResult) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._EvaluatorResult(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNGender2whaleᚋpkgᚋmodelsᚐGender(ctx context.Context, v interface{}) (models.Gender, error) {
@@ -21028,6 +22113,38 @@ func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.Selecti
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) unmarshalNInt2ᚕintᚄ(ctx context.Context, v interface{}) ([]int, error) {
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]int, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNInt2int(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalNInt2ᚕintᚄ(ctx context.Context, sel ast.SelectionSet, v []int) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNInt2int(ctx, sel, v[i])
+	}
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) unmarshalNInvitationConfirmState2whaleᚋpkgᚋmodelsᚐInvitationConfirmState(ctx context.Context, v interface{}) (models.InvitationConfirmState, error) {
@@ -21262,6 +22379,76 @@ func (ec *executionContext) marshalNMatchingPreview2ᚖwhaleᚋpkgᚋmodelsᚐMa
 		return graphql.Null
 	}
 	return ec._MatchingPreview(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNMatchingProperty2whaleᚋpkgᚋmodelsᚐMatchingProperty(ctx context.Context, sel ast.SelectionSet, v models.MatchingProperty) graphql.Marshaler {
+	return ec._MatchingProperty(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNMatchingProperty2ᚕwhaleᚋpkgᚋmodelsᚐMatchingPropertyᚄ(ctx context.Context, sel ast.SelectionSet, v []models.MatchingProperty) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNMatchingProperty2whaleᚋpkgᚋmodelsᚐMatchingProperty(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) unmarshalNMatchingPropertyParam2ᚕᚖwhaleᚋpkgᚋmodelsᚐMatchingPropertyParamᚄ(ctx context.Context, v interface{}) ([]*models.MatchingPropertyParam, error) {
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]*models.MatchingPropertyParam, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNMatchingPropertyParam2ᚖwhaleᚋpkgᚋmodelsᚐMatchingPropertyParam(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalNMatchingPropertyParam2ᚖwhaleᚋpkgᚋmodelsᚐMatchingPropertyParam(ctx context.Context, v interface{}) (*models.MatchingPropertyParam, error) {
+	res, err := ec.unmarshalInputMatchingPropertyParam(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalNMatchingQuota2whaleᚋpkgᚋmodelsᚐMatchingQuota(ctx context.Context, sel ast.SelectionSet, v models.MatchingQuota) graphql.Marshaler {

@@ -38,6 +38,9 @@ func newMatching(db *gorm.DB, opts ...gen.DOOption) matching {
 	_matching.ChatGroupState = field.NewString(tableName, "chat_group_state")
 	_matching.ResultID = field.NewInt(tableName, "result_id")
 	_matching.Remark = field.NewString(tableName, "remark")
+	_matching.DayRange = field.NewField(tableName, "day_range")
+	_matching.PreferredPeriods = field.NewField(tableName, "preferred_periods")
+	_matching.Properties = field.NewField(tableName, "properties")
 	_matching.FinishedAt = field.NewTime(tableName, "finished_at")
 	_matching.MatchedAt = field.NewTime(tableName, "matched_at")
 	_matching.Deadline = field.NewTime(tableName, "deadline")
@@ -52,24 +55,27 @@ func newMatching(db *gorm.DB, opts ...gen.DOOption) matching {
 type matching struct {
 	matchingDo matchingDo
 
-	ALL             field.Asterisk
-	ID              field.String
-	TopicID         field.String
-	UserID          field.String
-	AreaIDs         field.Field
-	CityID          field.String
-	Gender          field.String
-	RejectedUserIDs field.Field
-	InChatGroup     field.Bool
-	State           field.String
-	ChatGroupState  field.String
-	ResultID        field.Int
-	Remark          field.String
-	FinishedAt      field.Time
-	MatchedAt       field.Time
-	Deadline        field.Time
-	CreatedAt       field.Time
-	UpdatedAt       field.Time
+	ALL              field.Asterisk
+	ID               field.String
+	TopicID          field.String
+	UserID           field.String
+	AreaIDs          field.Field
+	CityID           field.String
+	Gender           field.String
+	RejectedUserIDs  field.Field
+	InChatGroup      field.Bool
+	State            field.String
+	ChatGroupState   field.String
+	ResultID         field.Int
+	Remark           field.String
+	DayRange         field.Field
+	PreferredPeriods field.Field
+	Properties       field.Field
+	FinishedAt       field.Time
+	MatchedAt        field.Time
+	Deadline         field.Time
+	CreatedAt        field.Time
+	UpdatedAt        field.Time
 
 	fieldMap map[string]field.Expr
 }
@@ -98,6 +104,9 @@ func (m *matching) updateTableName(table string) *matching {
 	m.ChatGroupState = field.NewString(table, "chat_group_state")
 	m.ResultID = field.NewInt(table, "result_id")
 	m.Remark = field.NewString(table, "remark")
+	m.DayRange = field.NewField(table, "day_range")
+	m.PreferredPeriods = field.NewField(table, "preferred_periods")
+	m.Properties = field.NewField(table, "properties")
 	m.FinishedAt = field.NewTime(table, "finished_at")
 	m.MatchedAt = field.NewTime(table, "matched_at")
 	m.Deadline = field.NewTime(table, "deadline")
@@ -125,7 +134,7 @@ func (m *matching) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 }
 
 func (m *matching) fillFieldMap() {
-	m.fieldMap = make(map[string]field.Expr, 17)
+	m.fieldMap = make(map[string]field.Expr, 20)
 	m.fieldMap["id"] = m.ID
 	m.fieldMap["topic_id"] = m.TopicID
 	m.fieldMap["user_id"] = m.UserID
@@ -138,6 +147,9 @@ func (m *matching) fillFieldMap() {
 	m.fieldMap["chat_group_state"] = m.ChatGroupState
 	m.fieldMap["result_id"] = m.ResultID
 	m.fieldMap["remark"] = m.Remark
+	m.fieldMap["day_range"] = m.DayRange
+	m.fieldMap["preferred_periods"] = m.PreferredPeriods
+	m.fieldMap["properties"] = m.Properties
 	m.fieldMap["finished_at"] = m.FinishedAt
 	m.fieldMap["matched_at"] = m.MatchedAt
 	m.fieldMap["deadline"] = m.Deadline

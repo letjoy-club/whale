@@ -49,6 +49,28 @@ func (r *mutationResolver) CreateMatching(ctx context.Context, userID *string, p
 	return modelutil.CreateMatching(ctx, uid, param)
 }
 
+// CreateMatchingV2 is the resolver for the createMatchingV2 field.
+func (r *mutationResolver) CreateMatchingV2(ctx context.Context, userID *string, param models.CreateMatchingParamV2) (*models.Matching, error) {
+	token := midacontext.GetClientToken(ctx)
+	if !token.IsAdmin() && !token.IsUser() {
+		return nil, midacode.ErrNotPermitted
+	}
+	uid := graphqlutil.GetID(token, userID)
+	if uid == "" {
+		return nil, whalecode.ErrUserIDCannotBeEmpty
+	}
+	if param.Remark == nil {
+		emptyStr := ""
+		param.Remark = &emptyStr
+	}
+	release, err := redisutil.LockAll(ctx, keyer.UserMatching(uid))
+	if err != nil {
+		return nil, err
+	}
+	defer release(ctx)
+	return modelutil.CreateMatchingV2(ctx, uid, param)
+}
+
 // UpdateMatching is the resolver for the updateMatching field.
 func (r *mutationResolver) UpdateMatching(ctx context.Context, matchingID string, param models.UpdateMatchingParam) (*models.Matching, error) {
 	token := midacontext.GetClientToken(ctx)
@@ -351,6 +373,34 @@ func (r *mutationResolver) AddMatchingToRecent(ctx context.Context, matchingID s
 		return nil, midacode.ErrNotPermitted
 	}
 	return modelutil.AddMatchingToRecent(ctx, matchingID)
+}
+
+// GetMatchingScore is the resolver for the getMatchingScore field.
+func (r *mutationResolver) GetMatchingScore(ctx context.Context, id1 string, id2 string) (*matcher.EvaluatorResult, error) {
+	token := midacontext.GetClientToken(ctx)
+	if !token.IsAdmin() {
+		return nil, midacode.ErrNotPermitted
+	}
+	thunk := midacontext.GetLoader[loader.Loader](ctx).Matching.LoadMany(ctx, []string{id1, id2})
+	matchings, errors := thunk()
+	if len(errors) > 0 {
+		return nil, multierr.Combine(errors...)
+	}
+
+	m1, m2 := matchings[0], matchings[1]
+	if m1.TopicID != m2.TopicID {
+		return nil, whalecode.ErrMatchingNotMatchWithTopic
+	}
+
+	ctx = matcher.WithMatchingContext(ctx, []*models.Matching{m1, m2})
+	_, matched := matcher.Matched(ctx, m1, m2)
+	if matched {
+		config := midacontext.GetLoader[loader.Loader](ctx).TopicOptionConfig.Load(ctx, m1.TopicID)
+		result := matcher.Evaluate(config, m1, m2)
+		return &result, nil
+	} else {
+		return &matcher.EvaluatorResult{Properties: []int{}}, nil
+	}
 }
 
 // Matching is the resolver for the matching field.

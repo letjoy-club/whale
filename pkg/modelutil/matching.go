@@ -138,24 +138,10 @@ func CheckMatchingResultAndCreateChatGroup(ctx context.Context, m *models.Matchi
 }
 
 func CreateMatching(ctx context.Context, uid string, param models.CreateMatchingParam) (*models.Matching, error) {
-	thunk := midacontext.GetLoader[loader.Loader](ctx).MatchingQuota.Load(ctx, uid)
-	quota, err := thunk()
+	err := checkMatchingParam(ctx, uid, param.TopicID, param.CityID)
 	if err != nil {
 		return nil, err
 	}
-	if quota.Remain <= 0 {
-		return nil, whalecode.ErrMatchingQuotaNotEnough
-	}
-
-	constraintThunk := midacontext.GetLoader[loader.Loader](ctx).MatchingDurationConstraint.Load(ctx, uid)
-	constraint, err := constraintThunk()
-	if err != nil {
-		return nil, err
-	}
-	if constraint.Remain <= 0 {
-		return nil, whalecode.ErrMatchingDurationQuotaNotEnough
-	}
-
 	users, err := hoopoe.GetUserByIDs(ctx, midacontext.GetServices(ctx).Hoopoe, []string{uid})
 	if err != nil {
 		return nil, err
@@ -163,16 +149,6 @@ func CreateMatching(ctx context.Context, uid string, param models.CreateMatching
 
 	if users.GetUserByIds[0].Gender == "" {
 		return nil, whalecode.ErrMatchingQuotaNotEnough
-	}
-
-	_, err = hoopoe.GetTopic(ctx, midacontext.GetServices(ctx).Hoopoe, param.TopicID)
-	if err != nil {
-		return nil, err
-	}
-
-	_, err = hoopoe.GetArea(ctx, midacontext.GetServices(ctx).Hoopoe, param.CityID)
-	if err != nil {
-		return nil, err
 	}
 
 	db := dbutil.GetDB(ctx)
@@ -193,12 +169,166 @@ func CreateMatching(ctx context.Context, uid string, param models.CreateMatching
 	}
 
 	matching := &models.Matching{
-		ID:             shortid.New("m_", 8),
+		ID:             shortid.NewWithTime("m_", 6),
 		TopicID:        param.TopicID,
 		UserID:         uid,
 		State:          models.MatchingStateMatching.String(),
 		Gender:         param.Gender.String(),
 		Remark:         *param.Remark,
+		CityID:         param.CityID,
+		ChatGroupState: string(models.ChatGroupStateUncreated),
+		Deadline:       time.Now().Add(time.Hour * 24 * 7),
+		AreaIDs:        param.AreaIds,
+	}
+
+	err = db.Transaction(func(tx *gorm.DB) error {
+		err = dbquery.Use(tx).Matching.WithContext(ctx).Create(matching)
+		if err != nil {
+			return err
+		}
+
+		MatchingQuota := dbquery.Use(tx).MatchingQuota
+		_, err = MatchingQuota.WithContext(ctx).
+			Where(MatchingQuota.UserID.Eq(uid)).
+			UpdateSimple(
+				MatchingQuota.Remain.Add(-1),
+				MatchingQuota.MatchingNum.Add(1),
+			)
+		if err != nil {
+			return err
+		}
+
+		MatchingDurationConstraint := dbquery.Use(tx).MatchingDurationConstraint
+		_, err = MatchingDurationConstraint.WithContext(ctx).
+			Where(MatchingDurationConstraint.UserID.Eq(uid)).
+			UpdateSimple(MatchingDurationConstraint.Remain.Add(-1))
+		return err
+	})
+	if err == nil {
+		midacontext.GetLoader[loader.Loader](ctx).MatchingQuota.Clear(ctx, uid)
+		midacontext.GetLoader[loader.Loader](ctx).MatchingDurationConstraint.Clear(ctx, uid)
+	}
+	RecordUserJoinTopic(ctx, matching.TopicID, matching.CityID, matching.UserID, matching.ID)
+	return matching, err
+}
+
+func checkMatchingParam(ctx context.Context, uid, topicID, cityID string) error {
+	_, err := hoopoe.GetTopic(ctx, midacontext.GetServices(ctx).Hoopoe, topicID)
+	if err != nil {
+		return err
+	}
+
+	_, err = hoopoe.GetArea(ctx, midacontext.GetServices(ctx).Hoopoe, cityID)
+	if err != nil {
+		return err
+	}
+
+	thunk := midacontext.GetLoader[loader.Loader](ctx).MatchingQuota.Load(ctx, uid)
+	quota, err := thunk()
+	if err != nil {
+		return err
+	}
+	if quota.Remain <= 0 {
+		return whalecode.ErrMatchingQuotaNotEnough
+	}
+
+	constraintThunk := midacontext.GetLoader[loader.Loader](ctx).MatchingDurationConstraint.Load(ctx, uid)
+	constraint, err := constraintThunk()
+	if err != nil {
+		return err
+	}
+	if constraint.Remain <= 0 {
+		return whalecode.ErrMatchingDurationQuotaNotEnough
+	}
+	return nil
+}
+
+func SimplifyPreferredPeriods(periods []models.DatePeriod) []string {
+	if lo.Contains(periods, models.DatePeriodUnlimited) {
+		return []string{}
+	}
+	periodSet := map[models.DatePeriod]struct{}{}
+	for _, period := range periods {
+		periodSet[period] = struct{}{}
+	}
+
+	// 如果周末晚上和下午都可以，合并为周末
+	if _, ok := periodSet[models.DatePeriodWeekendNight]; ok {
+		if _, ok := periodSet[models.DatePeriodWeekendAfternoon]; !ok {
+			periodSet[models.DatePeriodWeekend] = struct{}{}
+		}
+	}
+	// 如果工作日晚上和下午都可以，合并为工作日
+	if _, ok := periodSet[models.DatePeriodWorkdayNight]; ok {
+		if _, ok := periodSet[models.DatePeriodWorkdayAfternoon]; !ok {
+			periodSet[models.DatePeriodWorkday] = struct{}{}
+		}
+	}
+	// 如果周末和工作日都可以，合并为不限
+	if _, ok := periodSet[models.DatePeriodWeekend]; ok {
+		if _, ok := periodSet[models.DatePeriodWorkday]; !ok {
+			return []string{}
+		}
+	}
+
+	if _, ok := periodSet[models.DatePeriodWeekend]; ok {
+		delete(periodSet, models.DatePeriodWeekendNight)
+		delete(periodSet, models.DatePeriodWeekendAfternoon)
+	}
+	if _, ok := periodSet[models.DatePeriodWorkday]; ok {
+		delete(periodSet, models.DatePeriodWorkdayNight)
+		delete(periodSet, models.DatePeriodWorkdayAfternoon)
+	}
+
+	return lo.MapToSlice(periodSet, func(period models.DatePeriod, _ struct{}) string {
+		return period.String()
+	})
+}
+
+func CreateMatchingV2(ctx context.Context, uid string, param models.CreateMatchingParamV2) (*models.Matching, error) {
+	err := checkMatchingParam(ctx, uid, param.TopicID, param.CityID)
+	if err != nil {
+		return nil, err
+	}
+
+	users, err := hoopoe.GetUserByIDs(ctx, midacontext.GetServices(ctx).Hoopoe, []string{uid})
+	if err != nil {
+		return nil, err
+	}
+
+	if users.GetUserByIds[0].Gender == "" {
+		return nil, whalecode.ErrUserGenderIsNotSet
+	}
+
+	db := dbutil.GetDB(ctx)
+	Matching := dbquery.Use(db).Matching
+
+	_, err = Matching.WithContext(ctx).Where(
+		Matching.TopicID.Eq(param.TopicID),
+		Matching.UserID.Eq(uid),
+		Matching.State.In(
+			string(models.MatchingStateMatching),
+			string(models.MatchingStateMatched),
+		),
+	).Take()
+	// 如果有找到，或者其他数据库错误
+	notFoundErr := midacode.ItemCustomNotFound(err, midacode.ErrItemNotFound)
+	if notFoundErr != midacode.ErrItemNotFound {
+		return nil, whalecode.ErrTopicIsAlreadyInMatching
+	}
+
+	matching := &models.Matching{
+		ID:               shortid.NewWithTime("m_", 6),
+		TopicID:          param.TopicID,
+		UserID:           uid,
+		State:            models.MatchingStateMatching.String(),
+		Gender:           param.Gender.String(),
+		Remark:           *param.Remark,
+		DayRange:         param.DayRange,
+		PreferredPeriods: SimplifyPreferredPeriods(param.PreferredPeriods),
+		Properties: lo.Map(param.Properties, func(p *models.MatchingPropertyParam, i int) models.MatchingProperty {
+			return models.MatchingProperty{ID: p.ID, Values: p.Values}
+		}),
 		CityID:         param.CityID,
 		ChatGroupState: string(models.ChatGroupStateUncreated),
 		Deadline:       time.Now().Add(time.Hour * 24 * 7),
@@ -274,7 +404,7 @@ func CreateMatchingInvitation(ctx context.Context, uid string, param models.Crea
 
 	db := dbutil.GetDB(ctx)
 	invitation := models.MatchingInvitation{
-		ID:               shortid.New("mi_", 8),
+		ID:               shortid.NewWithTime("mi_", 6),
 		UserID:           uid,
 		InviteeID:        param.InviteeID,
 		Remark:           param.Remark,

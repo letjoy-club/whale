@@ -34,6 +34,8 @@ type Loader struct {
 	UserAvatarNickname *dataloader.Loader[string, UserAvatarNickname]
 	// 查询城市的热门话题
 	HotTopics *dataloader.Loader[string, *models.HotTopicsInArea]
+
+	TopicOptionConfig *TopicOptionConfigLoader
 }
 
 func NewLoader(db *gorm.DB) *Loader {
@@ -55,6 +57,8 @@ func NewLoader(db *gorm.DB) *Loader {
 		UserJoinTopic:      NewUserJoinTopicLoader(db),
 
 		RecentMatching: NewRecentMatchingLoader(db),
+
+		TopicOptionConfig: NewTopicOptionConfigLoader(),
 	}
 }
 

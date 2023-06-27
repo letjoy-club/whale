@@ -54,6 +54,21 @@ type CreateMatchingParam struct {
 	Deadline *time.Time `json:"deadline,omitempty"`
 }
 
+type CreateMatchingParamV2 struct {
+	TopicID string   `json:"topicId"`
+	AreaIds []string `json:"areaIds"`
+	CityID  string   `json:"cityId"`
+	Gender  Gender   `json:"gender"`
+	// 特定日期区间，格式 yyyyMMdd，一定要包含两个字符串，字符串区间为闭区间
+	DayRange []string `json:"dayRange"`
+	// 特定时间区间，如果不限，则长度为0
+	PreferredPeriods []DatePeriod `json:"preferredPeriods"`
+	// 匹配属性
+	Properties []*MatchingPropertyParam `json:"properties"`
+	Remark     *string                  `json:"remark,omitempty"`
+	Deadline   *time.Time               `json:"deadline,omitempty"`
+}
+
 type CreateUserJoinTopicParam struct {
 	MatchingID string `json:"matchingId"`
 }
@@ -78,6 +93,11 @@ type MatchingInvitationFilter struct {
 	UserID *string    `json:"userId,omitempty"`
 	Before *time.Time `json:"before,omitempty"`
 	After  *time.Time `json:"after,omitempty"`
+}
+
+type MatchingPropertyParam struct {
+	ID     string   `json:"id"`
+	Values []string `json:"values"`
 }
 
 type MatchingResultFilter struct {
@@ -250,6 +270,64 @@ func (e *ChatGroupState) UnmarshalGQL(v interface{}) error {
 }
 
 func (e ChatGroupState) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type DatePeriod string
+
+const (
+	// 不限
+	DatePeriodUnlimited DatePeriod = "Unlimited"
+	// 周末
+	DatePeriodWeekend DatePeriod = "Weekend"
+	// 周末下午
+	DatePeriodWeekendAfternoon DatePeriod = "WeekendAfternoon"
+	// 周末晚上
+	DatePeriodWeekendNight DatePeriod = "WeekendNight"
+	// 工作日
+	DatePeriodWorkday DatePeriod = "Workday"
+	// 工作日下午
+	DatePeriodWorkdayAfternoon DatePeriod = "WorkdayAfternoon"
+	// 工作日晚上
+	DatePeriodWorkdayNight DatePeriod = "WorkdayNight"
+)
+
+var AllDatePeriod = []DatePeriod{
+	DatePeriodUnlimited,
+	DatePeriodWeekend,
+	DatePeriodWeekendAfternoon,
+	DatePeriodWeekendNight,
+	DatePeriodWorkday,
+	DatePeriodWorkdayAfternoon,
+	DatePeriodWorkdayNight,
+}
+
+func (e DatePeriod) IsValid() bool {
+	switch e {
+	case DatePeriodUnlimited, DatePeriodWeekend, DatePeriodWeekendAfternoon, DatePeriodWeekendNight, DatePeriodWorkday, DatePeriodWorkdayAfternoon, DatePeriodWorkdayNight:
+		return true
+	}
+	return false
+}
+
+func (e DatePeriod) String() string {
+	return string(e)
+}
+
+func (e *DatePeriod) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = DatePeriod(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid DatePeriod", str)
+	}
+	return nil
+}
+
+func (e DatePeriod) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
