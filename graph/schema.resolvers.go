@@ -343,11 +343,16 @@ func (r *topicResolver) FuzzyMatchingNum(ctx context.Context, obj *models.Topic,
 		remain := rand.Int() % 3
 		return 3 + remain, nil
 	}
-	newCount := 3 * int(float32(count)-float32(count*count/(count*count*count*count*count)))
+	if count >= 1000 {
+		return 999, nil
+	}
+
+	base := float64(count)
+	newCount := base * (1.3 - 3*base*base/10000000)
 	if newCount >= 1000 {
 		return 999, nil
 	}
-	return newCount, nil
+	return int(newCount), nil
 }
 
 // Topic is the resolver for the topic field.
