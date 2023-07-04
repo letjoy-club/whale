@@ -101,6 +101,34 @@ func AcceptMatchingInvitation(ctx context.Context, invitation *models.MatchingIn
 	midacontext.GetLoader[loader.Loader](ctx).Matching.Clear(ctx, m1.ID)
 	midacontext.GetLoader[loader.Loader](ctx).Matching.Clear(ctx, m2.ID)
 	midacontext.GetLoader[loader.Loader](ctx).MatchingInvitation.Clear(ctx, invitation.ID)
+
+	topicName := GetTopicName(ctx, invitation.TopicID)
+	if topicName == "" {
+		return nil
+	}
+
+	thunk := midacontext.GetLoader[loader.Loader](ctx).UserAvatarNickname.Load(ctx, invitation.InviteeID)
+	invitee, err := thunk()
+
+	if err != nil {
+		fmt.Println("GetUserAvatarNickname err:", err)
+		return nil
+	}
+
+	_, err = scream.SendUserNotification(ctx, midacontext.GetServices(ctx).Scream,
+		scream.UserNotificationKindInvitationaccepted,
+		invitation.UserID,
+		map[string]interface{}{
+			"invitationId": invitation.ID,
+			"userId":       invitee.ID,
+			"userName":     invitee.Nickname,
+			"topicName":    topicName,
+		},
+	)
+
+	if err != nil {
+		fmt.Println("SendUserNotification err:", err)
+	}
 	return nil
 }
 
@@ -125,18 +153,22 @@ func RejectMatchingInvitation(ctx context.Context, invitation *models.MatchingIn
 	thunk := midacontext.GetLoader[loader.Loader](ctx).UserAvatarNickname.Load(ctx, invitation.InviteeID)
 	invitee, err := thunk()
 	if err == nil {
-		_, err = scream.SendUserNotification(ctx,
-			midacontext.GetServices(ctx).Scream,
-			scream.UserNotificationKindInvitationdenied,
-			invitation.UserID,
-			map[string]interface{}{
-				"userName":     invitee.Nickname,
-				"userId":       invitee.ID,
-				"invitationId": invitation.ID,
-			},
-		)
-		if err != nil {
-			fmt.Println("err", err)
+		topicName := GetTopicName(ctx, invitation.TopicID)
+		if topicName != "" {
+			_, err = scream.SendUserNotification(ctx,
+				midacontext.GetServices(ctx).Scream,
+				scream.UserNotificationKindInvitationdenied,
+				invitation.UserID,
+				map[string]interface{}{
+					"userName":     invitee.Nickname,
+					"userId":       invitee.ID,
+					"invitationId": invitation.ID,
+					"topicName":    topicName,
+				},
+			)
+			if err != nil {
+				fmt.Println("err", err)
+			}
 		}
 	} else {
 		fmt.Println("err", err)
@@ -180,7 +212,35 @@ func CancelMatchingInvitation(ctx context.Context, uid string, invitationID stri
 	if err != nil {
 		return err
 	}
+
 	midacontext.GetLoader[loader.Loader](ctx).MatchingQuota.Clear(ctx, matchingInvitation.UserID)
 	midacontext.GetLoader[loader.Loader](ctx).MatchingInvitation.Clear(ctx, matchingInvitation.ID)
+
+	topicName := GetTopicName(ctx, matchingInvitation.TopicID)
+	if topicName == "" {
+		return nil
+	}
+
+	thunk := midacontext.GetLoader[loader.Loader](ctx).UserAvatarNickname.Load(ctx, matchingInvitation.UserID)
+	inviter, err := thunk()
+	if err != nil {
+		fmt.Println("failed to get inviter", err)
+		return nil
+	}
+
+	_, err = scream.SendUserNotification(ctx, midacontext.GetServices(ctx).Scream,
+		scream.UserNotificationKindInvitationcanceled,
+		matchingInvitation.InviteeID,
+		map[string]interface{}{
+			"invitationId": matchingInvitation.ID,
+			"userId":       inviter.ID,
+			"userName":     inviter.Nickname,
+			"topicName":    topicName,
+		},
+	)
+	if err != nil {
+		fmt.Println("failed to send user notification", err)
+	}
+
 	return nil
 }

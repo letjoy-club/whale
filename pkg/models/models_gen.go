@@ -137,6 +137,12 @@ type Topic struct {
 
 func (Topic) IsEntity() {}
 
+type TopicOptionConfig struct {
+	TopicID string `json:"topicId"`
+}
+
+func (TopicOptionConfig) IsEntity() {}
+
 type UpdateCityTopicParam struct {
 	TopicIds []string `json:"topicIds"`
 }

@@ -23,6 +23,7 @@ import (
 	"github.com/letjoy-club/mida-tool/midacode"
 	"github.com/letjoy-club/mida-tool/midacontext"
 	"github.com/letjoy-club/mida-tool/proxy"
+	"github.com/letjoy-club/mida-tool/pulsarutil"
 	"github.com/letjoy-club/mida-tool/qcloudutil/clsutil"
 	"github.com/letjoy-club/mida-tool/redisutil"
 	"github.com/letjoy-club/mida-tool/tracerutil"
@@ -42,6 +43,7 @@ func main() {
 	redis := whaleConf.Redis()
 	loader := loader.NewLoader(db)
 	cls := whaleConf.CLS()
+	publisher := whaleConf.MatchingPublisher()
 
 	tp := whaleConf.Trace()
 	defer func() { tp.Shutdown(context.Background()) }()
@@ -103,6 +105,7 @@ func main() {
 			ctx = dbutil.WithDB(ctx, db)
 			ctx = clsutil.WithGraphLogger(ctx, cls, whaleConf.QCloud.CLSConf.TopicID, "whale")
 			ctx = redisutil.WithRedis(ctx, redis)
+			ctx = pulsarutil.WithMQ[*whaleconf.Publisher](ctx, publisher)
 			ctx = midacontext.WithLoader(ctx, loader)
 			ctx = midacontext.WithServices(ctx, services)
 			ctx = midacontext.WithClientToken(ctx, token)

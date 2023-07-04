@@ -19,6 +19,13 @@ query GetTopic($id: String!) {
   }
 }
 
+query GetTopicName($id: String!) {
+  topic(id: $id) {
+    id
+    name
+  }
+}
+
 query GetArea($id: AreaCode!) {
   area(code: $id) {
     code
@@ -54,8 +61,8 @@ query GetTopicConfigOption($topicId: String!) {
   }
 }
 
-query GetTopicConfigOptions {
-  topicOptionConfigs {
+query GetTopicConfigOptions($paginator: GraphQLPaginator!) {
+  topicOptionConfigs(paginator: $paginator) {
     ...TopicOptionConfigFields
   }
 }
@@ -64,5 +71,12 @@ query GetTopics {
   topics {
     id
     name
+  }
+}
+
+query GetBlacklistRelationship($ids: [String!]!) {
+  blacklistRelationship(ids: $ids) {
+    a
+    b
   }
 }

@@ -11,6 +11,7 @@ import (
 	"time"
 	"whale/pkg/dbquery"
 	"whale/pkg/loader"
+	"whale/pkg/matcher"
 	"whale/pkg/models"
 	"whale/pkg/modelutil"
 
@@ -31,6 +32,11 @@ func (r *cityTopicsResolver) Topics(ctx context.Context, obj *models.CityTopics)
 // City is the resolver for the city field.
 func (r *cityTopicsResolver) City(ctx context.Context, obj *models.CityTopics) (*models.Area, error) {
 	return &models.Area{Code: obj.CityID}, nil
+}
+
+// FailedReason is the resolver for the failedReason field.
+func (r *evaluatorResultResolver) FailedReason(ctx context.Context, obj *matcher.EvaluatorResult) (string, error) {
+	return string(obj.FailedReason), nil
 }
 
 // City is the resolver for the city field.
@@ -171,6 +177,18 @@ func (r *matchingOfTopicResolver) Areas(ctx context.Context, obj *models.Matchin
 	return lo.Map(obj.AreaIDs, func(id string, i int) *models.Area {
 		return &models.Area{Code: id}
 	}), nil
+}
+
+// PreferredPeriods is the resolver for the preferredPeriods field.
+func (r *matchingPreviewResolver) PreferredPeriods(ctx context.Context, obj *models.Matching) ([]models.DatePeriod, error) {
+	return lo.Map(obj.PreferredPeriods, func(p string, i int) models.DatePeriod {
+		return models.DatePeriod(p)
+	}), nil
+}
+
+// TopicOptionConfig is the resolver for the topicOptionConfig field.
+func (r *matchingPreviewResolver) TopicOptionConfig(ctx context.Context, obj *models.Matching) (*models.TopicOptionConfig, error) {
+	return &models.TopicOptionConfig{TopicID: obj.TopicID}, nil
 }
 
 // User is the resolver for the user field.
@@ -378,6 +396,9 @@ func (r *userResolver) MatchingQuota(ctx context.Context, obj *models.User) (*mo
 // CityTopics returns CityTopicsResolver implementation.
 func (r *Resolver) CityTopics() CityTopicsResolver { return &cityTopicsResolver{r} }
 
+// EvaluatorResult returns EvaluatorResultResolver implementation.
+func (r *Resolver) EvaluatorResult() EvaluatorResultResolver { return &evaluatorResultResolver{r} }
+
 // HotTopicsInArea returns HotTopicsInAreaResolver implementation.
 func (r *Resolver) HotTopicsInArea() HotTopicsInAreaResolver { return &hotTopicsInAreaResolver{r} }
 
@@ -414,6 +435,7 @@ func (r *Resolver) TopicMetrics() TopicMetricsResolver { return &topicMetricsRes
 func (r *Resolver) User() UserResolver { return &userResolver{r} }
 
 type cityTopicsResolver struct{ *Resolver }
+type evaluatorResultResolver struct{ *Resolver }
 type hotTopicsInAreaResolver struct{ *Resolver }
 type matchingResolver struct{ *Resolver }
 type matchingInvitationResolver struct{ *Resolver }

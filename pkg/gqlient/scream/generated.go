@@ -78,10 +78,13 @@ type SendUserNotificationResponse struct {
 	// - 匹配成功 param: { "userId": "", "userName": "", "matchingId": "" }
 	// - 匹配被拒绝 param: { "userId": "", "userName": "", "matchingId": "" }
 	// - 匹配超时 param: { "matchingId": "" }
-	// - 邀请被拒 param: { "userId": "", "userName": "", "invitationId": "" }
-	// - 官方消息 param: { }
-	// - 举报已提交 param: { "userId":"", "userName": "", "reportId": "" }
-	// - 举报生效 param: { "userId": "", "userName": "", "reportId": "" }
+	// - 收到邀请 param: { "userId": "", "userName": "", "invitationId": "", "topicName": "" }
+	// - 邀请被接受 param: { "userId": "", "userName": "", "invitationId": "", "topicName": "" }
+	// - 邀请撤回 param: { "userId": "", "userName": "", "invitationId": "", "topicName": "" }
+	// - 邀请被拒 param: { "userId": "", "userName": "", "invitationId": "", "topicName": "" }
+	// - 官方消息 param: { "title": "", "message": "" }
+	// - 举报已提交 param: { "userId":"", "userName": "" }
+	// - 举报生效 param: { "userId": "", "userName": "" }
 	SendUserNotification string `json:"sendUserNotification"`
 }
 
@@ -99,14 +102,22 @@ const (
 	UserNotificationKindMatchingdenied UserNotificationKind = "MatchingDenied"
 	// 【匹配】超时
 	UserNotificationKindMatchingtimeout UserNotificationKind = "MatchingTimeout"
+	// 【邀请】收到邀请
+	UserNotificationKindInvitationrecieved UserNotificationKind = "InvitationRecieved"
 	// 【邀请】邀请被拒
 	UserNotificationKindInvitationdenied UserNotificationKind = "InvitationDenied"
+	// 【邀请】邀请被接受
+	UserNotificationKindInvitationaccepted UserNotificationKind = "InvitationAccepted"
+	// 【邀请】邀请撤回
+	UserNotificationKindInvitationcanceled UserNotificationKind = "InvitationCanceled"
 	// 【官方】欢迎消息
 	UserNotificationKindWelcomemessage UserNotificationKind = "WelcomeMessage"
 	// 【官方】举报生效
 	UserNotificationKindReportaccepted UserNotificationKind = "ReportAccepted"
 	// 【官方】收到举报
 	UserNotificationKindReportrecieved UserNotificationKind = "ReportRecieved"
+	// 【官方】自定义消息
+	UserNotificationKindCustomizedmessage UserNotificationKind = "CustomizedMessage"
 )
 
 // __InvitationCreatedInput is used internally by genqlient

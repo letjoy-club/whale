@@ -6,6 +6,7 @@ import (
 	"sort"
 	"time"
 	"whale/pkg/dbquery"
+	"whale/pkg/gqlient/hoopoe"
 	"whale/pkg/loader"
 	"whale/pkg/models"
 
@@ -114,4 +115,13 @@ func RecordUserJoinTopic(ctx context.Context, topicID, cityID, userID, matchingI
 		userjoined.LatestMatchingID = matchingID
 		UserJoinTopic.WithContext(ctx).Save(userjoined)
 	}
+}
+
+func GetTopicName(ctx context.Context, topicID string) string {
+	topic, err := hoopoe.GetTopicName(ctx, midacontext.GetServices(ctx).Hoopoe, topicID)
+	if err != nil {
+		fmt.Println("GetTopicName err:", err)
+		return ""
+	}
+	return topic.Topic.Name
 }

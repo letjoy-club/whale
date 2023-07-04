@@ -6,6 +6,7 @@ package graph
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"time"
 	"whale/pkg/dbquery"
@@ -233,6 +234,11 @@ func (r *mutationResolver) CancelMatching(ctx context.Context, matchingID string
 			UpdateSimple(MatchingQuota.Remain.Add(1))
 		return err
 	})
+	{
+		if err := modelutil.PublishMatchingCanceledEvent(ctx, matching); err != nil {
+			fmt.Println("failed to publish matching canceled event", err)
+		}
+	}
 	loader := midacontext.GetLoader[loader.Loader](ctx)
 	loader.Matching.Clear(ctx, matchingID)
 	loader.MatchingQuota.Clear(ctx, matching.UserID)
@@ -393,13 +399,13 @@ func (r *mutationResolver) GetMatchingScore(ctx context.Context, id1 string, id2
 	}
 
 	ctx = matcher.WithMatchingContext(ctx, []*models.Matching{m1, m2})
-	_, matched := matcher.Matched(ctx, m1, m2)
+	reason, matched := matcher.Matched(ctx, m1, m2)
 	if matched {
 		config := midacontext.GetLoader[loader.Loader](ctx).TopicOptionConfig.Load(ctx, m1.TopicID)
 		result := matcher.Evaluate(config, m1, m2)
 		return &result, nil
 	} else {
-		return &matcher.EvaluatorResult{Properties: []int{}}, nil
+		return &matcher.EvaluatorResult{Properties: []int{}, FailedReason: reason}, nil
 	}
 }
 

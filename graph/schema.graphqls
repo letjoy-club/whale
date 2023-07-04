@@ -3,6 +3,10 @@ scalar AreaCode
 
 directive @adminOnly on FIELD_DEFINITION
 
+extend type TopicOptionConfig @key(fields: "topicId") {
+  topicId: String! @external
+}
+
 extend type User @key(fields: "id") {
   id: String! @external
   matchingQuota: MatchingQuota!
@@ -33,6 +37,7 @@ type EvaluatorResult {
   score: Int!
   timeScore: Int!
   properties: [Int!]!
+  failedReason: String!
 }
 
 type SimpleAvatarUser {
@@ -57,6 +62,10 @@ type MatchingOfTopic {
 type MatchingPreview {
   userId: String!
   remark: String!
+  properties: [MatchingProperty!]!
+  dayRange: [String!]!
+  preferredPeriods: [DatePeriod!]!
+  topicOptionConfig: TopicOptionConfig
 
   user: User!
 }

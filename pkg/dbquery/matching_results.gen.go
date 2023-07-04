@@ -34,6 +34,7 @@ func newMatchingResult(db *gorm.DB, opts ...gen.DOOption) matchingResult {
 	_matchingResult.ChatGroupState = field.NewString(tableName, "chat_group_state")
 	_matchingResult.ChatGroupID = field.NewString(tableName, "chat_group_id")
 	_matchingResult.Closed = field.NewBool(tableName, "closed")
+	_matchingResult.MatchingScore = field.NewInt(tableName, "matching_score")
 	_matchingResult.CreatedBy = field.NewString(tableName, "created_by")
 	_matchingResult.FinishedAt = field.NewTime(tableName, "finished_at")
 	_matchingResult.ChatGroupCreatedAt = field.NewTime(tableName, "chat_group_created_at")
@@ -57,6 +58,7 @@ type matchingResult struct {
 	ChatGroupState     field.String
 	ChatGroupID        field.String
 	Closed             field.Bool
+	MatchingScore      field.Int
 	CreatedBy          field.String
 	FinishedAt         field.Time
 	ChatGroupCreatedAt field.Time
@@ -86,6 +88,7 @@ func (m *matchingResult) updateTableName(table string) *matchingResult {
 	m.ChatGroupState = field.NewString(table, "chat_group_state")
 	m.ChatGroupID = field.NewString(table, "chat_group_id")
 	m.Closed = field.NewBool(table, "closed")
+	m.MatchingScore = field.NewInt(table, "matching_score")
 	m.CreatedBy = field.NewString(table, "created_by")
 	m.FinishedAt = field.NewTime(table, "finished_at")
 	m.ChatGroupCreatedAt = field.NewTime(table, "chat_group_created_at")
@@ -115,7 +118,7 @@ func (m *matchingResult) GetFieldByName(fieldName string) (field.OrderExpr, bool
 }
 
 func (m *matchingResult) fillFieldMap() {
-	m.fieldMap = make(map[string]field.Expr, 13)
+	m.fieldMap = make(map[string]field.Expr, 14)
 	m.fieldMap["id"] = m.ID
 	m.fieldMap["matching_ids"] = m.MatchingIDs
 	m.fieldMap["topic_id"] = m.TopicID
@@ -124,6 +127,7 @@ func (m *matchingResult) fillFieldMap() {
 	m.fieldMap["chat_group_state"] = m.ChatGroupState
 	m.fieldMap["chat_group_id"] = m.ChatGroupID
 	m.fieldMap["closed"] = m.Closed
+	m.fieldMap["matching_score"] = m.MatchingScore
 	m.fieldMap["created_by"] = m.CreatedBy
 	m.fieldMap["finished_at"] = m.FinishedAt
 	m.fieldMap["chat_group_created_at"] = m.ChatGroupCreatedAt

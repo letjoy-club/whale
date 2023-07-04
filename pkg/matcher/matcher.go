@@ -25,6 +25,31 @@ type Matcher struct {
 func (m *Matcher) Match(ctx context.Context) error {
 	db := dbutil.GetDB(ctx)
 	Matching := dbquery.Use(db).Matching
+	{
+		matchings, err := Matching.WithContext(ctx).
+			Where(Matching.State.Eq(string(models.MatchingStateMatching)), Matching.Deadline.Lt(time.Now())).Find()
+		if err != nil {
+			return err
+		}
+		for _, matching := range matchings {
+			err := modelutil.PublishMatchingTimeoutEvent(ctx, matching)
+			if err != nil {
+				fmt.Println("failed to publish matching timeout event", err)
+			}
+		}
+		if len(matchings) > 0 {
+			rx, err := Matching.WithContext(ctx).
+				Where(Matching.ID.In(lo.Map(matchings, func(m *models.Matching, i int) string { return m.ID })...)).
+				UpdateSimple(Matching.State.Value(string(models.MatchingStateTimeout)))
+			if err != nil {
+				return err
+			}
+			if rx.RowsAffected > 0 {
+				logger.L.Info("mark matching as timeout", zap.Int64("count", rx.RowsAffected))
+			}
+		}
+	}
+
 	matchings, err := Matching.WithContext(ctx).Where(Matching.State.Eq(string(models.MatchingStateMatching))).Find()
 	if err != nil {
 		return err
@@ -80,10 +105,27 @@ func MatchingInArea(ctx context.Context, matchings []*models.Matching) error {
 				continue
 			}
 			if _, matched := Matched(ctx, matchings[i], matchings[j]); matched {
-				if _, err := NewMatchingResult(ctx, []*models.Matching{matchings[i], matchings[j]}); err != nil {
-					logger.L.Error("failed to create matching result", zap.Error(err), zap.String("matching-1", matchings[i].ID), zap.String("matching-2", matchings[j].ID))
-					return err
+				topicOption := mc.TopicOption(matchings[i].TopicID)
+				if topicOption != nil {
+					score := Evaluate(topicOption, matchings[i], matchings[j])
+					if score.Score >= topicOption.Threshold {
+						// 分数大于阈值，创建匹配结果
+						if _, err := NewMatchingResult(ctx, []*models.Matching{matchings[i], matchings[j]}, score.Score); err != nil {
+							logger.L.Error("failed to create matching result", zap.Error(err), zap.String("matching-1", matchings[i].ID), zap.String("matching-2", matchings[j].ID))
+							return err
+						}
+					} else {
+						// 分数小于阈值，不创建匹配结果
+						continue
+					}
+				} else {
+					// 没有选项，默认直接生成匹配结果
+					if _, err := NewMatchingResult(ctx, []*models.Matching{matchings[i], matchings[j]}, 100); err != nil {
+						logger.L.Error("failed to create matching result", zap.Error(err), zap.String("matching-1", matchings[i].ID), zap.String("matching-2", matchings[j].ID))
+						return err
+					}
 				}
+
 				mc.Use(matchings[i].ID)
 				mc.Use(matchings[j].ID)
 			}
@@ -92,7 +134,7 @@ func MatchingInArea(ctx context.Context, matchings []*models.Matching) error {
 	return nil
 }
 
-func NewMatchingResult(ctx context.Context, matchings []*models.Matching) (*models.MatchingResult, error) {
+func NewMatchingResult(ctx context.Context, matchings []*models.Matching, score int) (*models.MatchingResult, error) {
 	db := dbutil.GetDB(ctx)
 	MatchingResult := dbquery.Use(db).MatchingResult
 
@@ -110,6 +152,7 @@ func NewMatchingResult(ctx context.Context, matchings []*models.Matching) (*mode
 		UserIDs:        userIDs,
 		ChatGroupState: models.ChatGroupStateUncreated.String(),
 		ConfirmStates:  states,
+		MatchingScore:  score,
 		CreatedBy:      string(models.ResultCreatedByMatching),
 		TopicID:        matchings[0].TopicID,
 	}
@@ -143,6 +186,13 @@ func NewMatchingResult(ctx context.Context, matchings []*models.Matching) (*mode
 		return nil, err
 	}
 
+	for _, matching := range matchings {
+		err := modelutil.PublishMatchedEvent(ctx, matching)
+		if err != nil {
+			fmt.Println("failed to publish matched event", err)
+		}
+	}
+
 	err = modelutil.CheckMatchingResultAndCreateChatGroup(ctx, matchingResult)
 	if err != nil {
 		fmt.Println("failed to create chat group", err)
@@ -170,6 +220,10 @@ func NewMatchingResult(ctx context.Context, matchings []*models.Matching) (*mode
 	if err != nil {
 		fmt.Println("err", err)
 	}
+	topicName := modelutil.GetTopicName(ctx, matchingResult.TopicID)
+	if topicName == "" {
+		return nil, nil
+	}
 	thunk := midacontext.GetLoader[loader.Loader](ctx).UserAvatarNickname.LoadMany(ctx, userIDs)
 	users, _ := thunk()
 	if len(users) > 0 {
@@ -180,6 +234,7 @@ func NewMatchingResult(ctx context.Context, matchings []*models.Matching) (*mode
 			map[string]interface{}{
 				"userName":   users[0].Nickname,
 				"userId":     users[0].ID,
+				"topicName":  topicName,
 				"matchingId": matchingResult.MatchingIDs[0],
 			},
 		)
@@ -193,6 +248,7 @@ func NewMatchingResult(ctx context.Context, matchings []*models.Matching) (*mode
 			map[string]interface{}{
 				"userName":   users[1].Nickname,
 				"userId":     users[1].ID,
+				"topicName":  topicName,
 				"matchingId": matchingResult.MatchingIDs[1],
 			},
 		)

@@ -9,6 +9,7 @@ import (
 
 	sql "github.com/go-sql-driver/mysql"
 	"github.com/goccy/go-yaml"
+	"github.com/letjoy-club/mida-tool/pulsarutil"
 	"github.com/redis/go-redis/v9"
 	cls "github.com/tencentcloud/tencentcloud-cls-sdk-go"
 	"go.opentelemetry.io/otel"
@@ -29,6 +30,8 @@ type Conf struct {
 
 	RedisConf RedisConf `yaml:"redis"`
 	Secret    string    `yaml:"secret"`
+
+	MQ pulsarutil.PulsarClient `yaml:"mq"`
 
 	ServiceConf ServiceConf `yaml:"services"`
 	TraceConf   TraceConf   `yaml:"trace"`

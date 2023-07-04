@@ -23,7 +23,7 @@ func NewUserProfileLoader(db *gorm.DB) *dataloader.Loader[string, UserProfile] {
 		if err != nil {
 			return nil, err
 		}
-		return lo.Map(ret.GetUserByIds, func(u hoopoe.GetUserByIDsGetUserByIdsUser, i int) UserProfile {
+		return lo.Map(ret.GetUserByIds, func(u *hoopoe.GetUserByIDsGetUserByIdsUser, i int) UserProfile {
 			return UserProfile{ID: u.Id, Gender: models.Gender(u.Gender)}
 		}), nil
 	}, func(k map[string]UserProfile, v UserProfile) { k[v.ID] = v }, time.Minute)

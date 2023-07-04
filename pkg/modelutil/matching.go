@@ -207,6 +207,9 @@ func CreateMatching(ctx context.Context, uid string, param models.CreateMatching
 	if err == nil {
 		midacontext.GetLoader[loader.Loader](ctx).MatchingQuota.Clear(ctx, uid)
 		midacontext.GetLoader[loader.Loader](ctx).MatchingDurationConstraint.Clear(ctx, uid)
+		if err := PublishMatchingCreatedEvent(ctx, matching); err != nil {
+			fmt.Println("publishMatchingCreatedEvent err:", err)
+		}
 	}
 	RecordUserJoinTopic(ctx, matching.TopicID, matching.CityID, matching.UserID, matching.ID)
 	return matching, err
@@ -254,19 +257,19 @@ func SimplifyPreferredPeriods(periods []models.DatePeriod) []string {
 
 	// 如果周末晚上和下午都可以，合并为周末
 	if _, ok := periodSet[models.DatePeriodWeekendNight]; ok {
-		if _, ok := periodSet[models.DatePeriodWeekendAfternoon]; !ok {
+		if _, ok := periodSet[models.DatePeriodWeekendAfternoon]; ok {
 			periodSet[models.DatePeriodWeekend] = struct{}{}
 		}
 	}
 	// 如果工作日晚上和下午都可以，合并为工作日
 	if _, ok := periodSet[models.DatePeriodWorkdayNight]; ok {
-		if _, ok := periodSet[models.DatePeriodWorkdayAfternoon]; !ok {
+		if _, ok := periodSet[models.DatePeriodWorkdayAfternoon]; ok {
 			periodSet[models.DatePeriodWorkday] = struct{}{}
 		}
 	}
 	// 如果周末和工作日都可以，合并为不限
 	if _, ok := periodSet[models.DatePeriodWeekend]; ok {
-		if _, ok := periodSet[models.DatePeriodWorkday]; !ok {
+		if _, ok := periodSet[models.DatePeriodWorkday]; ok {
 			return []string{}
 		}
 	}
@@ -361,6 +364,9 @@ func CreateMatchingV2(ctx context.Context, uid string, param models.CreateMatchi
 	if err == nil {
 		midacontext.GetLoader[loader.Loader](ctx).MatchingQuota.Clear(ctx, uid)
 		midacontext.GetLoader[loader.Loader](ctx).MatchingDurationConstraint.Clear(ctx, uid)
+		if err := PublishMatchingCreatedEvent(ctx, matching); err != nil {
+			fmt.Println("publishMatchingCreatedEvent err:", err)
+		}
 	}
 	RecordUserJoinTopic(ctx, matching.TopicID, matching.CityID, matching.UserID, matching.ID)
 	return matching, err
@@ -456,6 +462,26 @@ func CreateMatchingInvitation(ctx context.Context, uid string, param models.Crea
 	if err != nil {
 		fmt.Println("failed to create invitation notification:", err)
 	}
+
+	userThunk := midacontext.GetLoader[loader.Loader](ctx).UserAvatarNickname.Load(ctx, uid)
+	profile, err := userThunk()
+	if err != nil {
+		fmt.Println("failed to get user nickname", err)
+		return nil, nil
+	}
+
+	topicName := GetTopicName(ctx, param.TopicID)
+	if topicName != "" {
+		_, err = scream.SendUserNotification(ctx, midacontext.GetServices(ctx).Scream, scream.UserNotificationKindInvitationrecieved, invitation.InviteeID, map[string]interface{}{
+			"topicName":    topicName,
+			"userId":       uid,
+			"userName":     profile.Nickname,
+			"invitationId": invitation.ID,
+		})
+		if err != nil {
+			fmt.Println("failed to send invitation notification:", err)
+		}
+	}
 	return &invitation, nil
 }
 
@@ -532,5 +558,6 @@ func FinishMatching(ctx context.Context, matchingID string, uid string) error {
 	}
 	midacontext.GetLoader[loader.Loader](ctx).MatchingResult.Clear(ctx, matching.ResultID)
 	midacontext.GetLoader[loader.Loader](ctx).MatchingQuota.Clear(ctx, matching.UserID)
+	PublishMatchingFinishedEvent(ctx, matching, matchingResult.CreatedBy)
 	return err
 }

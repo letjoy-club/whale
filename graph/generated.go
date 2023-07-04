@@ -43,6 +43,7 @@ type Config struct {
 type ResolverRoot interface {
 	CityTopics() CityTopicsResolver
 	Entity() EntityResolver
+	EvaluatorResult() EvaluatorResultResolver
 	HotTopicsInArea() HotTopicsInAreaResolver
 	Matching() MatchingResolver
 	MatchingInvitation() MatchingInvitationResolver
@@ -94,9 +95,10 @@ type ComplexityRoot struct {
 	}
 
 	EvaluatorResult struct {
-		Properties func(childComplexity int) int
-		Score      func(childComplexity int) int
-		TimeScore  func(childComplexity int) int
+		FailedReason func(childComplexity int) int
+		Properties   func(childComplexity int) int
+		Score        func(childComplexity int) int
+		TimeScore    func(childComplexity int) int
 	}
 
 	HotTopicsInArea struct {
@@ -166,9 +168,13 @@ type ComplexityRoot struct {
 	}
 
 	MatchingPreview struct {
-		Remark func(childComplexity int) int
-		User   func(childComplexity int) int
-		UserID func(childComplexity int) int
+		DayRange          func(childComplexity int) int
+		PreferredPeriods  func(childComplexity int) int
+		Properties        func(childComplexity int) int
+		Remark            func(childComplexity int) int
+		TopicOptionConfig func(childComplexity int) int
+		User              func(childComplexity int) int
+		UserID            func(childComplexity int) int
 	}
 
 	MatchingProperty struct {
@@ -315,6 +321,10 @@ type ComplexityRoot struct {
 		Topic    func(childComplexity int) int
 	}
 
+	TopicOptionConfig struct {
+		TopicID func(childComplexity int) int
+	}
+
 	User struct {
 		ID            func(childComplexity int) int
 		MatchingQuota func(childComplexity int) int
@@ -354,6 +364,9 @@ type EntityResolver interface {
 	FindTopicByID(ctx context.Context, id string) (*models.Topic, error)
 	FindUserByID(ctx context.Context, id string) (*models.User, error)
 }
+type EvaluatorResultResolver interface {
+	FailedReason(ctx context.Context, obj *matcher.EvaluatorResult) (string, error)
+}
 type HotTopicsInAreaResolver interface {
 	City(ctx context.Context, obj *models.HotTopicsInArea) (*models.Area, error)
 }
@@ -388,6 +401,8 @@ type MatchingOfTopicResolver interface {
 	Areas(ctx context.Context, obj *models.Matching) ([]*models.Area, error)
 }
 type MatchingPreviewResolver interface {
+	PreferredPeriods(ctx context.Context, obj *models.Matching) ([]models.DatePeriod, error)
+	TopicOptionConfig(ctx context.Context, obj *models.Matching) (*models.TopicOptionConfig, error)
 	User(ctx context.Context, obj *models.Matching) (*models.User, error)
 }
 type MatchingResultResolver interface {
@@ -626,6 +641,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Entity.FindUserByID(childComplexity, args["id"].(string)), true
+
+	case "EvaluatorResult.failedReason":
+		if e.complexity.EvaluatorResult.FailedReason == nil {
+			break
+		}
+
+		return e.complexity.EvaluatorResult.FailedReason(childComplexity), true
 
 	case "EvaluatorResult.properties":
 		if e.complexity.EvaluatorResult.Properties == nil {
@@ -1026,12 +1048,40 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.MatchingOfTopic.UserID(childComplexity), true
 
+	case "MatchingPreview.dayRange":
+		if e.complexity.MatchingPreview.DayRange == nil {
+			break
+		}
+
+		return e.complexity.MatchingPreview.DayRange(childComplexity), true
+
+	case "MatchingPreview.preferredPeriods":
+		if e.complexity.MatchingPreview.PreferredPeriods == nil {
+			break
+		}
+
+		return e.complexity.MatchingPreview.PreferredPeriods(childComplexity), true
+
+	case "MatchingPreview.properties":
+		if e.complexity.MatchingPreview.Properties == nil {
+			break
+		}
+
+		return e.complexity.MatchingPreview.Properties(childComplexity), true
+
 	case "MatchingPreview.remark":
 		if e.complexity.MatchingPreview.Remark == nil {
 			break
 		}
 
 		return e.complexity.MatchingPreview.Remark(childComplexity), true
+
+	case "MatchingPreview.topicOptionConfig":
+		if e.complexity.MatchingPreview.TopicOptionConfig == nil {
+			break
+		}
+
+		return e.complexity.MatchingPreview.TopicOptionConfig(childComplexity), true
 
 	case "MatchingPreview.user":
 		if e.complexity.MatchingPreview.User == nil {
@@ -2124,6 +2174,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.TopicMetrics.Topic(childComplexity), true
 
+	case "TopicOptionConfig.topicId":
+		if e.complexity.TopicOptionConfig.TopicID == nil {
+			break
+		}
+
+		return e.complexity.TopicOptionConfig.TopicID(childComplexity), true
+
 	case "User.id":
 		if e.complexity.User.ID == nil {
 			break
@@ -2362,7 +2419,7 @@ var sources = []*ast.Source{
 `, BuiltIn: true},
 	{Name: "../federation/entity.graphql", Input: `
 # a union of all types that use the @key directive
-union _Entity = Area | ChatGroup | Matching | MatchingQuota | Topic | User
+union _Entity = Area | ChatGroup | Matching | MatchingQuota | Topic | TopicOptionConfig | User
 
 # fake type to build resolver interfaces for users to implement
 type Entity {
@@ -4635,6 +4692,50 @@ func (ec *executionContext) fieldContext_EvaluatorResult_properties(ctx context.
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EvaluatorResult_failedReason(ctx context.Context, field graphql.CollectedField, obj *matcher.EvaluatorResult) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EvaluatorResult_failedReason(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.EvaluatorResult().FailedReason(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EvaluatorResult_failedReason(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EvaluatorResult",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -7377,6 +7478,189 @@ func (ec *executionContext) fieldContext_MatchingPreview_remark(ctx context.Cont
 	return fc, nil
 }
 
+func (ec *executionContext) _MatchingPreview_properties(ctx context.Context, field graphql.CollectedField, obj *models.Matching) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MatchingPreview_properties(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Properties, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]models.MatchingProperty)
+	fc.Result = res
+	return ec.marshalNMatchingProperty2ᚕwhaleᚋpkgᚋmodelsᚐMatchingPropertyᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MatchingPreview_properties(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MatchingPreview",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_MatchingProperty_id(ctx, field)
+			case "values":
+				return ec.fieldContext_MatchingProperty_values(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type MatchingProperty", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MatchingPreview_dayRange(ctx context.Context, field graphql.CollectedField, obj *models.Matching) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MatchingPreview_dayRange(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DayRange, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MatchingPreview_dayRange(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MatchingPreview",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MatchingPreview_preferredPeriods(ctx context.Context, field graphql.CollectedField, obj *models.Matching) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MatchingPreview_preferredPeriods(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.MatchingPreview().PreferredPeriods(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]models.DatePeriod)
+	fc.Result = res
+	return ec.marshalNDatePeriod2ᚕwhaleᚋpkgᚋmodelsᚐDatePeriodᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MatchingPreview_preferredPeriods(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MatchingPreview",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type DatePeriod does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MatchingPreview_topicOptionConfig(ctx context.Context, field graphql.CollectedField, obj *models.Matching) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MatchingPreview_topicOptionConfig(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.MatchingPreview().TopicOptionConfig(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*models.TopicOptionConfig)
+	fc.Result = res
+	return ec.marshalOTopicOptionConfig2ᚖwhaleᚋpkgᚋmodelsᚐTopicOptionConfig(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MatchingPreview_topicOptionConfig(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MatchingPreview",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "topicId":
+				return ec.fieldContext_TopicOptionConfig_topicId(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type TopicOptionConfig", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _MatchingPreview_user(ctx context.Context, field graphql.CollectedField, obj *models.Matching) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_MatchingPreview_user(ctx, field)
 	if err != nil {
@@ -8547,6 +8831,14 @@ func (ec *executionContext) fieldContext_MatchingResult_matchingPreviews(ctx con
 				return ec.fieldContext_MatchingPreview_userId(ctx, field)
 			case "remark":
 				return ec.fieldContext_MatchingPreview_remark(ctx, field)
+			case "properties":
+				return ec.fieldContext_MatchingPreview_properties(ctx, field)
+			case "dayRange":
+				return ec.fieldContext_MatchingPreview_dayRange(ctx, field)
+			case "preferredPeriods":
+				return ec.fieldContext_MatchingPreview_preferredPeriods(ctx, field)
+			case "topicOptionConfig":
+				return ec.fieldContext_MatchingPreview_topicOptionConfig(ctx, field)
 			case "user":
 				return ec.fieldContext_MatchingPreview_user(ctx, field)
 			}
@@ -10116,6 +10408,8 @@ func (ec *executionContext) fieldContext_Mutation_getMatchingScore(ctx context.C
 				return ec.fieldContext_EvaluatorResult_timeScore(ctx, field)
 			case "properties":
 				return ec.fieldContext_EvaluatorResult_properties(ctx, field)
+			case "failedReason":
+				return ec.fieldContext_EvaluatorResult_failedReason(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type EvaluatorResult", field.Name)
 		},
@@ -14331,6 +14625,50 @@ func (ec *executionContext) fieldContext_TopicMetrics_topic(ctx context.Context,
 	return fc, nil
 }
 
+func (ec *executionContext) _TopicOptionConfig_topicId(ctx context.Context, field graphql.CollectedField, obj *models.TopicOptionConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TopicOptionConfig_topicId(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TopicID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TopicOptionConfig_topicId(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TopicOptionConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _User_id(ctx context.Context, field graphql.CollectedField, obj *models.User) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_User_id(ctx, field)
 	if err != nil {
@@ -18159,6 +18497,13 @@ func (ec *executionContext) __Entity(ctx context.Context, sel ast.SelectionSet, 
 			return graphql.Null
 		}
 		return ec._Topic(ctx, sel, obj)
+	case models.TopicOptionConfig:
+		return ec._TopicOptionConfig(ctx, sel, &obj)
+	case *models.TopicOptionConfig:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._TopicOptionConfig(ctx, sel, obj)
 	case models.User:
 		return ec._User(ctx, sel, &obj)
 	case *models.User:
@@ -18496,22 +18841,42 @@ func (ec *executionContext) _EvaluatorResult(ctx context.Context, sel ast.Select
 			out.Values[i] = ec._EvaluatorResult_score(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "timeScore":
 
 			out.Values[i] = ec._EvaluatorResult_timeScore(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "properties":
 
 			out.Values[i] = ec._EvaluatorResult_properties(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
+		case "failedReason":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._EvaluatorResult_failedReason(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -19273,6 +19638,57 @@ func (ec *executionContext) _MatchingPreview(ctx context.Context, sel ast.Select
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
+		case "properties":
+
+			out.Values[i] = ec._MatchingPreview_properties(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "dayRange":
+
+			out.Values[i] = ec._MatchingPreview_dayRange(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "preferredPeriods":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._MatchingPreview_preferredPeriods(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "topicOptionConfig":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._MatchingPreview_topicOptionConfig(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		case "user":
 			field := field
 
@@ -21111,6 +21527,34 @@ func (ec *executionContext) _TopicMetrics(ctx context.Context, sel ast.Selection
 				return innerFunc(ctx)
 
 			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var topicOptionConfigImplementors = []string{"TopicOptionConfig", "_Entity"}
+
+func (ec *executionContext) _TopicOptionConfig(ctx context.Context, sel ast.SelectionSet, obj *models.TopicOptionConfig) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, topicOptionConfigImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("TopicOptionConfig")
+		case "topicId":
+
+			out.Values[i] = ec._TopicOptionConfig_topicId(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -23849,6 +24293,13 @@ func (ec *executionContext) marshalOTime2ᚖtimeᚐTime(ctx context.Context, sel
 	}
 	res := graphql.MarshalTime(*v)
 	return res
+}
+
+func (ec *executionContext) marshalOTopicOptionConfig2ᚖwhaleᚋpkgᚋmodelsᚐTopicOptionConfig(ctx context.Context, sel ast.SelectionSet, v *models.TopicOptionConfig) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._TopicOptionConfig(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOUserJoinTopicFilter2ᚖwhaleᚋpkgᚋmodelsᚐUserJoinTopicFilter(ctx context.Context, v interface{}) (*models.UserJoinTopicFilter, error) {

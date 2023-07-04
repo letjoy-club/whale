@@ -12,6 +12,8 @@ type EvaluatorResult struct {
 
 	TimeScore  int
 	Properties []int
+
+	FailedReason MatchingReason
 }
 
 func Evaluate(topicOption *hoopoe.TopicOptionConfigFields, matching1, matching2 *models.Matching) (result EvaluatorResult) {
@@ -19,42 +21,44 @@ func Evaluate(topicOption *hoopoe.TopicOptionConfigFields, matching1, matching2 
 		result.Properties = make([]int, 0)
 		return result
 	}
-	// if matching1.UserID == matching2.UserID {
-	// 	return 0, nil
-	// }
-	// if matching1.TopicID != matching2.TopicID {
-	// 	return 0, nil
-	// }
 	allWeight := topicOption.TimeWeight
 	result.Properties = make([]int, len(topicOption.Properties))
 	// 判断时间相似度
-	score := CompareDateSimilarity(matching1, matching2)
+	timeScore := CompareDateSimilarity(matching1, matching2)
+	score := 0
 
-	for i, property := range topicOption.Properties {
-		if !property.Enabled {
-			result.Properties[i] = -1
-			continue
-		}
-		allWeight += property.Weight
-		// 判断数值类型的相似度属性
-		if property.Comparable && len(property.Options) > 0 {
-			v1 := matching1.GetSingleValueProperty(property.Name)
-			v2 := matching2.GetSingleValueProperty(property.Name)
-			score = CompareNumeralProperty(property.Options, v1, v2)
+	if len(result.Properties) > 0 {
+
+		for i, property := range topicOption.Properties {
+			if !property.Enabled {
+				result.Properties[i] = -1
+				continue
+			}
+			allWeight += property.Weight
+			// 判断数值类型的相似度属性
+			if property.Comparable && len(property.Options) > 0 {
+				v1 := matching1.GetSingleValueProperty(property.Name)
+				v2 := matching2.GetSingleValueProperty(property.Name)
+				score = CompareNumeralProperty(property.Options, v1, v2)
+				result.Properties[i] = score
+				continue
+			}
+			// 判断 enum 类型的相似度属性
+			score = CompareEnumSimilarity(property, matching1, matching2)
 			result.Properties[i] = score
-			continue
 		}
-		// 判断 enum 类型的相似度属性
-		score = CompareEnumSimilarity(&property, matching1, matching2)
-		result.Properties[i] = score
 	}
-	result.TimeScore = topicOption.TimeWeight * score / allWeight
+	if allWeight > 0 {
+		result.TimeScore = topicOption.TimeWeight * timeScore / allWeight
+	}
 	result.Score += result.TimeScore
-	for i, p := range result.Properties {
-		if p == -1 {
-			continue
+	if len(result.Properties) > 0 {
+		for i, p := range result.Properties {
+			if p == -1 {
+				continue
+			}
+			result.Score += topicOption.Properties[i].Weight * p / allWeight
 		}
-		result.Score += topicOption.Properties[i].Weight * p / allWeight
 	}
 	return result
 }
@@ -162,8 +166,12 @@ func CompareEnumSimilarity(property *loader.TopicOptionConfigProperty, matching1
 		if property.DefaultSelectAll {
 			return 100
 		} else {
+			// 如果两个都是未填，则认为该属性匹配度为 100
+			if len(v1) == 0 || len(v2) == 0 {
+				return 100
+			}
 			// 这时候选得越多越不相似，每出现一个选项，扣 10 分
-			return min(0, 10*(abs(len(v1)-len(v2))))
+			return max(0, 100-10*(abs(len(v1)-len(v2))))
 		}
 	}
 
@@ -188,7 +196,7 @@ func CompareEnumSimilarity(property *loader.TopicOptionConfigProperty, matching1
 }
 
 // CompareNumeralProperty 返回数值类型的属性的匹配分数，范围为0-100
-func CompareNumeralProperty(options []loader.TopicOptionConfigOptions, label1, label2 string) (score int) {
+func CompareNumeralProperty(options []*loader.TopicOptionConfigOptions, label1, label2 string) (score int) {
 	// 如果配置属性的选项数量小于2，则认为该配置为及格分 60
 	if len(options) < 2 {
 		return 60

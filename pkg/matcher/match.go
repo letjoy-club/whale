@@ -11,6 +11,7 @@ type MatchingReason string
 
 const (
 	MatchingReasonOk                MatchingReason = "Ok"
+	MatchingReasonBlacklist         MatchingReason = "InBlacklist"
 	MatchingReasonAreaNotOverlapse  MatchingReason = "AreaNotOverlapse"
 	MatchingReasonGenderNotMatched  MatchingReason = "GenderNotMatched"
 	MatchingReasonCannotMatchItSelf MatchingReason = "CannotMatchItSelf"
@@ -39,6 +40,9 @@ func Matched(ctx context.Context, m1 *models.Matching, m2 *models.Matching) (Mat
 	// 如果 J 用户 希望的性别和 I 用户一致
 	if userJWantGender != models.GenderN.String() && userJWantGender != userIGender {
 		return MatchingReasonGenderNotMatched, false
+	}
+	if mc.InBlacklist(m1.UserID, m2.UserID) {
+		return MatchingReasonBlacklist, false
 	}
 	_, hasOverlapse := AreaOverlapse(m1.AreaIDs, m2.AreaIDs)
 	if hasOverlapse {

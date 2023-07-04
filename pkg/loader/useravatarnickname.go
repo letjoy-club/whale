@@ -23,7 +23,7 @@ func NewUserAvatarNicknameLoader(db *gorm.DB) *dataloader.Loader[string, UserAva
 		if err != nil {
 			return nil, err
 		}
-		return lo.Map(ret.GetUserByIds, func(u hoopoe.GetAvatarByIDsGetUserByIdsUser, i int) UserAvatarNickname {
+		return lo.Map(ret.GetUserByIds, func(u *hoopoe.GetAvatarByIDsGetUserByIdsUser, i int) UserAvatarNickname {
 			return UserAvatarNickname{ID: u.Id, Avatar: u.Avatar, Nickname: u.Nickname}
 		}), nil
 	}, func(k map[string]UserAvatarNickname, v UserAvatarNickname) { k[v.ID] = v }, time.Minute)

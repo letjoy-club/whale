@@ -2,6 +2,7 @@ package matcher
 
 import (
 	"context"
+	"whale/pkg/gqlient/hoopoe"
 	"whale/pkg/loader"
 	"whale/pkg/models"
 
@@ -14,6 +15,18 @@ type MatchingContext struct {
 	used            map[string]bool
 	topics          []string
 	userProfiles    map[string]loader.UserProfile
+	blacklist       map[string]struct{}
+	topicsOptions   map[string]*hoopoe.TopicOptionConfigFields
+}
+
+func (mc *MatchingContext) InBlacklist(id1, id2 string) bool {
+	if id1 > id2 {
+		_, ok := mc.blacklist[id2+"-"+id1]
+		return ok
+	} else {
+		_, ok := mc.blacklist[id1+"-"+id2]
+		return ok
+	}
 }
 
 func (mc *MatchingContext) TopicMatchings(topicID string) []*models.Matching {
@@ -22,6 +35,10 @@ func (mc *MatchingContext) TopicMatchings(topicID string) []*models.Matching {
 
 func (mc *MatchingContext) Topics() []string {
 	return mc.topics
+}
+
+func (mc *MatchingContext) TopicOption(topicID string) *hoopoe.TopicOptionConfigFields {
+	return mc.topicsOptions[topicID]
 }
 
 func (mc *MatchingContext) Use(matchingID string) {
@@ -57,11 +74,16 @@ func WithMatchingContext(ctx context.Context, matchings []*models.Matching) cont
 		userProfiles[u.ID] = u
 	}
 
+	blacklist := getBlacklistRelationship(ctx, userIDs)
+	topicOptions := getTopicOptions(ctx)
+
 	mc := &MatchingContext{
 		topic2matchings: topicMap,
 		used:            make(map[string]bool),
 		topics:          lo.Keys(topicMap),
 		userProfiles:    userProfiles,
+		blacklist:       blacklist,
+		topicsOptions:   topicOptions,
 	}
 
 	return context.WithValue(ctx, mcKey{}, mc)

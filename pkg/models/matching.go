@@ -145,6 +145,8 @@ type MatchingResult struct {
 
 	Closed bool
 
+	MatchingScore int `gorm:"default:100"`
+
 	CreatedBy string `gorm:"type:varchar(64)"`
 
 	// 结束时间，由第一个用户的结束时间来决定

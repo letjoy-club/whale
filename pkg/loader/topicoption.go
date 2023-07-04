@@ -13,15 +13,15 @@ type TopicOptionConfigOptions = hoopoe.TopicOptionConfigFieldsPropertiesTopicOpt
 
 type TopicOptionConfigLoader struct {
 	TopicID string
-	m       map[string]TopicOptionConfig
+	m       map[string]*TopicOptionConfig
 }
 
 func (l *TopicOptionConfigLoader) LoadAll(ctx context.Context) {
-	resp, err := hoopoe.GetTopicConfigOptions(ctx, midacontext.GetServices(ctx).Hoopoe)
+	resp, err := hoopoe.GetTopicConfigOptions(ctx, midacontext.GetServices(ctx).Hoopoe, &hoopoe.GraphQLPaginator{Size: 9999})
 	if err != nil {
 		return
 	}
-	m := make(map[string]TopicOptionConfig)
+	m := make(map[string]*TopicOptionConfig)
 	for _, v := range resp.TopicOptionConfigs {
 		m[v.TopicId] = v
 	}
@@ -41,7 +41,7 @@ func (l *TopicOptionConfigLoader) GetTopicOptionConfig(topicID string) *TopicOpt
 	if !ok {
 		return nil
 	}
-	return &config
+	return config
 }
 
 func NewTopicOptionConfigLoader() *TopicOptionConfigLoader {

@@ -41,11 +41,11 @@ func (v *GetAreaArea) GetDepth() int { return v.Depth }
 // GetAreaResponse is returned by GetArea on success.
 type GetAreaResponse struct {
 	// 【地区】根据地区代码查询地区信息
-	Area GetAreaArea `json:"area"`
+	Area *GetAreaArea `json:"area"`
 }
 
 // GetArea returns GetAreaResponse.Area, and is useful for accessing the field via an interface.
-func (v *GetAreaResponse) GetArea() GetAreaArea { return v.Area }
+func (v *GetAreaResponse) GetArea() *GetAreaArea { return v.Area }
 
 // GetAvatarByIDsGetUserByIdsUser includes the requested fields of the GraphQL type User.
 type GetAvatarByIDsGetUserByIdsUser struct {
@@ -69,21 +69,44 @@ func (v *GetAvatarByIDsGetUserByIdsUser) GetAvatar() string { return v.Avatar }
 // GetAvatarByIDsResponse is returned by GetAvatarByIDs on success.
 type GetAvatarByIDsResponse struct {
 	// 【用户】根据ID批量获取
-	GetUserByIds []GetAvatarByIDsGetUserByIdsUser `json:"getUserByIds"`
+	GetUserByIds []*GetAvatarByIDsGetUserByIdsUser `json:"getUserByIds"`
 }
 
 // GetGetUserByIds returns GetAvatarByIDsResponse.GetUserByIds, and is useful for accessing the field via an interface.
-func (v *GetAvatarByIDsResponse) GetGetUserByIds() []GetAvatarByIDsGetUserByIdsUser {
+func (v *GetAvatarByIDsResponse) GetGetUserByIds() []*GetAvatarByIDsGetUserByIdsUser {
 	return v.GetUserByIds
+}
+
+// GetBlacklistRelationshipBlacklistRelationshipUserPair includes the requested fields of the GraphQL type UserPair.
+type GetBlacklistRelationshipBlacklistRelationshipUserPair struct {
+	A string `json:"a"`
+	B string `json:"b"`
+}
+
+// GetA returns GetBlacklistRelationshipBlacklistRelationshipUserPair.A, and is useful for accessing the field via an interface.
+func (v *GetBlacklistRelationshipBlacklistRelationshipUserPair) GetA() string { return v.A }
+
+// GetB returns GetBlacklistRelationshipBlacklistRelationshipUserPair.B, and is useful for accessing the field via an interface.
+func (v *GetBlacklistRelationshipBlacklistRelationshipUserPair) GetB() string { return v.B }
+
+// GetBlacklistRelationshipResponse is returned by GetBlacklistRelationship on success.
+type GetBlacklistRelationshipResponse struct {
+	// 【黑名单】获取指定 userId 之间的黑名单关系
+	BlacklistRelationship []*GetBlacklistRelationshipBlacklistRelationshipUserPair `json:"blacklistRelationship"`
+}
+
+// GetBlacklistRelationship returns GetBlacklistRelationshipResponse.BlacklistRelationship, and is useful for accessing the field via an interface.
+func (v *GetBlacklistRelationshipResponse) GetBlacklistRelationship() []*GetBlacklistRelationshipBlacklistRelationshipUserPair {
+	return v.BlacklistRelationship
 }
 
 // GetTopicConfigOptionResponse is returned by GetTopicConfigOption on success.
 type GetTopicConfigOptionResponse struct {
-	TopicOptionConfig GetTopicConfigOptionTopicOptionConfig `json:"topicOptionConfig"`
+	TopicOptionConfig *GetTopicConfigOptionTopicOptionConfig `json:"topicOptionConfig"`
 }
 
 // GetTopicOptionConfig returns GetTopicConfigOptionResponse.TopicOptionConfig, and is useful for accessing the field via an interface.
-func (v *GetTopicConfigOptionResponse) GetTopicOptionConfig() GetTopicConfigOptionTopicOptionConfig {
+func (v *GetTopicConfigOptionResponse) GetTopicOptionConfig() *GetTopicConfigOptionTopicOptionConfig {
 	return v.TopicOptionConfig
 }
 
@@ -108,7 +131,7 @@ func (v *GetTopicConfigOptionTopicOptionConfig) GetThreshold() int {
 }
 
 // GetProperties returns GetTopicConfigOptionTopicOptionConfig.Properties, and is useful for accessing the field via an interface.
-func (v *GetTopicConfigOptionTopicOptionConfig) GetProperties() []TopicOptionConfigFieldsPropertiesTopicOptionProperty {
+func (v *GetTopicConfigOptionTopicOptionConfig) GetProperties() []*TopicOptionConfigFieldsPropertiesTopicOptionProperty {
 	return v.TopicOptionConfigFields.Properties
 }
 
@@ -144,7 +167,7 @@ type __premarshalGetTopicConfigOptionTopicOptionConfig struct {
 
 	Threshold int `json:"threshold"`
 
-	Properties []TopicOptionConfigFieldsPropertiesTopicOptionProperty `json:"properties"`
+	Properties []*TopicOptionConfigFieldsPropertiesTopicOptionProperty `json:"properties"`
 }
 
 func (v *GetTopicConfigOptionTopicOptionConfig) MarshalJSON() ([]byte, error) {
@@ -167,11 +190,11 @@ func (v *GetTopicConfigOptionTopicOptionConfig) __premarshalJSON() (*__premarsha
 
 // GetTopicConfigOptionsResponse is returned by GetTopicConfigOptions on success.
 type GetTopicConfigOptionsResponse struct {
-	TopicOptionConfigs []GetTopicConfigOptionsTopicOptionConfigsTopicOptionConfig `json:"topicOptionConfigs"`
+	TopicOptionConfigs []*GetTopicConfigOptionsTopicOptionConfigsTopicOptionConfig `json:"topicOptionConfigs"`
 }
 
 // GetTopicOptionConfigs returns GetTopicConfigOptionsResponse.TopicOptionConfigs, and is useful for accessing the field via an interface.
-func (v *GetTopicConfigOptionsResponse) GetTopicOptionConfigs() []GetTopicConfigOptionsTopicOptionConfigsTopicOptionConfig {
+func (v *GetTopicConfigOptionsResponse) GetTopicOptionConfigs() []*GetTopicConfigOptionsTopicOptionConfigsTopicOptionConfig {
 	return v.TopicOptionConfigs
 }
 
@@ -196,7 +219,7 @@ func (v *GetTopicConfigOptionsTopicOptionConfigsTopicOptionConfig) GetThreshold(
 }
 
 // GetProperties returns GetTopicConfigOptionsTopicOptionConfigsTopicOptionConfig.Properties, and is useful for accessing the field via an interface.
-func (v *GetTopicConfigOptionsTopicOptionConfigsTopicOptionConfig) GetProperties() []TopicOptionConfigFieldsPropertiesTopicOptionProperty {
+func (v *GetTopicConfigOptionsTopicOptionConfigsTopicOptionConfig) GetProperties() []*TopicOptionConfigFieldsPropertiesTopicOptionProperty {
 	return v.TopicOptionConfigFields.Properties
 }
 
@@ -232,7 +255,7 @@ type __premarshalGetTopicConfigOptionsTopicOptionConfigsTopicOptionConfig struct
 
 	Threshold int `json:"threshold"`
 
-	Properties []TopicOptionConfigFieldsPropertiesTopicOptionProperty `json:"properties"`
+	Properties []*TopicOptionConfigFieldsPropertiesTopicOptionProperty `json:"properties"`
 }
 
 func (v *GetTopicConfigOptionsTopicOptionConfigsTopicOptionConfig) MarshalJSON() ([]byte, error) {
@@ -253,14 +276,37 @@ func (v *GetTopicConfigOptionsTopicOptionConfigsTopicOptionConfig) __premarshalJ
 	return &retval, nil
 }
 
+// GetTopicNameResponse is returned by GetTopicName on success.
+type GetTopicNameResponse struct {
+	// 【话题】话题查询
+	Topic *GetTopicNameTopic `json:"topic"`
+}
+
+// GetTopic returns GetTopicNameResponse.Topic, and is useful for accessing the field via an interface.
+func (v *GetTopicNameResponse) GetTopic() *GetTopicNameTopic { return v.Topic }
+
+// GetTopicNameTopic includes the requested fields of the GraphQL type Topic.
+type GetTopicNameTopic struct {
+	// 话题ID
+	Id string `json:"id"`
+	// 名称
+	Name string `json:"name"`
+}
+
+// GetId returns GetTopicNameTopic.Id, and is useful for accessing the field via an interface.
+func (v *GetTopicNameTopic) GetId() string { return v.Id }
+
+// GetName returns GetTopicNameTopic.Name, and is useful for accessing the field via an interface.
+func (v *GetTopicNameTopic) GetName() string { return v.Name }
+
 // GetTopicResponse is returned by GetTopic on success.
 type GetTopicResponse struct {
 	// 【话题】话题查询
-	Topic GetTopicTopic `json:"topic"`
+	Topic *GetTopicTopic `json:"topic"`
 }
 
 // GetTopic returns GetTopicResponse.Topic, and is useful for accessing the field via an interface.
-func (v *GetTopicResponse) GetTopic() GetTopicTopic { return v.Topic }
+func (v *GetTopicResponse) GetTopic() *GetTopicTopic { return v.Topic }
 
 // GetTopicTopic includes the requested fields of the GraphQL type Topic.
 type GetTopicTopic struct {
@@ -274,11 +320,11 @@ func (v *GetTopicTopic) GetId() string { return v.Id }
 // GetTopicsResponse is returned by GetTopics on success.
 type GetTopicsResponse struct {
 	// 【话题】列表查询
-	Topics []GetTopicsTopicsTopic `json:"topics"`
+	Topics []*GetTopicsTopicsTopic `json:"topics"`
 }
 
 // GetTopics returns GetTopicsResponse.Topics, and is useful for accessing the field via an interface.
-func (v *GetTopicsResponse) GetTopics() []GetTopicsTopicsTopic { return v.Topics }
+func (v *GetTopicsResponse) GetTopics() []*GetTopicsTopicsTopic { return v.Topics }
 
 // GetTopicsTopicsTopic includes the requested fields of the GraphQL type Topic.
 type GetTopicsTopicsTopic struct {
@@ -311,20 +357,31 @@ func (v *GetUserByIDsGetUserByIdsUser) GetGender() string { return v.Gender }
 // GetUserByIDsResponse is returned by GetUserByIDs on success.
 type GetUserByIDsResponse struct {
 	// 【用户】根据ID批量获取
-	GetUserByIds []GetUserByIDsGetUserByIdsUser `json:"getUserByIds"`
+	GetUserByIds []*GetUserByIDsGetUserByIdsUser `json:"getUserByIds"`
 }
 
 // GetGetUserByIds returns GetUserByIDsResponse.GetUserByIds, and is useful for accessing the field via an interface.
-func (v *GetUserByIDsResponse) GetGetUserByIds() []GetUserByIDsGetUserByIdsUser {
+func (v *GetUserByIDsResponse) GetGetUserByIds() []*GetUserByIDsGetUserByIdsUser {
 	return v.GetUserByIds
 }
 
+type GraphQLPaginator struct {
+	Page int `json:"page"`
+	Size int `json:"size"`
+}
+
+// GetPage returns GraphQLPaginator.Page, and is useful for accessing the field via an interface.
+func (v *GraphQLPaginator) GetPage() int { return v.Page }
+
+// GetSize returns GraphQLPaginator.Size, and is useful for accessing the field via an interface.
+func (v *GraphQLPaginator) GetSize() int { return v.Size }
+
 // TopicOptionConfigFields includes the GraphQL fields of TopicOptionConfig requested by the fragment TopicOptionConfigFields.
 type TopicOptionConfigFields struct {
-	TopicId    string                                                 `json:"topicId"`
-	TimeWeight int                                                    `json:"timeWeight"`
-	Threshold  int                                                    `json:"threshold"`
-	Properties []TopicOptionConfigFieldsPropertiesTopicOptionProperty `json:"properties"`
+	TopicId    string                                                  `json:"topicId"`
+	TimeWeight int                                                     `json:"timeWeight"`
+	Threshold  int                                                     `json:"threshold"`
+	Properties []*TopicOptionConfigFieldsPropertiesTopicOptionProperty `json:"properties"`
 }
 
 // GetTopicId returns TopicOptionConfigFields.TopicId, and is useful for accessing the field via an interface.
@@ -337,22 +394,22 @@ func (v *TopicOptionConfigFields) GetTimeWeight() int { return v.TimeWeight }
 func (v *TopicOptionConfigFields) GetThreshold() int { return v.Threshold }
 
 // GetProperties returns TopicOptionConfigFields.Properties, and is useful for accessing the field via an interface.
-func (v *TopicOptionConfigFields) GetProperties() []TopicOptionConfigFieldsPropertiesTopicOptionProperty {
+func (v *TopicOptionConfigFields) GetProperties() []*TopicOptionConfigFieldsPropertiesTopicOptionProperty {
 	return v.Properties
 }
 
 // TopicOptionConfigFieldsPropertiesTopicOptionProperty includes the requested fields of the GraphQL type TopicOptionProperty.
 type TopicOptionConfigFieldsPropertiesTopicOptionProperty struct {
-	Id               string                                                                   `json:"id"`
-	Required         bool                                                                     `json:"required"`
-	Name             string                                                                   `json:"name"`
-	Weight           int                                                                      `json:"weight"`
-	Comparable       bool                                                                     `json:"comparable"`
-	Enabled          bool                                                                     `json:"enabled"`
-	MaxSelection     int                                                                      `json:"maxSelection"`
-	DefaultSelectAll bool                                                                     `json:"defaultSelectAll"`
-	Options          []TopicOptionConfigFieldsPropertiesTopicOptionPropertyOptionsTopicOption `json:"options"`
-	ExtraOptionKey   ExtraOptionKey                                                           `json:"extraOptionKey"`
+	Id               string                                                                    `json:"id"`
+	Required         bool                                                                      `json:"required"`
+	Name             string                                                                    `json:"name"`
+	Weight           int                                                                       `json:"weight"`
+	Comparable       bool                                                                      `json:"comparable"`
+	Enabled          bool                                                                      `json:"enabled"`
+	MaxSelection     int                                                                       `json:"maxSelection"`
+	DefaultSelectAll bool                                                                      `json:"defaultSelectAll"`
+	Options          []*TopicOptionConfigFieldsPropertiesTopicOptionPropertyOptionsTopicOption `json:"options"`
+	ExtraOptionKey   ExtraOptionKey                                                            `json:"extraOptionKey"`
 }
 
 // GetId returns TopicOptionConfigFieldsPropertiesTopicOptionProperty.Id, and is useful for accessing the field via an interface.
@@ -386,7 +443,7 @@ func (v *TopicOptionConfigFieldsPropertiesTopicOptionProperty) GetDefaultSelectA
 }
 
 // GetOptions returns TopicOptionConfigFieldsPropertiesTopicOptionProperty.Options, and is useful for accessing the field via an interface.
-func (v *TopicOptionConfigFieldsPropertiesTopicOptionProperty) GetOptions() []TopicOptionConfigFieldsPropertiesTopicOptionPropertyOptionsTopicOption {
+func (v *TopicOptionConfigFieldsPropertiesTopicOptionProperty) GetOptions() []*TopicOptionConfigFieldsPropertiesTopicOptionPropertyOptionsTopicOption {
 	return v.Options
 }
 
@@ -427,6 +484,14 @@ type __GetAvatarByIDsInput struct {
 // GetIds returns __GetAvatarByIDsInput.Ids, and is useful for accessing the field via an interface.
 func (v *__GetAvatarByIDsInput) GetIds() []string { return v.Ids }
 
+// __GetBlacklistRelationshipInput is used internally by genqlient
+type __GetBlacklistRelationshipInput struct {
+	Ids []string `json:"ids"`
+}
+
+// GetIds returns __GetBlacklistRelationshipInput.Ids, and is useful for accessing the field via an interface.
+func (v *__GetBlacklistRelationshipInput) GetIds() []string { return v.Ids }
+
 // __GetTopicConfigOptionInput is used internally by genqlient
 type __GetTopicConfigOptionInput struct {
 	TopicId string `json:"topicId"`
@@ -435,6 +500,14 @@ type __GetTopicConfigOptionInput struct {
 // GetTopicId returns __GetTopicConfigOptionInput.TopicId, and is useful for accessing the field via an interface.
 func (v *__GetTopicConfigOptionInput) GetTopicId() string { return v.TopicId }
 
+// __GetTopicConfigOptionsInput is used internally by genqlient
+type __GetTopicConfigOptionsInput struct {
+	Paginator *GraphQLPaginator `json:"paginator,omitempty"`
+}
+
+// GetPaginator returns __GetTopicConfigOptionsInput.Paginator, and is useful for accessing the field via an interface.
+func (v *__GetTopicConfigOptionsInput) GetPaginator() *GraphQLPaginator { return v.Paginator }
+
 // __GetTopicInput is used internally by genqlient
 type __GetTopicInput struct {
 	Id string `json:"id"`
@@ -442,6 +515,14 @@ type __GetTopicInput struct {
 
 // GetId returns __GetTopicInput.Id, and is useful for accessing the field via an interface.
 func (v *__GetTopicInput) GetId() string { return v.Id }
+
+// __GetTopicNameInput is used internally by genqlient
+type __GetTopicNameInput struct {
+	Id string `json:"id"`
+}
+
+// GetId returns __GetTopicNameInput.Id, and is useful for accessing the field via an interface.
+func (v *__GetTopicNameInput) GetId() string { return v.Id }
 
 // __GetUserByIDsInput is used internally by genqlient
 type __GetUserByIDsInput struct {
@@ -514,6 +595,42 @@ func GetAvatarByIDs(
 	var err error
 
 	var data GetAvatarByIDsResponse
+	resp := &graphql.Response{Data: &data}
+
+	err = client.MakeRequest(
+		ctx,
+		req,
+		resp,
+	)
+
+	return &data, err
+}
+
+// The query or mutation executed by GetBlacklistRelationship.
+const GetBlacklistRelationship_Operation = `
+query GetBlacklistRelationship ($ids: [String!]!) {
+	blacklistRelationship(ids: $ids) {
+		a
+		b
+	}
+}
+`
+
+func GetBlacklistRelationship(
+	ctx context.Context,
+	client graphql.Client,
+	ids []string,
+) (*GetBlacklistRelationshipResponse, error) {
+	req := &graphql.Request{
+		OpName: "GetBlacklistRelationship",
+		Query:  GetBlacklistRelationship_Operation,
+		Variables: &__GetBlacklistRelationshipInput{
+			Ids: ids,
+		},
+	}
+	var err error
+
+	var data GetBlacklistRelationshipResponse
 	resp := &graphql.Response{Data: &data}
 
 	err = client.MakeRequest(
@@ -617,8 +734,8 @@ func GetTopicConfigOption(
 
 // The query or mutation executed by GetTopicConfigOptions.
 const GetTopicConfigOptions_Operation = `
-query GetTopicConfigOptions {
-	topicOptionConfigs {
+query GetTopicConfigOptions ($paginator: GraphQLPaginator!) {
+	topicOptionConfigs(paginator: $paginator) {
 		... TopicOptionConfigFields
 	}
 }
@@ -647,14 +764,54 @@ fragment TopicOptionConfigFields on TopicOptionConfig {
 func GetTopicConfigOptions(
 	ctx context.Context,
 	client graphql.Client,
+	paginator *GraphQLPaginator,
 ) (*GetTopicConfigOptionsResponse, error) {
 	req := &graphql.Request{
 		OpName: "GetTopicConfigOptions",
 		Query:  GetTopicConfigOptions_Operation,
+		Variables: &__GetTopicConfigOptionsInput{
+			Paginator: paginator,
+		},
 	}
 	var err error
 
 	var data GetTopicConfigOptionsResponse
+	resp := &graphql.Response{Data: &data}
+
+	err = client.MakeRequest(
+		ctx,
+		req,
+		resp,
+	)
+
+	return &data, err
+}
+
+// The query or mutation executed by GetTopicName.
+const GetTopicName_Operation = `
+query GetTopicName ($id: String!) {
+	topic(id: $id) {
+		id
+		name
+	}
+}
+`
+
+func GetTopicName(
+	ctx context.Context,
+	client graphql.Client,
+	id string,
+) (*GetTopicNameResponse, error) {
+	req := &graphql.Request{
+		OpName: "GetTopicName",
+		Query:  GetTopicName_Operation,
+		Variables: &__GetTopicNameInput{
+			Id: id,
+		},
+	}
+	var err error
+
+	var data GetTopicNameResponse
 	resp := &graphql.Response{Data: &data}
 
 	err = client.MakeRequest(

@@ -31,12 +31,27 @@ directive @tag(name: String!) on FIELD_DEFINITION | INTERFACE | OBJECT | UNION |
 
 scalar _Any
 
-union _Entity = Area | Tag | Topic | User
+union _Entity = Area | Tag | Topic | TopicOptionConfig | User
 
 scalar _FieldSet
 
 type _Service {
   sdl: String
+}
+
+input AddConcertParam {
+  name: String!
+  startAt: Time!
+  days: [Time!]!
+  address: String!
+  cityId: String!
+  singerIds: [Int!]!
+  visible: Boolean!
+}
+
+input AddSingerParam {
+  name: String!
+  visible: Boolean!
 }
 
 input AddTagCategoryParam {
@@ -219,6 +234,22 @@ input CityFilter {
   name: String
 }
 
+type Concert {
+  id: Int!
+  name: String!
+  startAt: Time!
+  days: [Time!]!
+  address: String!
+  cityId: String!
+  singerIds: [Int!]!
+  area: Area!
+  singers: [Singer!]!
+}
+
+input ConcertFilter {
+  name: String
+}
+
 input CreateTopicOptionConfig {
   timeWeight: Int!
   threshold: Int!
@@ -266,6 +297,7 @@ type Entity {
   findAreaByCode(code: AreaCode!): Area!
   findTagByID(id: String!): Tag!
   findTopicByID(id: String!): Topic!
+  findTopicOptionConfigByTopicID(topicID: String!): TopicOptionConfig!
   findUserByID(id: String!): User!
 }
 
@@ -561,9 +593,25 @@ type Mutation {
     """话题ID"""
     id: String!
   ): String
+
+  """【话题】更新话题图片，有则更新，无则新增"""
+  updateTopicImage(
+    """话题ID"""
+    topicId: String!
+
+    """图片种类"""
+    imageType: String!
+
+    """图片URL"""
+    imageUrl: String!
+  ): String
   createTopicOptionConfig(topicId: String!, param: CreateTopicOptionConfig!): TopicOptionConfig!
   updateTopicOptionConfig(topicId: String!, param: UpdateTopicOptionConfig!): TopicOptionConfig!
   deleteTopicOptionConfig(topicId: String!): String!
+  addSinger(param: AddSingerParam!): Singer!
+  addConcert(param: AddConcertParam!): Concert!
+  updateSinger(id: Int!, param: UpdateSingerParam!): Singer!
+  updateConcert(id: Int!, param: UpdateConcertParam!): Concert!
 
   """【用户】小程序登录"""
   miniAppLogin(
@@ -949,14 +997,17 @@ type Query {
 
   """【话题】类别列表查询"""
   topicCategories(
-    """是否可用，管理端可用，其他情况默认为TRUE"""
-    enable: Boolean
+    """过滤条件"""
+    filter: TopicCategoryFilter
+
+    """分页"""
+    paginator: GraphQLPaginator
   ): [TopicCategory!]!
 
   """【话题】类别列表查询"""
   topicCategoriesCount(
-    """是否可用，管理端可用，其他情况默认为TRUE"""
-    enable: Boolean
+    """过滤条件"""
+    filter: TopicCategoryFilter
   ): Summary!
 
   """【话题】根据类别查询话题"""
@@ -997,6 +1048,10 @@ type Query {
   singer(id: Int!): Singer!
   singers(filter: SingerFilter, paginator: GraphQLPaginator): [Singer!]!
   singersCount(filter: SingerFilter): Summary!
+  concert(id: Int!): Concert!
+  concerts(filter: ConcertFilter, paginator: GraphQLPaginator): [Concert!]!
+  concertsCount(filter: ConcertFilter): Summary!
+  topicOptionSearch(key: ExtraOptionKey!, keyword: String!): [TopicOptionResult!]!
 
   """【用户】周活跃"""
   weeklyActive(
@@ -1068,6 +1123,9 @@ type Query {
     userId: String
   ): Boolean!
 
+  """【黑名单】获取指定 userId 之间的黑名单关系"""
+  blacklistRelationship(ids: [String!]!): [UserPair!]!
+
   """【举报】是否已举报"""
   userReportState(
     """匹配ID"""
@@ -1098,6 +1156,9 @@ type Query {
     filter: UserReportFilter
   ): Summary!
 
+  """【举报】举报惩罚选项，管理端使用"""
+  reportPunishmentOptions: [ReportPunishmentOption!]!
+
   """【封禁】封禁记录查询，只查询180天内的封禁记录，管理端使用"""
   userBlockRecords(
     """用户ID"""
@@ -1116,11 +1177,20 @@ type Query {
   _service: _Service!
 }
 
+type ReportPunishmentOption {
+  """惩罚方式"""
+  punishment: String!
+
+  """惩罚方式描述"""
+  desc: String!
+
+  """封禁时长"""
+  blockDuration: Int
+}
+
 type Singer {
   id: Int!
   name: String!
-  image: String!
-  createdAt: Time!
 }
 
 input SingerFilter {
@@ -1235,7 +1305,7 @@ type Topic {
   category: String!
 
   """封面图片URL"""
-  frontCover: String
+  frontCover: String @deprecated(reason: "use field imageConfigs instead")
 
   """可见地区，列表为空表示全区域可见"""
   visibleArea: [String!]
@@ -1265,7 +1335,7 @@ type Topic {
   hasConfig: Boolean!
 
   """图片配置"""
-  imageConfigs: [TopicImageConfig!]
+  imageConfigs(imageTypes: [String!]): [TopicImageConfig!]!
 }
 
 type TopicCategory {
@@ -1281,8 +1351,19 @@ type TopicCategory {
   """话题颜色"""
   defaultColor: String
 
+  """话题是否限时"""
+  timeLimited: Boolean!
+
   """是否可用"""
   enable: Boolean!
+}
+
+input TopicCategoryFilter {
+  """类别中文名，支持模糊查询"""
+  desc: String
+
+  """是否可用，管理端可用，其他情况默认为TRUE"""
+  enable: Boolean
 }
 
 input TopicFilter {
@@ -1307,7 +1388,7 @@ type TopicImageConfig {
   imageUrl: String!
 
   """是否失效"""
-  Enable: Boolean!
+  enable: Boolean!
 }
 
 type TopicOption {
@@ -1349,6 +1430,7 @@ input TopicOptionPropertyParam {
   name: String!
   weight: Int!
   comparable: Boolean!
+  enabled: Boolean!
   defaultSelectAll: Boolean!
   maxSelection: Int!
   options: [TopicOptionParam!]!
@@ -1356,8 +1438,25 @@ input TopicOptionPropertyParam {
   required: Boolean!
 }
 
+union TopicOptionResult = Singer | Concert
+
 input UpdateAdminAccountParam {
   enabled: Boolean
+}
+
+input UpdateConcertParam {
+  name: String
+  startAt: Time
+  days: [Time!]
+  address: String
+  cityId: String
+  singerIds: [Int!]
+  visible: Boolean
+}
+
+input UpdateSingerParam {
+  name: String
+  visible: Boolean
 }
 
 input UpdateTopicCategoryParam {
@@ -1652,6 +1751,11 @@ type UserNicknameReview {
   nickname: String!
 }
 
+type UserPair {
+  a: String!
+  b: String!
+}
+
 type UserProfile {
   """职业"""
   career: String
@@ -1732,7 +1836,7 @@ input UserReportFilter {
   matchingId: String
 
   """是否已处理"""
-  processed: Boolean!
+  processed: Boolean
 }
 
 type UserStatsInfo {
