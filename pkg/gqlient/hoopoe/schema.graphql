@@ -31,7 +31,7 @@ directive @tag(name: String!) on FIELD_DEFINITION | INTERFACE | OBJECT | UNION |
 
 scalar _Any
 
-union _Entity = Area | Tag | Topic | TopicOptionConfig | User
+union _Entity = Area | LevelRights | Tag | Topic | TopicOptionConfig | User
 
 scalar _FieldSet
 
@@ -47,6 +47,23 @@ input AddConcertParam {
   cityId: String!
   singerIds: [Int!]!
   visible: Boolean!
+}
+
+input AddConfigurationParam {
+  """配置名称"""
+  name: String!
+
+  """配置描述"""
+  desc: String!
+
+  """是否启用"""
+  enable: Boolean!
+
+  """开始时间"""
+  startAt: Time!
+
+  """配置内容"""
+  content: String!
 }
 
 input AddSingerParam {
@@ -118,11 +135,11 @@ input AddTopicCategoryParam {
   """话题颜色"""
   defaultColor: String
 
-  """是否限时"""
-  timeLimited: Boolean!
+  """是否限时，默认不限时"""
+  timeLimited: Boolean
 
-  """是否可用"""
-  enable: Boolean!
+  """是否可用，默认不启用"""
+  enable: Boolean
 }
 
 input AddTopicParam {
@@ -156,8 +173,8 @@ input AddTopicParam {
   """排序"""
   sequence: Int
 
-  """是否可用"""
-  enable: Boolean!
+  """是否启用，默认不启用"""
+  enable: Boolean
 }
 
 type AdminAccount {
@@ -295,6 +312,7 @@ type DictData {
 
 type Entity {
   findAreaByCode(code: AreaCode!): Area!
+  findLevelRightsByLevel(level: Int!): LevelRights!
   findTagByID(id: String!): Tag!
   findTopicByID(id: String!): Topic!
   findTopicOptionConfigByTopicID(topicID: String!): TopicOptionConfig!
@@ -318,6 +336,14 @@ input FeishuLoginParam {
   avatar: String!
   email: String!
   nickname: String!
+}
+
+type GenderSelection {
+  """性别"""
+  gender: String!
+
+  """是否能选择"""
+  selection: Boolean!
 }
 
 input GraphQLPaginator {
@@ -352,6 +378,71 @@ type Inviter {
   invitedAt: Time!
 }
 
+type LevelCompletion {
+  """用户资料完善程度"""
+  profilePercent: Int!
+
+  """发起匹配次数"""
+  startMatchingNum: Int!
+
+  """匹配成功次数"""
+  matchingSuccessNum: Int!
+
+  """评价次数"""
+  evaluationNum: Int!
+
+  """邀请次数"""
+  invitedNum: Int!
+}
+
+type LevelDetail {
+  """等级"""
+  level: Int!
+
+  """当前等级的权益"""
+  rights: LevelRights!
+
+  """升到下一个等级的要求"""
+  requirement: LevelRequirement!
+
+  """完成情况"""
+  completion: LevelCompletion!
+}
+
+type LevelRequirement {
+  """是否最高等级"""
+  isMaxLevel: Boolean!
+
+  """用户资料完善程度"""
+  profilePercent: Int!
+
+  """发起匹配次数"""
+  startMatchingNum: Int!
+
+  """匹配成功次数"""
+  matchingSuccessNum: Int!
+
+  """评价次数"""
+  evaluationNum: Int!
+
+  """邀请次数"""
+  invitedNum: Int!
+}
+
+type LevelRights {
+  """用户等级"""
+  level: Int!
+
+  """性别选择"""
+  genderSelections: [GenderSelection!]!
+
+  """性别选择，用户端使用"""
+  genderSelection: Boolean!
+
+  """加权举报次数"""
+  weightedReport: Int!
+}
+
 type LoginResult {
   """登录token，后续请求放入Header中"""
   token: String!
@@ -374,11 +465,23 @@ type Mutation {
     userId: String
   ): imageUploadUrl!
 
-  """获取小程序邀请二维码"""
+  """【微信】获取微信手机号"""
+  getWechatPhone(
+    """小程序获取手机号code"""
+    code: String!
+  ): String
+
+  """【微信】获取小程序邀请二维码"""
   getInvitationMiniAppCode(
     """用户ID"""
     userId: String!
   ): String
+
+  """【通用】新增配置"""
+  addConfiguration(param: AddConfigurationParam!): String
+
+  """【通用】修改配置"""
+  updateConfiguration(id: Int!, param: UpdateConfigurationParam!): String
   addAdminAccount(email: String!): AdminAccount!
   feishuLogin(param: FeishuLoginParam!): AdminAccount!
   updateAdminAccount(id: String!, param: UpdateAdminAccountParam!): AdminAccount!
@@ -566,8 +669,8 @@ type Mutation {
 
   """【话题】话题类别更新，管理端使用"""
   updateTopicCategory(
-    """类别ID"""
-    id: Int!
+    """类别名称"""
+    name: String!
 
     """修改参数"""
     param: UpdateTopicCategoryParam!
@@ -640,6 +743,12 @@ type Mutation {
     inviterId: String
   ): String
 
+  """【用户】发送修改手机号短信验证码"""
+  sendPhoneModifySmsVerification(
+    """手机号"""
+    phone: String!
+  ): SendSmsCodeResult!
+
   """【用户】更新手机号"""
   updatePhone(
     """用户ID，管理端请求时必填"""
@@ -647,6 +756,12 @@ type Mutation {
 
     """手机号"""
     phone: String!
+
+    """验证码，用户端必填"""
+    code: String
+
+    """验证码序列号，用户端必填"""
+    sequence: String
   ): String
 
   """【用户】更新用户信息"""
@@ -782,6 +897,9 @@ type Mutation {
 
     """举报原因"""
     reason: [String!]!
+
+    """是否加权举报，默认：false"""
+    weightedReport: Boolean
   ): String
 
   """【举报】处理举报，管理端使用"""
@@ -1173,6 +1291,21 @@ type Query {
     """用户ID"""
     userId: String!
   ): Summary!
+
+  """【用户】等级详情"""
+  levelDetail(
+    """等级，未上送时返回用户的当前等级相关信息"""
+    level: Int
+
+    """用户ID，管理端使用"""
+    userId: String
+  ): LevelDetail!
+
+  """【用户等级】等级要求配置"""
+  levelRequirements: [LevelRequirement!]!
+
+  """【用户等级】等级权益配置"""
+  levelRights: [LevelRights!]!
   _entities(representations: [_Any!]!): [_Entity]!
   _service: _Service!
 }
@@ -1186,6 +1319,11 @@ type ReportPunishmentOption {
 
   """封禁时长"""
   blockDuration: Int
+}
+
+type SendSmsCodeResult {
+  """验证码序列号"""
+  sequence: String!
 }
 
 type Singer {
@@ -1454,6 +1592,23 @@ input UpdateConcertParam {
   visible: Boolean
 }
 
+input UpdateConfigurationParam {
+  """配置名称"""
+  name: String
+
+  """配置描述"""
+  desc: String
+
+  """是否启用"""
+  enable: Boolean
+
+  """开始时间"""
+  startAt: Time
+
+  """配置内容"""
+  content: String
+}
+
 input UpdateSingerParam {
   name: String
   visible: Boolean
@@ -1532,6 +1687,9 @@ type User {
 
   """微信openID"""
   openId: String!
+
+  """用户等级"""
+  level: Int!
 
   """注册时间"""
   createdAt: Time!
@@ -1688,14 +1846,8 @@ type UserInfoCompleteness {
   """信息是否全部填写"""
   filled: Boolean!
 
-  """
-  未填写的字段列表，filled=false时有值
-  - nickname: 昵称
-  - avatar: 头像
-  - gender: 性别
-  - birthday: 生日
-  """
-  unfilledFields: [String!]
+  """未填写的字段列表"""
+  requiredFields: [UserRequiredField!]!
 }
 
 input UserInfoUpdateParam {
@@ -1837,6 +1989,23 @@ input UserReportFilter {
 
   """是否已处理"""
   processed: Boolean
+}
+
+enum UserRequiredField {
+  """昵称"""
+  Nickname
+
+  """头像"""
+  Avatar
+
+  """生日"""
+  Birthday
+
+  """性别"""
+  Gender
+
+  """手机号"""
+  Phone
 }
 
 type UserStatsInfo {

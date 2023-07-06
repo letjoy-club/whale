@@ -9,6 +9,58 @@ import (
 	"github.com/Khan/genqlient/graphql"
 )
 
+// CreateMatchingValidResponse is returned by CreateMatchingValid on success.
+type CreateMatchingValidResponse struct {
+	// 【用户】获取用户信息
+	User *CreateMatchingValidUser `json:"user"`
+	// 【用户】 用户信息完整性检查
+	UserInfoCompletenessCheck *CreateMatchingValidUserInfoCompletenessCheckUserInfoCompleteness `json:"userInfoCompletenessCheck"`
+}
+
+// GetUser returns CreateMatchingValidResponse.User, and is useful for accessing the field via an interface.
+func (v *CreateMatchingValidResponse) GetUser() *CreateMatchingValidUser { return v.User }
+
+// GetUserInfoCompletenessCheck returns CreateMatchingValidResponse.UserInfoCompletenessCheck, and is useful for accessing the field via an interface.
+func (v *CreateMatchingValidResponse) GetUserInfoCompletenessCheck() *CreateMatchingValidUserInfoCompletenessCheckUserInfoCompleteness {
+	return v.UserInfoCompletenessCheck
+}
+
+// CreateMatchingValidUser includes the requested fields of the GraphQL type User.
+type CreateMatchingValidUser struct {
+	// 用户封禁信息
+	BlockInfo *CreateMatchingValidUserBlockInfo `json:"blockInfo"`
+}
+
+// GetBlockInfo returns CreateMatchingValidUser.BlockInfo, and is useful for accessing the field via an interface.
+func (v *CreateMatchingValidUser) GetBlockInfo() *CreateMatchingValidUserBlockInfo {
+	return v.BlockInfo
+}
+
+// CreateMatchingValidUserBlockInfo includes the requested fields of the GraphQL type UserBlockInfo.
+type CreateMatchingValidUserBlockInfo struct {
+	// 是否用户封禁，封禁则整个APP无法使用
+	UserBlocked bool `json:"userBlocked"`
+	// 是否匹配封禁，封禁则无法加入新的匹配
+	MatchingBlocked bool `json:"matchingBlocked"`
+}
+
+// GetUserBlocked returns CreateMatchingValidUserBlockInfo.UserBlocked, and is useful for accessing the field via an interface.
+func (v *CreateMatchingValidUserBlockInfo) GetUserBlocked() bool { return v.UserBlocked }
+
+// GetMatchingBlocked returns CreateMatchingValidUserBlockInfo.MatchingBlocked, and is useful for accessing the field via an interface.
+func (v *CreateMatchingValidUserBlockInfo) GetMatchingBlocked() bool { return v.MatchingBlocked }
+
+// CreateMatchingValidUserInfoCompletenessCheckUserInfoCompleteness includes the requested fields of the GraphQL type UserInfoCompleteness.
+type CreateMatchingValidUserInfoCompletenessCheckUserInfoCompleteness struct {
+	// 信息是否全部填写
+	Filled bool `json:"filled"`
+}
+
+// GetFilled returns CreateMatchingValidUserInfoCompletenessCheckUserInfoCompleteness.Filled, and is useful for accessing the field via an interface.
+func (v *CreateMatchingValidUserInfoCompletenessCheckUserInfoCompleteness) GetFilled() bool {
+	return v.Filled
+}
+
 type ExtraOptionKey string
 
 const (
@@ -346,6 +398,8 @@ type GetUserByIDsGetUserByIdsUser struct {
 	Id string `json:"id"`
 	// 性别：男——M；女——F
 	Gender string `json:"gender"`
+	// 用户等级
+	Level int `json:"level"`
 }
 
 // GetId returns GetUserByIDsGetUserByIdsUser.Id, and is useful for accessing the field via an interface.
@@ -353,6 +407,9 @@ func (v *GetUserByIDsGetUserByIdsUser) GetId() string { return v.Id }
 
 // GetGender returns GetUserByIDsGetUserByIdsUser.Gender, and is useful for accessing the field via an interface.
 func (v *GetUserByIDsGetUserByIdsUser) GetGender() string { return v.Gender }
+
+// GetLevel returns GetUserByIDsGetUserByIdsUser.Level, and is useful for accessing the field via an interface.
+func (v *GetUserByIDsGetUserByIdsUser) GetLevel() int { return v.Level }
 
 // GetUserByIDsResponse is returned by GetUserByIDs on success.
 type GetUserByIDsResponse struct {
@@ -468,6 +525,14 @@ func (v *TopicOptionConfigFieldsPropertiesTopicOptionPropertyOptionsTopicOption)
 	return v.Value
 }
 
+// __CreateMatchingValidInput is used internally by genqlient
+type __CreateMatchingValidInput struct {
+	UserId string `json:"userId"`
+}
+
+// GetUserId returns __CreateMatchingValidInput.UserId, and is useful for accessing the field via an interface.
+func (v *__CreateMatchingValidInput) GetUserId() string { return v.UserId }
+
 // __GetAreaInput is used internally by genqlient
 type __GetAreaInput struct {
 	Id string `json:"id"`
@@ -531,6 +596,47 @@ type __GetUserByIDsInput struct {
 
 // GetIds returns __GetUserByIDsInput.Ids, and is useful for accessing the field via an interface.
 func (v *__GetUserByIDsInput) GetIds() []string { return v.Ids }
+
+// The query or mutation executed by CreateMatchingValid.
+const CreateMatchingValid_Operation = `
+query CreateMatchingValid ($userId: String!) {
+	user(id: $userId) {
+		blockInfo {
+			userBlocked
+			matchingBlocked
+		}
+	}
+	userInfoCompletenessCheck(userId: $userId) {
+		filled
+	}
+}
+`
+
+func CreateMatchingValid(
+	ctx context.Context,
+	client graphql.Client,
+	userId string,
+) (*CreateMatchingValidResponse, error) {
+	req := &graphql.Request{
+		OpName: "CreateMatchingValid",
+		Query:  CreateMatchingValid_Operation,
+		Variables: &__CreateMatchingValidInput{
+			UserId: userId,
+		},
+	}
+	var err error
+
+	var data CreateMatchingValidResponse
+	resp := &graphql.Response{Data: &data}
+
+	err = client.MakeRequest(
+		ctx,
+		req,
+		resp,
+	)
+
+	return &data, err
+}
 
 // The query or mutation executed by GetArea.
 const GetArea_Operation = `
@@ -861,6 +967,7 @@ query GetUserByIDs ($ids: [String!]!) {
 	getUserByIds(ids: $ids) {
 		id
 		gender
+		level
 	}
 }
 `

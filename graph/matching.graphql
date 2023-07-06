@@ -144,7 +144,7 @@ extend type Query {
 
 extend type Mutation {
   "【匹配系统】创建匹配"
-  createMatching(userId: String, param: CreateMatchingParam!): Matching!
+  createMatching(userId: String, param: CreateMatchingParam!): Matching! @deprecated
 
   "【匹配系统】创建匹配V2"
   createMatchingV2(userId: String, param: CreateMatchingParamV2!): Matching!

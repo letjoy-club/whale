@@ -29,6 +29,7 @@ func Use(db *gorm.DB, opts ...gen.DOOption) *Query {
 		MatchingReview:              newMatchingReview(db, opts...),
 		RecentMatching:              newRecentMatching(db, opts...),
 		UserJoinTopic:               newUserJoinTopic(db, opts...),
+		WhaleConfig:                 newWhaleConfig(db, opts...),
 	}
 }
 
@@ -46,6 +47,7 @@ type Query struct {
 	MatchingReview              matchingReview
 	RecentMatching              recentMatching
 	UserJoinTopic               userJoinTopic
+	WhaleConfig                 whaleConfig
 }
 
 func (q *Query) Available() bool { return q.db != nil }
@@ -64,6 +66,7 @@ func (q *Query) clone(db *gorm.DB) *Query {
 		MatchingReview:              q.MatchingReview.clone(db),
 		RecentMatching:              q.RecentMatching.clone(db),
 		UserJoinTopic:               q.UserJoinTopic.clone(db),
+		WhaleConfig:                 q.WhaleConfig.clone(db),
 	}
 }
 
@@ -89,6 +92,7 @@ func (q *Query) ReplaceDB(db *gorm.DB) *Query {
 		MatchingReview:              q.MatchingReview.replaceDB(db),
 		RecentMatching:              q.RecentMatching.replaceDB(db),
 		UserJoinTopic:               q.UserJoinTopic.replaceDB(db),
+		WhaleConfig:                 q.WhaleConfig.replaceDB(db),
 	}
 }
 
@@ -104,6 +108,7 @@ type queryCtx struct {
 	MatchingReview              IMatchingReviewDo
 	RecentMatching              IRecentMatchingDo
 	UserJoinTopic               IUserJoinTopicDo
+	WhaleConfig                 IWhaleConfigDo
 }
 
 func (q *Query) WithContext(ctx context.Context) *queryCtx {
@@ -119,6 +124,7 @@ func (q *Query) WithContext(ctx context.Context) *queryCtx {
 		MatchingReview:              q.MatchingReview.WithContext(ctx),
 		RecentMatching:              q.RecentMatching.WithContext(ctx),
 		UserJoinTopic:               q.UserJoinTopic.WithContext(ctx),
+		WhaleConfig:                 q.WhaleConfig.WithContext(ctx),
 	}
 }
 

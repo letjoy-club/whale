@@ -36,6 +36,8 @@ type Loader struct {
 	HotTopics *dataloader.Loader[string, *models.HotTopicsInArea]
 
 	TopicOptionConfig *TopicOptionConfigLoader
+	// 配置
+	WhaleConfig *dataloader.Loader[string, *models.WhaleConfig]
 }
 
 func NewLoader(db *gorm.DB) *Loader {
@@ -59,6 +61,8 @@ func NewLoader(db *gorm.DB) *Loader {
 		RecentMatching: NewRecentMatchingLoader(db),
 
 		TopicOptionConfig: NewTopicOptionConfigLoader(),
+
+		WhaleConfig: NewWhaleConfigLoader(db),
 	}
 }
 

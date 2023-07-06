@@ -5,14 +5,17 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"github.com/letjoy-club/mida-tool/qcloudutil"
+	"github.com/redis/go-redis/v9"
+	"gorm.io/gorm"
 	"log"
 	"net/http"
 	"whale/graph"
 	"whale/pkg/loader"
+	"whale/pkg/mq"
 	"whale/pkg/restfulserver"
 	"whale/pkg/whaleconf"
 
-	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/go-chi/chi/v5"
@@ -20,14 +23,12 @@ import (
 	"github.com/letjoy-club/mida-tool/authenticator"
 	"github.com/letjoy-club/mida-tool/dbutil"
 	"github.com/letjoy-club/mida-tool/graphqlutil"
-	"github.com/letjoy-club/mida-tool/midacode"
 	"github.com/letjoy-club/mida-tool/midacontext"
 	"github.com/letjoy-club/mida-tool/proxy"
 	"github.com/letjoy-club/mida-tool/pulsarutil"
 	"github.com/letjoy-club/mida-tool/qcloudutil/clsutil"
 	"github.com/letjoy-club/mida-tool/redisutil"
 	"github.com/letjoy-club/mida-tool/tracerutil"
-	"go.opentelemetry.io/otel/trace"
 )
 
 func main() {
@@ -42,34 +43,21 @@ func main() {
 	db := whaleConf.DB()
 	redis := whaleConf.Redis()
 	loader := loader.NewLoader(db)
-	cls := whaleConf.CLS()
+	whaleConf.QCloud.Init()
+
 	publisher := whaleConf.MatchingPublisher()
+	subscriber := whaleConf.CreateSubscriber()
+	pullTopics(subscriber, db, redis, loader, whaleConf.QCloud)
 
 	tp := whaleConf.Trace()
 	defer func() { tp.Shutdown(context.Background()) }()
 	tr := tp.Tracer("whale-graph")
 
 	gqlConf := graph.Config{Resolvers: &graph.Resolver{}}
-	gqlConf.Directives.AdminOnly = func(ctx context.Context, obj interface{}, next graphql.Resolver) (interface{}, error) {
-		token := midacontext.GetClientToken(ctx)
-		if token.IsAdmin() {
-			return next(ctx)
-		}
-		return nil, midacode.ErrNotPermitted
-	}
+	gqlConf.Directives.AdminOnly = graphqlutil.AdminOnly
 
 	srv := handler.NewDefaultServer(graph.NewExecutableSchema(gqlConf))
-	srv.AroundOperations(func(ctx context.Context, next graphql.OperationHandler) graphql.ResponseHandler {
-		oc := graphql.GetOperationContext(ctx)
-		opName := "unknown"
-		if oc.OperationName != "" {
-			opName = oc.OperationName
-		}
-		ctx, span := tr.Start(ctx, "whale."+opName, trace.WithSpanKind(trace.SpanKindServer))
-		defer span.End()
-		fmt.Printf("RawQuery: %s\n", oc.RawQuery)
-		return next(ctx)
-	})
+	srv.AroundOperations(graphqlutil.AroundOperations(tr, "whale"))
 	srv.SetErrorPresenter(graphqlutil.ErrorPresenter)
 
 	r := chi.NewRouter()
@@ -103,7 +91,7 @@ func main() {
 			}
 
 			ctx = dbutil.WithDB(ctx, db)
-			ctx = clsutil.WithGraphLogger(ctx, cls, whaleConf.QCloud.CLSConf.TopicID, "whale")
+			ctx = clsutil.WithGraphLogger(ctx, whaleConf.QCloud.CLS.Client, whaleConf.QCloud.CLS.TopicID, "whale")
 			ctx = redisutil.WithRedis(ctx, redis)
 			ctx = pulsarutil.WithMQ[*whaleconf.Publisher](ctx, publisher)
 			ctx = midacontext.WithLoader(ctx, loader)
@@ -136,4 +124,14 @@ func main() {
 
 	log.Printf("connect to http://localhost:%d/whale/v2 for GraphQL playground", *port)
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", *port), r))
+}
+
+func pullTopics(subscriber *whaleconf.Subscriber, db *gorm.DB, redis *redis.Client, loader *loader.Loader, qCloud qcloudutil.QCloudConf) {
+	ctx := context.Background()
+	ctx = qcloudutil.WithQCloud(ctx, qCloud)
+	ctx = redisutil.WithRedis(ctx, redis)
+	ctx = midacontext.WithLoader(ctx, loader)
+	ctx = dbutil.WithDB(ctx, db)
+	ctx = pulsarutil.WithMQ[*whaleconf.Subscriber](ctx, subscriber)
+	go mq.UserLevelChangeListener(ctx)
 }

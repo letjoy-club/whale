@@ -10,11 +10,11 @@ import (
 )
 
 func (l Conf) MatchingPublisher() *Publisher {
-	if l.MQ.Endpoint == "" {
+	if l.MQ.MatchingWriter.Endpoint == "" {
 		fmt.Println(color.HiRedString("MQ is not configured"))
 		return &Publisher{}
 	}
-	producer := l.MQ.CreateProducer("event")
+	producer := l.MQ.MatchingWriter.CreateProducer("event")
 	return &Publisher{publisher: producer}
 }
 

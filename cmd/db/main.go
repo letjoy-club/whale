@@ -28,6 +28,7 @@ func main() {
 		&models.MatchingReview{},
 		&models.UserJoinTopic{},
 		&models.RecentMatching{},
+		&models.WhaleConfig{},
 
 		&models.MatchingDurationConstraint{},
 		&models.MatchingInvitation{},

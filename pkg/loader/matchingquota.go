@@ -2,12 +2,13 @@ package loader
 
 import (
 	"context"
+	"github.com/graph-gophers/dataloader/v7"
+	"github.com/letjoy-club/mida-tool/midacontext"
+	"gorm.io/gorm"
 	"time"
 	"whale/pkg/dbquery"
+	"whale/pkg/gqlient/hoopoe"
 	"whale/pkg/models"
-
-	"github.com/graph-gophers/dataloader/v7"
-	"gorm.io/gorm"
 )
 
 func NewMatchingQuotaLoader(db *gorm.DB) *dataloader.Loader[string, *models.MatchingQuota] {
@@ -17,20 +18,59 @@ func NewMatchingQuotaLoader(db *gorm.DB) *dataloader.Loader[string, *models.Matc
 		if err != nil {
 			return nil, err
 		}
-		notFound := map[string]struct{}{}
-		for _, id := range keys {
-			notFound[id] = struct{}{}
-		}
+
+		matchingQuotaMap := map[string]struct{}{}
 		for _, matchingQuota := range matchingQuotas {
-			delete(notFound, matchingQuota.UserID)
+			matchingQuotaMap[matchingQuota.UserID] = struct{}{}
 		}
+
+		notFoundIds := []string{}
+		for _, key := range keys {
+			if _, ok := matchingQuotaMap[key]; !ok {
+				notFoundIds = append(notFoundIds, key)
+			}
+		}
+
 		toBeAdded := []*models.MatchingQuota{}
-		if len(notFound) > 0 {
-			for id := range notFound {
+		if len(notFoundIds) > 0 {
+			// 查询用户信息
+			services := midacontext.GetServices(ctx)
+			resp, _ := hoopoe.GetUserByIDs(ctx, services.Hoopoe, notFoundIds)
+			userMap := make(map[string]*hoopoe.GetUserByIDsGetUserByIdsUser)
+			if resp != nil && resp.GetUserByIds != nil {
+				for _, user := range resp.GetUserByIds {
+					userMap[user.Id] = user
+				}
+			}
+			// 查询用户等级权益配置
+			thunk := midacontext.GetLoader[Loader](ctx).WhaleConfig.Load(ctx, models.ConfigLevelRights)
+			conf, _ := thunk()
+			levelConfig := &models.UserLevelConfig{}
+			if conf != nil {
+				levelConfig.Parse(conf)
+			}
+			rightsMap := make(map[int]*models.LevelRights)
+			if levelConfig != nil {
+				for _, levelRight := range levelConfig.Rights {
+					rightsMap[levelRight.Level] = levelRight
+				}
+			}
+			// 初始化记录
+			for _, id := range notFoundIds {
+				user := userMap[id]
+				level := 1
+				quota := 3
+				if user != nil && user.Level > 0 { // 用户信息未找到，兜底使用
+					level = user.Level
+				}
+				config := rightsMap[level]
+				if config != nil && config.MatchingQuota > 0 {
+					quota = config.MatchingQuota
+				}
 				toBeAdded = append(toBeAdded, &models.MatchingQuota{
 					UserID: id,
-					Remain: 3,
-					Total:  3,
+					Remain: quota,
+					Total:  quota,
 				})
 			}
 			if err := MatchingQuota.WithContext(ctx).Create(toBeAdded...); err != nil {

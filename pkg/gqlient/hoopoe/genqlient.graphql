@@ -2,6 +2,7 @@ query GetUserByIDs($ids: [String!]!) {
   getUserByIds(ids: $ids) {
     id
     gender
+    level
   }
 }
 
@@ -78,5 +79,17 @@ query GetBlacklistRelationship($ids: [String!]!) {
   blacklistRelationship(ids: $ids) {
     a
     b
+  }
+}
+
+query CreateMatchingValid($userId: String!) {
+  user(id: $userId) {
+    blockInfo {
+      userBlocked
+      matchingBlocked
+    }
+  }
+  userInfoCompletenessCheck(userId: $userId) {
+    filled
   }
 }

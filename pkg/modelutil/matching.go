@@ -142,14 +142,6 @@ func CreateMatching(ctx context.Context, uid string, param models.CreateMatching
 	if err != nil {
 		return nil, err
 	}
-	users, err := hoopoe.GetUserByIDs(ctx, midacontext.GetServices(ctx).Hoopoe, []string{uid})
-	if err != nil {
-		return nil, err
-	}
-
-	if users.GetUserByIds[0].Gender == "" {
-		return nil, whalecode.ErrMatchingQuotaNotEnough
-	}
 
 	db := dbutil.GetDB(ctx)
 	Matching := dbquery.Use(db).Matching
@@ -226,6 +218,17 @@ func checkMatchingParam(ctx context.Context, uid, topicID, cityID string) error 
 		return err
 	}
 
+	res, err := hoopoe.CreateMatchingValid(ctx, midacontext.GetServices(ctx).Hoopoe, uid)
+	if err != nil {
+		return err
+	}
+	if !res.GetUserInfoCompletenessCheck().Filled {
+		return whalecode.ErrUserInfoNotComplete
+	}
+	if res.User.BlockInfo.UserBlocked || res.User.BlockInfo.MatchingBlocked {
+		return whalecode.ErrUserBlocked
+	}
+
 	thunk := midacontext.GetLoader[loader.Loader](ctx).MatchingQuota.Load(ctx, uid)
 	quota, err := thunk()
 	if err != nil {
@@ -292,15 +295,6 @@ func CreateMatchingV2(ctx context.Context, uid string, param models.CreateMatchi
 	err := checkMatchingParam(ctx, uid, param.TopicID, param.CityID)
 	if err != nil {
 		return nil, err
-	}
-
-	users, err := hoopoe.GetUserByIDs(ctx, midacontext.GetServices(ctx).Hoopoe, []string{uid})
-	if err != nil {
-		return nil, err
-	}
-
-	if users.GetUserByIds[0].Gender == "" {
-		return nil, whalecode.ErrUserGenderIsNotSet
 	}
 
 	db := dbutil.GetDB(ctx)

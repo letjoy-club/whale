@@ -3,6 +3,7 @@ package whaleconf
 import (
 	"context"
 	"fmt"
+	"github.com/letjoy-club/mida-tool/qcloudutil"
 	"log"
 	"os"
 	"time"
@@ -11,7 +12,6 @@ import (
 	"github.com/goccy/go-yaml"
 	"github.com/letjoy-club/mida-tool/pulsarutil"
 	"github.com/redis/go-redis/v9"
-	cls "github.com/tencentcloud/tencentcloud-cls-sdk-go"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
@@ -31,22 +31,16 @@ type Conf struct {
 	RedisConf RedisConf `yaml:"redis"`
 	Secret    string    `yaml:"secret"`
 
-	MQ pulsarutil.PulsarClient `yaml:"mq"`
+	MQ MQConf `yaml:"mq"`
 
-	ServiceConf ServiceConf `yaml:"services"`
-	TraceConf   TraceConf   `yaml:"trace"`
-	QCloud      QCloudConf  `yaml:"qcloud"`
+	ServiceConf ServiceConf           `yaml:"services"`
+	TraceConf   TraceConf             `yaml:"trace"`
+	QCloud      qcloudutil.QCloudConf `yaml:"qcloud"`
 }
 
-type QCloudConf struct {
-	CLSConf CLSConf `yaml:"cls"`
-}
-
-type CLSConf struct {
-	Endpoint  string `yaml:"endpoint"`
-	SecretID  string `yaml:"secret-id"`
-	SecretKey string `yaml:"secret-key"`
-	TopicID   string `yaml:"topic-id"`
+type MQConf struct {
+	MatchingWriter    pulsarutil.PulsarClient `yaml:"matching-writer"`
+	UserServiceReader pulsarutil.PulsarClient `yaml:"user-service-reader"`
 }
 
 type TraceConf struct {
@@ -61,19 +55,6 @@ type ServiceConf struct {
 	Smew string `yaml:"smew"`
 	// 通知服务
 	Scream string `yaml:"scream"`
-}
-
-func (l Conf) CLS() *cls.AsyncProducerClient {
-	c := cls.GetDefaultAsyncProducerClientConfig()
-	c.Endpoint = l.QCloud.CLSConf.Endpoint
-	c.AccessKeyID = l.QCloud.CLSConf.SecretID
-	c.AccessKeySecret = l.QCloud.CLSConf.SecretKey
-	c.Retries = 1
-	client, err := cls.NewAsyncProducerClient(c)
-	if err != nil {
-		panic(err)
-	}
-	return client
 }
 
 func (l Conf) Trace() *sdktrace.TracerProvider {

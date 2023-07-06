@@ -18,6 +18,8 @@ var (
 	ErrTopicIsAlreadyInMatching = midacode.NewError("TOPIC_IS_ALREADY_IN_MATCHING", "该话题已经在匹配中", midacode.LogLevelWarn)
 	ErrUserGenderIsNotSet       = midacode.NewError("USER_GENDER_IS_NOT_SET", "账号性别信息为空，请先补充性别", midacode.LogLevelWarn)
 	ErrUserIDCannotBeEmpty      = midacode.NewError("USER_ID_CANNOT_BE_EMPTY", "用户 id 不能为空", midacode.LogLevelInfo)
+	ErrUserInfoNotComplete      = midacode.NewError("USER_INFO_NOT_COMPLETE", "用户信息未完善，请先补充", midacode.LogLevelWarn)
+	ErrUserBlocked              = midacode.NewError("USER_BLOCKED", "用户已被封禁，无法发起匹配", midacode.LogLevelWarn)
 
 	ErrCannotInviteOtherTwiceForTheSameTopic          = midacode.NewError("CANNOT_INVITE_OTHER_TWICE_FOR_THE_SAME_TOPIC", "不能连续邀请同一个人两次同个话题", midacode.LogLevelWarn)
 	ErrCannotPerformActionWhenChatGroupAlreadyCreated = midacode.NewError("CANNOT_PERFORM_ACTION_WHEN_CHAT_GROUP_ALREADY_CREATED", "聊天室已经创建，不能执行该操作", midacode.LogLevelWarn)
