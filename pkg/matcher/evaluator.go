@@ -16,6 +16,22 @@ type EvaluatorResult struct {
 	FailedReason MatchingReason
 }
 
+func EvaluateWithFuzzyMatching(topicOption *hoopoe.TopicOptionConfigFields, matching *models.Matching, fuzzyMatching *models.Matching) (result EvaluatorResult) {
+	timeScore := CompareDateSimilarity(matching, fuzzyMatching)
+	result.TimeScore = timeScore
+	result.Score += timeScore
+	result.Properties = make([]int, len(topicOption.Properties))
+	allWeight := topicOption.TimeWeight
+	if len(result.Properties) > 0 {
+		for i := range topicOption.Properties {
+			result.Properties[i] = -1
+			allWeight += topicOption.Properties[i].Weight
+		}
+	}
+	result.Score = result.TimeScore * topicOption.TimeWeight / allWeight
+	return result
+}
+
 func Evaluate(topicOption *hoopoe.TopicOptionConfigFields, matching1, matching2 *models.Matching) (result EvaluatorResult) {
 	if topicOption == nil {
 		result.Properties = make([]int, 0)
@@ -28,7 +44,6 @@ func Evaluate(topicOption *hoopoe.TopicOptionConfigFields, matching1, matching2 
 	score := 0
 
 	if len(result.Properties) > 0 {
-
 		for i, property := range topicOption.Properties {
 			if !property.Enabled {
 				result.Properties[i] = -1

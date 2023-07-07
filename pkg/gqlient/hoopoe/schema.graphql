@@ -118,11 +118,11 @@ input AddTopicCategoryParam {
   """话题颜色"""
   defaultColor: String
 
-  """是否限时"""
-  timeLimited: Boolean!
+  """是否限时，默认不限时"""
+  timeLimited: Boolean
 
-  """是否可用"""
-  enable: Boolean!
+  """是否可用，默认不启用"""
+  enable: Boolean
 }
 
 input AddTopicParam {
@@ -156,8 +156,8 @@ input AddTopicParam {
   """排序"""
   sequence: Int
 
-  """是否可用"""
-  enable: Boolean!
+  """是否启用，默认不启用"""
+  enable: Boolean
 }
 
 type AdminAccount {
@@ -253,6 +253,9 @@ input ConcertFilter {
 input CreateTopicOptionConfig {
   timeWeight: Int!
   threshold: Int!
+  allowFuzzyMatching: Boolean!
+  fuzzyMatchingTopic: Boolean!
+  delayMinuteToPairWithFuzzyTopic: Int!
   properties: [TopicOptionPropertyParam!]
 }
 
@@ -320,6 +323,11 @@ input FeishuLoginParam {
   nickname: String!
 }
 
+type GetPhoneNumberResult {
+  """手机号"""
+  phone: String!
+}
+
 input GraphQLPaginator {
   page: Int!
   size: Int!
@@ -374,7 +382,13 @@ type Mutation {
     userId: String
   ): imageUploadUrl!
 
-  """获取小程序邀请二维码"""
+  """【微信】获取微信手机号"""
+  getWechatPhone(
+    """小程序获取手机号code"""
+    code: String!
+  ): GetPhoneNumberResult!
+
+  """【微信】获取小程序邀请二维码"""
   getInvitationMiniAppCode(
     """用户ID"""
     userId: String!
@@ -566,8 +580,8 @@ type Mutation {
 
   """【话题】话题类别更新，管理端使用"""
   updateTopicCategory(
-    """类别ID"""
-    id: Int!
+    """类别名称"""
+    name: String!
 
     """修改参数"""
     param: UpdateTopicCategoryParam!
@@ -640,6 +654,12 @@ type Mutation {
     inviterId: String
   ): String
 
+  """【用户】发送修改手机号短信验证码"""
+  sendPhoneModifySmsVerification(
+    """手机号"""
+    phone: String!
+  ): SendSmsCodeResult!
+
   """【用户】更新手机号"""
   updatePhone(
     """用户ID，管理端请求时必填"""
@@ -647,6 +667,12 @@ type Mutation {
 
     """手机号"""
     phone: String!
+
+    """验证码，用户端必填"""
+    code: String
+
+    """验证码序列号，用户端必填"""
+    sequence: String
   ): String
 
   """【用户】更新用户信息"""
@@ -1188,6 +1214,11 @@ type ReportPunishmentOption {
   blockDuration: Int
 }
 
+type SendSmsCodeResult {
+  """验证码序列号"""
+  sequence: String!
+}
+
 type Singer {
   id: Int!
   name: String!
@@ -1400,6 +1431,15 @@ type TopicOptionConfig {
   topicId: String!
   timeWeight: Int!
   threshold: Int!
+
+  """是否允许被模糊匹配"""
+  allowFuzzyMatching: Boolean!
+
+  """是否是模糊匹配话题"""
+  fuzzyMatchingTopic: Boolean!
+
+  """等待多少分钟后可进行模糊匹配"""
+  delayMinuteToPairWithFuzzyTopic: Int!
   properties: [TopicOptionProperty!]!
 }
 
@@ -1473,6 +1513,9 @@ input UpdateTopicCategoryParam {
 input UpdateTopicOptionConfig {
   timeWeight: Int
   threshold: Int
+  allowFuzzyMatching: Boolean
+  fuzzyMatchingTopic: Boolean
+  delayMinuteToPairWithFuzzyTopic: Int
   properties: [TopicOptionPropertyParam!]
 }
 
@@ -1688,14 +1731,8 @@ type UserInfoCompleteness {
   """信息是否全部填写"""
   filled: Boolean!
 
-  """
-  未填写的字段列表，filled=false时有值
-  - nickname: 昵称
-  - avatar: 头像
-  - gender: 性别
-  - birthday: 生日
-  """
-  unfilledFields: [String!]
+  """未填写的字段列表"""
+  requiredFields: [UserRequiredField!]!
 }
 
 input UserInfoUpdateParam {
@@ -1837,6 +1874,23 @@ input UserReportFilter {
 
   """是否已处理"""
   processed: Boolean
+}
+
+enum UserRequiredField {
+  """昵称"""
+  Nickname
+
+  """头像"""
+  Avatar
+
+  """生日"""
+  Birthday
+
+  """性别"""
+  Gender
+
+  """手机号"""
+  Phone
 }
 
 type UserStatsInfo {

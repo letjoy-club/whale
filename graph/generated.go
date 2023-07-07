@@ -201,8 +201,10 @@ type ComplexityRoot struct {
 		CreatedBy         func(childComplexity int) int
 		FinishedAt        func(childComplexity int) int
 		ID                func(childComplexity int) int
+		MatchingDegree    func(childComplexity int) int
 		MatchingIDs       func(childComplexity int) int
 		MatchingPreviews  func(childComplexity int) int
+		MatchingScore     func(childComplexity int) int
 		Topic             func(childComplexity int) int
 		TopicID           func(childComplexity int) int
 		UpdatedAt         func(childComplexity int) int
@@ -416,6 +418,7 @@ type MatchingResultResolver interface {
 	MatchingPreviews(ctx context.Context, obj *models.MatchingResult) ([]*models.Matching, error)
 	Topic(ctx context.Context, obj *models.MatchingResult) (*models.Topic, error)
 	ChatGroup(ctx context.Context, obj *models.MatchingResult) (*models.ChatGroup, error)
+	MatchingDegree(ctx context.Context, obj *models.MatchingResult) (int, error)
 }
 type MutationResolver interface {
 	CheckAndCreateChatGroup(ctx context.Context, matchingID string) (*string, error)
@@ -1216,6 +1219,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.MatchingResult.ID(childComplexity), true
 
+	case "MatchingResult.matchingDegree":
+		if e.complexity.MatchingResult.MatchingDegree == nil {
+			break
+		}
+
+		return e.complexity.MatchingResult.MatchingDegree(childComplexity), true
+
 	case "MatchingResult.matchingIds":
 		if e.complexity.MatchingResult.MatchingIDs == nil {
 			break
@@ -1229,6 +1239,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.MatchingResult.MatchingPreviews(childComplexity), true
+
+	case "MatchingResult.matchingScore":
+		if e.complexity.MatchingResult.MatchingScore == nil {
+			break
+		}
+
+		return e.complexity.MatchingResult.MatchingScore(childComplexity), true
 
 	case "MatchingResult.topic":
 		if e.complexity.MatchingResult.Topic == nil {
@@ -5759,6 +5776,8 @@ func (ec *executionContext) fieldContext_Matching_matchingResult(ctx context.Con
 				return ec.fieldContext_MatchingResult_updatedAt(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_MatchingResult_createdAt(ctx, field)
+			case "matchingScore":
+				return ec.fieldContext_MatchingResult_matchingScore(ctx, field)
 			case "closed":
 				return ec.fieldContext_MatchingResult_closed(ctx, field)
 			case "finishedAt":
@@ -5773,6 +5792,8 @@ func (ec *executionContext) fieldContext_Matching_matchingResult(ctx context.Con
 				return ec.fieldContext_MatchingResult_topic(ctx, field)
 			case "chatGroup":
 				return ec.fieldContext_MatchingResult_chatGroup(ctx, field)
+			case "matchingDegree":
+				return ec.fieldContext_MatchingResult_matchingDegree(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type MatchingResult", field.Name)
 		},
@@ -6959,6 +6980,8 @@ func (ec *executionContext) fieldContext_MatchingInvitation_matchingResult(ctx c
 				return ec.fieldContext_MatchingResult_updatedAt(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_MatchingResult_createdAt(ctx, field)
+			case "matchingScore":
+				return ec.fieldContext_MatchingResult_matchingScore(ctx, field)
 			case "closed":
 				return ec.fieldContext_MatchingResult_closed(ctx, field)
 			case "finishedAt":
@@ -6973,6 +6996,8 @@ func (ec *executionContext) fieldContext_MatchingInvitation_matchingResult(ctx c
 				return ec.fieldContext_MatchingResult_topic(ctx, field)
 			case "chatGroup":
 				return ec.fieldContext_MatchingResult_chatGroup(ctx, field)
+			case "matchingDegree":
+				return ec.fieldContext_MatchingResult_matchingDegree(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type MatchingResult", field.Name)
 		},
@@ -8589,6 +8614,70 @@ func (ec *executionContext) fieldContext_MatchingResult_createdAt(ctx context.Co
 	return fc, nil
 }
 
+func (ec *executionContext) _MatchingResult_matchingScore(ctx context.Context, field graphql.CollectedField, obj *models.MatchingResult) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MatchingResult_matchingScore(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return obj.MatchingScore, nil
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.AdminOnly == nil {
+				return nil, errors.New("directive adminOnly is not implemented")
+			}
+			return ec.directives.AdminOnly(ctx, obj, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(int); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be int`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MatchingResult_matchingScore(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MatchingResult",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _MatchingResult_closed(ctx context.Context, field graphql.CollectedField, obj *models.MatchingResult) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_MatchingResult_closed(ctx, field)
 	if err != nil {
@@ -8942,6 +9031,50 @@ func (ec *executionContext) fieldContext_MatchingResult_chatGroup(ctx context.Co
 				return ec.fieldContext_ChatGroup_id(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ChatGroup", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MatchingResult_matchingDegree(ctx context.Context, field graphql.CollectedField, obj *models.MatchingResult) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MatchingResult_matchingDegree(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.MatchingResult().MatchingDegree(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MatchingResult_matchingDegree(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MatchingResult",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
 		},
 	}
 	return fc, nil
@@ -11541,6 +11674,8 @@ func (ec *executionContext) fieldContext_Query_userMatchingsInTheDay(ctx context
 				return ec.fieldContext_MatchingResult_updatedAt(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_MatchingResult_createdAt(ctx, field)
+			case "matchingScore":
+				return ec.fieldContext_MatchingResult_matchingScore(ctx, field)
 			case "closed":
 				return ec.fieldContext_MatchingResult_closed(ctx, field)
 			case "finishedAt":
@@ -11555,6 +11690,8 @@ func (ec *executionContext) fieldContext_Query_userMatchingsInTheDay(ctx context
 				return ec.fieldContext_MatchingResult_topic(ctx, field)
 			case "chatGroup":
 				return ec.fieldContext_MatchingResult_chatGroup(ctx, field)
+			case "matchingDegree":
+				return ec.fieldContext_MatchingResult_matchingDegree(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type MatchingResult", field.Name)
 		},
@@ -11632,6 +11769,8 @@ func (ec *executionContext) fieldContext_Query_matchingResultByChatGroupId(ctx c
 				return ec.fieldContext_MatchingResult_updatedAt(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_MatchingResult_createdAt(ctx, field)
+			case "matchingScore":
+				return ec.fieldContext_MatchingResult_matchingScore(ctx, field)
 			case "closed":
 				return ec.fieldContext_MatchingResult_closed(ctx, field)
 			case "finishedAt":
@@ -11646,6 +11785,8 @@ func (ec *executionContext) fieldContext_Query_matchingResultByChatGroupId(ctx c
 				return ec.fieldContext_MatchingResult_topic(ctx, field)
 			case "chatGroup":
 				return ec.fieldContext_MatchingResult_chatGroup(ctx, field)
+			case "matchingDegree":
+				return ec.fieldContext_MatchingResult_matchingDegree(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type MatchingResult", field.Name)
 		},
@@ -11883,6 +12024,8 @@ func (ec *executionContext) fieldContext_Query_matchingResult(ctx context.Contex
 				return ec.fieldContext_MatchingResult_updatedAt(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_MatchingResult_createdAt(ctx, field)
+			case "matchingScore":
+				return ec.fieldContext_MatchingResult_matchingScore(ctx, field)
 			case "closed":
 				return ec.fieldContext_MatchingResult_closed(ctx, field)
 			case "finishedAt":
@@ -11897,6 +12040,8 @@ func (ec *executionContext) fieldContext_Query_matchingResult(ctx context.Contex
 				return ec.fieldContext_MatchingResult_topic(ctx, field)
 			case "chatGroup":
 				return ec.fieldContext_MatchingResult_chatGroup(ctx, field)
+			case "matchingDegree":
+				return ec.fieldContext_MatchingResult_matchingDegree(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type MatchingResult", field.Name)
 		},
@@ -11974,6 +12119,8 @@ func (ec *executionContext) fieldContext_Query_matchingResults(ctx context.Conte
 				return ec.fieldContext_MatchingResult_updatedAt(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_MatchingResult_createdAt(ctx, field)
+			case "matchingScore":
+				return ec.fieldContext_MatchingResult_matchingScore(ctx, field)
 			case "closed":
 				return ec.fieldContext_MatchingResult_closed(ctx, field)
 			case "finishedAt":
@@ -11988,6 +12135,8 @@ func (ec *executionContext) fieldContext_Query_matchingResults(ctx context.Conte
 				return ec.fieldContext_MatchingResult_topic(ctx, field)
 			case "chatGroup":
 				return ec.fieldContext_MatchingResult_chatGroup(ctx, field)
+			case "matchingDegree":
+				return ec.fieldContext_MatchingResult_matchingDegree(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type MatchingResult", field.Name)
 		},
@@ -19937,6 +20086,13 @@ func (ec *executionContext) _MatchingResult(ctx context.Context, sel ast.Selecti
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
+		case "matchingScore":
+
+			out.Values[i] = ec._MatchingResult_matchingScore(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		case "closed":
 
 			out.Values[i] = ec._MatchingResult_closed(ctx, field, obj)
@@ -20038,6 +20194,26 @@ func (ec *executionContext) _MatchingResult(ctx context.Context, sel ast.Selecti
 					}
 				}()
 				res = ec._MatchingResult_chatGroup(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "matchingDegree":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._MatchingResult_matchingDegree(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
 				return res
 			}
 
