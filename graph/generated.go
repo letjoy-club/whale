@@ -88,6 +88,7 @@ type ComplexityRoot struct {
 	}
 
 	Entity struct {
+		FindLevelRightsByLevel    func(childComplexity int, level int) int
 		FindMatchingByID          func(childComplexity int, id string) int
 		FindMatchingQuotaByUserID func(childComplexity int, userID string) int
 		FindTopicByID             func(childComplexity int, id string) int
@@ -106,6 +107,12 @@ type ComplexityRoot struct {
 		CityID       func(childComplexity int) int
 		TopicMetrics func(childComplexity int) int
 		UpdatedAt    func(childComplexity int) int
+	}
+
+	LevelRights struct {
+		Level                      func(childComplexity int) int
+		MatchingDurationConstraint func(childComplexity int) int
+		MatchingQuota              func(childComplexity int) int
 	}
 
 	Matching struct {
@@ -359,6 +366,7 @@ type CityTopicsResolver interface {
 	City(ctx context.Context, obj *models.CityTopics) (*models.Area, error)
 }
 type EntityResolver interface {
+	FindLevelRightsByLevel(ctx context.Context, level int) (*models.LevelRights, error)
 	FindMatchingByID(ctx context.Context, id string) (*models.Matching, error)
 	FindMatchingQuotaByUserID(ctx context.Context, userID string) (*models.MatchingQuota, error)
 	FindTopicByID(ctx context.Context, id string) (*models.Topic, error)
@@ -594,6 +602,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.CityTopics.UpdatedAt(childComplexity), true
 
+	case "Entity.findLevelRightsByLevel":
+		if e.complexity.Entity.FindLevelRightsByLevel == nil {
+			break
+		}
+
+		args, err := ec.field_Entity_findLevelRightsByLevel_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Entity.FindLevelRightsByLevel(childComplexity, args["level"].(int)), true
+
 	case "Entity.findMatchingByID":
 		if e.complexity.Entity.FindMatchingByID == nil {
 			break
@@ -697,6 +717,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.HotTopicsInArea.UpdatedAt(childComplexity), true
+
+	case "LevelRights.level":
+		if e.complexity.LevelRights.Level == nil {
+			break
+		}
+
+		return e.complexity.LevelRights.Level(childComplexity), true
+
+	case "LevelRights.matchingDurationConstraint":
+		if e.complexity.LevelRights.MatchingDurationConstraint == nil {
+			break
+		}
+
+		return e.complexity.LevelRights.MatchingDurationConstraint(childComplexity), true
+
+	case "LevelRights.matchingQuota":
+		if e.complexity.LevelRights.MatchingQuota == nil {
+			break
+		}
+
+		return e.complexity.LevelRights.MatchingQuota(childComplexity), true
 
 	case "Matching.areaIds":
 		if e.complexity.Matching.AreaIDs == nil {
@@ -2419,11 +2460,12 @@ var sources = []*ast.Source{
 `, BuiltIn: true},
 	{Name: "../federation/entity.graphql", Input: `
 # a union of all types that use the @key directive
-union _Entity = Area | ChatGroup | Matching | MatchingQuota | Topic | TopicOptionConfig | User
+union _Entity = Area | ChatGroup | LevelRights | Matching | MatchingQuota | Topic | TopicOptionConfig | User
 
 # fake type to build resolver interfaces for users to implement
 type Entity {
-		findMatchingByID(id: String!,): Matching!
+		findLevelRightsByLevel(level: Int!,): LevelRights!
+	findMatchingByID(id: String!,): Matching!
 	findMatchingQuotaByUserID(userID: String!,): MatchingQuota!
 	findTopicByID(id: String!,): Topic!
 	findUserByID(id: String!,): User!
@@ -2445,6 +2487,21 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 // endregion ************************** generated!.gotpl **************************
 
 // region    ***************************** args.gotpl *****************************
+
+func (ec *executionContext) field_Entity_findLevelRightsByLevel_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 int
+	if tmp, ok := rawArgs["level"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("level"))
+		arg0, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["level"] = arg0
+	return args, nil
+}
 
 func (ec *executionContext) field_Entity_findMatchingByID_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
@@ -4269,6 +4326,69 @@ func (ec *executionContext) fieldContext_CityTopics_city(ctx context.Context, fi
 	return fc, nil
 }
 
+func (ec *executionContext) _Entity_findLevelRightsByLevel(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Entity_findLevelRightsByLevel(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Entity().FindLevelRightsByLevel(rctx, fc.Args["level"].(int))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*models.LevelRights)
+	fc.Result = res
+	return ec.marshalNLevelRights2ᚖwhaleᚋpkgᚋmodelsᚐLevelRights(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Entity_findLevelRightsByLevel(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Entity",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "level":
+				return ec.fieldContext_LevelRights_level(ctx, field)
+			case "matchingQuota":
+				return ec.fieldContext_LevelRights_matchingQuota(ctx, field)
+			case "matchingDurationConstraint":
+				return ec.fieldContext_LevelRights_matchingDurationConstraint(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type LevelRights", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Entity_findLevelRightsByLevel_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Entity_findMatchingByID(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Entity_findMatchingByID(ctx, field)
 	if err != nil {
@@ -4928,6 +5048,138 @@ func (ec *executionContext) fieldContext_HotTopicsInArea_city(ctx context.Contex
 				return ec.fieldContext_Area_code(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Area", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LevelRights_level(ctx context.Context, field graphql.CollectedField, obj *models.LevelRights) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LevelRights_level(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Level, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LevelRights_level(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LevelRights",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LevelRights_matchingQuota(ctx context.Context, field graphql.CollectedField, obj *models.LevelRights) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LevelRights_matchingQuota(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MatchingQuota, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LevelRights_matchingQuota(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LevelRights",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LevelRights_matchingDurationConstraint(ctx context.Context, field graphql.CollectedField, obj *models.LevelRights) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LevelRights_matchingDurationConstraint(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MatchingDurationConstraint, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LevelRights_matchingDurationConstraint(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LevelRights",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
 		},
 	}
 	return fc, nil
@@ -18476,6 +18728,13 @@ func (ec *executionContext) __Entity(ctx context.Context, sel ast.SelectionSet, 
 			return graphql.Null
 		}
 		return ec._ChatGroup(ctx, sel, obj)
+	case models.LevelRights:
+		return ec._LevelRights(ctx, sel, &obj)
+	case *models.LevelRights:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._LevelRights(ctx, sel, obj)
 	case models.Matching:
 		return ec._Matching(ctx, sel, &obj)
 	case *models.Matching:
@@ -18723,6 +18982,29 @@ func (ec *executionContext) _Entity(ctx context.Context, sel ast.SelectionSet) g
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Entity")
+		case "findLevelRightsByLevel":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Entity_findLevelRightsByLevel(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
 		case "findMatchingByID":
 			field := field
 
@@ -18939,6 +19221,48 @@ func (ec *executionContext) _HotTopicsInArea(ctx context.Context, sel ast.Select
 				return innerFunc(ctx)
 
 			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var levelRightsImplementors = []string{"LevelRights", "_Entity"}
+
+func (ec *executionContext) _LevelRights(ctx context.Context, sel ast.SelectionSet, obj *models.LevelRights) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, levelRightsImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("LevelRights")
+		case "level":
+
+			out.Values[i] = ec._LevelRights_level(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "matchingQuota":
+
+			out.Values[i] = ec._LevelRights_matchingQuota(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "matchingDurationConstraint":
+
+			out.Values[i] = ec._LevelRights_matchingDurationConstraint(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -22599,6 +22923,20 @@ func (ec *executionContext) unmarshalNInvitationConfirmState2whaleᚋpkgᚋmodel
 
 func (ec *executionContext) marshalNInvitationConfirmState2whaleᚋpkgᚋmodelsᚐInvitationConfirmState(ctx context.Context, sel ast.SelectionSet, v models.InvitationConfirmState) graphql.Marshaler {
 	return v
+}
+
+func (ec *executionContext) marshalNLevelRights2whaleᚋpkgᚋmodelsᚐLevelRights(ctx context.Context, sel ast.SelectionSet, v models.LevelRights) graphql.Marshaler {
+	return ec._LevelRights(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNLevelRights2ᚖwhaleᚋpkgᚋmodelsᚐLevelRights(ctx context.Context, sel ast.SelectionSet, v *models.LevelRights) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._LevelRights(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNMatching2whaleᚋpkgᚋmodelsᚐMatching(ctx context.Context, sel ast.SelectionSet, v models.Matching) graphql.Marshaler {

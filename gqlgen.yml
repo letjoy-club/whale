@@ -105,3 +105,6 @@ models:
   RecentMatching:
     model:
       - whale/pkg/models.RecentMatching
+  LevelRights:
+    model:
+      - whale/pkg/models.LevelRights

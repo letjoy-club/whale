@@ -33,6 +33,12 @@ extend type ChatGroup @key(fields: "id") {
   id: String! @external
 }
 
+extend type LevelRights @key(fields: "level") {
+  level: Int! @external
+  matchingQuota: Int!
+  matchingDurationConstraint: Int!
+}
+
 type EvaluatorResult {
   score: Int!
   timeScore: Int!

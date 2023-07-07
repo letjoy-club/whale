@@ -8,10 +8,16 @@ import (
 	"context"
 	"whale/pkg/loader"
 	"whale/pkg/models"
+	"whale/pkg/modelutil"
 
 	"github.com/letjoy-club/mida-tool/midacode"
 	"github.com/letjoy-club/mida-tool/midacontext"
 )
+
+// FindLevelRightsByLevel is the resolver for the findLevelRightsByLevel field.
+func (r *entityResolver) FindLevelRightsByLevel(ctx context.Context, level int) (*models.LevelRights, error) {
+	return modelutil.GetLevelRightsConfig(ctx, level)
+}
 
 // FindMatchingByID is the resolver for the findMatchingByID field.
 func (r *entityResolver) FindMatchingByID(ctx context.Context, id string) (*models.Matching, error) {

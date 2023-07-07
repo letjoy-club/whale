@@ -35,6 +35,9 @@ type LevelRights struct {
 	MatchingDurationConstraint int `json:"matchingDurationConstraint"`
 }
 
+// IsEntity GraphQL @key
+func (LevelRights) IsEntity() {}
+
 func (c *UserLevelConfig) Parse(config *WhaleConfig) error {
 	return json.Unmarshal(config.Content, c)
 }

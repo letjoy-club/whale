@@ -80,6 +80,26 @@ func (ec *executionContext) __resolve_entities(ctx context.Context, representati
 		}()
 
 		switch typeName {
+		case "LevelRights":
+			resolverName, err := entityResolverNameForLevelRights(ctx, rep)
+			if err != nil {
+				return fmt.Errorf(`finding resolver for Entity "LevelRights": %w`, err)
+			}
+			switch resolverName {
+
+			case "findLevelRightsByLevel":
+				id0, err := ec.unmarshalNInt2int(ctx, rep["level"])
+				if err != nil {
+					return fmt.Errorf(`unmarshalling param 0 for findLevelRightsByLevel(): %w`, err)
+				}
+				entity, err := ec.resolvers.Entity().FindLevelRightsByLevel(ctx, id0)
+				if err != nil {
+					return fmt.Errorf(`resolving Entity "LevelRights": %w`, err)
+				}
+
+				list[idx[i]] = entity
+				return nil
+			}
 		case "Matching":
 			resolverName, err := entityResolverNameForMatching(ctx, rep)
 			if err != nil {
@@ -227,6 +247,23 @@ func (ec *executionContext) __resolve_entities(ctx context.Context, representati
 		g.Wait()
 		return list
 	}
+}
+
+func entityResolverNameForLevelRights(ctx context.Context, rep map[string]interface{}) (string, error) {
+	for {
+		var (
+			m   map[string]interface{}
+			val interface{}
+			ok  bool
+		)
+		_ = val
+		m = rep
+		if _, ok = m["level"]; !ok {
+			break
+		}
+		return "findLevelRightsByLevel", nil
+	}
+	return "", fmt.Errorf("%w for LevelRights", ErrTypeNotFound)
 }
 
 func entityResolverNameForMatching(ctx context.Context, rep map[string]interface{}) (string, error) {
