@@ -61,9 +61,69 @@ func (m *Matcher) Match(ctx context.Context) error {
 
 func (m *Matcher) MatchTopics(ctx context.Context) error {
 	mc := GetMatchingContext(ctx)
+	// 普通匹配
 	for _, topicID := range mc.Topics() {
-		if err := m.MatchTopic(ctx, topicID); err != nil {
-			logger.L.Error("failed to match topic", zap.Error(err), zap.String("topic-id", topicID))
+		config := mc.TopicOption(topicID)
+		if config == nil {
+			if err := m.MatchTopic(ctx, topicID); err != nil {
+				logger.L.Error("failed to match topic", zap.Error(err), zap.String("topic-id", topicID))
+			}
+		} else {
+			if !config.FuzzyMatchingTopic {
+				if err := m.MatchTopic(ctx, topicID); err != nil {
+					logger.L.Error("failed to match topic", zap.Error(err), zap.String("topic-id", topicID))
+				}
+			}
+		}
+	}
+
+	// 模糊匹配
+	pairableMatchings := m.PairableMatchings(ctx)
+	fuzzyMatchings := m.FuzzyMatchings(ctx)
+	if err := m.MatchingFuzzyTopic(ctx, fuzzyMatchings, pairableMatchings); err != nil {
+		logger.L.Error("failed to fuzzy match topic", zap.Error(err))
+	}
+	return nil
+}
+
+func (m *Matcher) MatchingFuzzyTopic(ctx context.Context, fuzzyMatchings, matchings []*models.Matching) error {
+	mc := GetMatchingContext(ctx)
+	city2matchings := lo.GroupBy(matchings, func(m *models.Matching) string {
+		return m.CityID
+	})
+	for _, fuzzyMatching := range fuzzyMatchings {
+		if mc.Used(fuzzyMatching.ID) {
+			continue
+		}
+		cityMatchings := city2matchings[fuzzyMatching.CityID]
+		if len(cityMatchings) == 0 {
+			continue
+		}
+		for _, matching := range cityMatchings {
+			if mc.Used(matching.ID) {
+				continue
+			}
+			reason, matched := Matched(ctx, matching, fuzzyMatching)
+			if !matched {
+				continue
+			}
+			topicOption := mc.TopicOption(fuzzyMatching.TopicID)
+			if topicOption == nil {
+				continue
+			}
+			score := EvaluateWithFuzzyMatching(topicOption, matching, fuzzyMatching)
+			score.FailedReason = reason
+			// 只考虑时间分数
+			if score.TimeScore >= topicOption.Threshold {
+				// 分数大于阈值，创建匹配结果
+				if _, err := NewMatchingResult(ctx, []*models.Matching{matching, fuzzyMatching}, score.Score); err != nil {
+					logger.L.Error("failed to create matching result", zap.Error(err), zap.String("matching", matching.ID), zap.String("fuzzy-matching", fuzzyMatching.ID))
+					return err
+				}
+			} else {
+				// 分数小于阈值，不创建匹配结果
+				continue
+			}
 		}
 	}
 	return nil
@@ -71,6 +131,63 @@ func (m *Matcher) MatchTopics(ctx context.Context) error {
 
 func (m *Matcher) MatchTopic(ctx context.Context, topicID string) error {
 	return m.MatchPair(ctx, topicID)
+}
+
+func (m *Matcher) FuzzyMatchings(ctx context.Context) []*models.Matching {
+	mc := GetMatchingContext(ctx)
+	matchings := []*models.Matching{}
+	for _, topic := range mc.Topics() {
+		config := mc.TopicOption(topic)
+		if config == nil {
+			continue
+		}
+		if !config.FuzzyMatchingTopic {
+			continue
+		}
+		ms := mc.TopicMatchings(topic)
+		if ms == nil {
+			continue
+		}
+		for _, m := range ms {
+			if mc.Used(m.ID) {
+				continue
+			}
+			matchings = append(matchings, m)
+		}
+	}
+	return matchings
+}
+
+func (m *Matcher) PairableMatchings(ctx context.Context) []*models.Matching {
+	mc := GetMatchingContext(ctx)
+
+	matchings := []*models.Matching{}
+	for _, topic := range mc.Topics() {
+		config := mc.TopicOption(topic)
+		if config == nil {
+			continue
+		}
+		if !config.AllowFuzzyMatching || config.FuzzyMatchingTopic {
+			continue
+		}
+		if config.DelayMinuteToPairWithFuzzyTopic < 0 {
+			continue
+		}
+		ms := mc.TopicMatchings(topic)
+		if ms == nil {
+			continue
+		}
+		collectBefore := time.Now().Add(-time.Duration(config.DelayMinuteToPairWithFuzzyTopic) * time.Minute)
+		for _, m := range ms {
+			if mc.Used(m.ID) {
+				continue
+			}
+			if m.CreatedAt.Before(collectBefore) {
+				matchings = append(matchings, m)
+			}
+		}
+	}
+	return matchings
 }
 
 func (m *Matcher) MatchPair(ctx context.Context, topicID string) error {

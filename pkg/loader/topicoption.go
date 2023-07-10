@@ -33,6 +33,9 @@ func (l *TopicOptionConfigLoader) Load(ctx context.Context, topicID string) *hoo
 	if err != nil {
 		return nil
 	}
+	if resp.TopicOptionConfig == nil {
+		return nil
+	}
 	return &resp.TopicOptionConfig.TopicOptionConfigFields
 }
 

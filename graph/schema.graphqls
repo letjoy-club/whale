@@ -210,6 +210,7 @@ type MatchingResult {
   updatedAt: Time! @adminOnly
   createdAt: Time!
 
+  matchingScore: Int! @adminOnly
   "是否关闭，如果有任何用户退出匹配，即 MatchingResult 视为关闭"
   closed: Boolean!
   "完成时间，取第一个用户标记匹配已完成的时间"
@@ -221,6 +222,7 @@ type MatchingResult {
   matchingPreviews: [MatchingPreview!]!
   topic: Topic!
   chatGroup: ChatGroup
+  matchingDegree: Int!
 }
 
 enum MatchingResultConfirmState {

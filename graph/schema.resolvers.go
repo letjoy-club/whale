@@ -256,6 +256,14 @@ func (r *matchingResultResolver) ChatGroup(ctx context.Context, obj *models.Matc
 	return &models.ChatGroup{ID: obj.ChatGroupID}, nil
 }
 
+// MatchingDegree is the resolver for the matchingDegree field.
+func (r *matchingResultResolver) MatchingDegree(ctx context.Context, obj *models.MatchingResult) (int, error) {
+	if obj.MatchingScore == 0 {
+		return 80, nil
+	}
+	return 80 + (obj.MatchingScore * 2 / 10), nil
+}
+
 // CheckAndCreateChatGroup is the resolver for the checkAndCreateChatGroup field.
 func (r *mutationResolver) CheckAndCreateChatGroup(ctx context.Context, matchingID string) (*string, error) {
 	panic(fmt.Errorf("not implemented: CheckAndCreateChatGroup - checkAndCreateChatGroup"))

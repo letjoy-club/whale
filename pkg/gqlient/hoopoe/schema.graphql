@@ -270,6 +270,9 @@ input ConcertFilter {
 input CreateTopicOptionConfig {
   timeWeight: Int!
   threshold: Int!
+  allowFuzzyMatching: Boolean!
+  fuzzyMatchingTopic: Boolean!
+  delayMinuteToPairWithFuzzyTopic: Int!
   properties: [TopicOptionPropertyParam!]
 }
 
@@ -344,6 +347,11 @@ type GenderSelection {
 
   """是否能选择"""
   selection: Boolean!
+}
+
+type GetPhoneNumberResult {
+  """手机号"""
+  phone: String!
 }
 
 input GraphQLPaginator {
@@ -469,7 +477,7 @@ type Mutation {
   getWechatPhone(
     """小程序获取手机号code"""
     code: String!
-  ): String
+  ): GetPhoneNumberResult!
 
   """【微信】获取小程序邀请二维码"""
   getInvitationMiniAppCode(
@@ -1538,6 +1546,15 @@ type TopicOptionConfig {
   topicId: String!
   timeWeight: Int!
   threshold: Int!
+
+  """是否允许被模糊匹配"""
+  allowFuzzyMatching: Boolean!
+
+  """是否是模糊匹配话题"""
+  fuzzyMatchingTopic: Boolean!
+
+  """等待多少分钟后可进行模糊匹配"""
+  delayMinuteToPairWithFuzzyTopic: Int!
   properties: [TopicOptionProperty!]!
 }
 
@@ -1628,6 +1645,9 @@ input UpdateTopicCategoryParam {
 input UpdateTopicOptionConfig {
   timeWeight: Int
   threshold: Int
+  allowFuzzyMatching: Boolean
+  fuzzyMatchingTopic: Boolean
+  delayMinuteToPairWithFuzzyTopic: Int
   properties: [TopicOptionPropertyParam!]
 }
 

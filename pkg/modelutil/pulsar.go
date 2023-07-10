@@ -115,7 +115,7 @@ func PublishMatchingFinishedEvent(ctx context.Context, matching *models.Matching
 		UserID:     matching.UserID,
 		TopicID:    matching.TopicID,
 		CreatedAt:  matching.CreatedAt,
-		FinishedAt: *matching.FinishedAt,
+		FinishedAt: time.Now(),
 		CityID:     matching.CityID,
 		CreatedBy:  createdBy,
 	})

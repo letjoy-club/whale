@@ -182,6 +182,21 @@ func (v *GetTopicConfigOptionTopicOptionConfig) GetThreshold() int {
 	return v.TopicOptionConfigFields.Threshold
 }
 
+// GetFuzzyMatchingTopic returns GetTopicConfigOptionTopicOptionConfig.FuzzyMatchingTopic, and is useful for accessing the field via an interface.
+func (v *GetTopicConfigOptionTopicOptionConfig) GetFuzzyMatchingTopic() bool {
+	return v.TopicOptionConfigFields.FuzzyMatchingTopic
+}
+
+// GetAllowFuzzyMatching returns GetTopicConfigOptionTopicOptionConfig.AllowFuzzyMatching, and is useful for accessing the field via an interface.
+func (v *GetTopicConfigOptionTopicOptionConfig) GetAllowFuzzyMatching() bool {
+	return v.TopicOptionConfigFields.AllowFuzzyMatching
+}
+
+// GetDelayMinuteToPairWithFuzzyTopic returns GetTopicConfigOptionTopicOptionConfig.DelayMinuteToPairWithFuzzyTopic, and is useful for accessing the field via an interface.
+func (v *GetTopicConfigOptionTopicOptionConfig) GetDelayMinuteToPairWithFuzzyTopic() int {
+	return v.TopicOptionConfigFields.DelayMinuteToPairWithFuzzyTopic
+}
+
 // GetProperties returns GetTopicConfigOptionTopicOptionConfig.Properties, and is useful for accessing the field via an interface.
 func (v *GetTopicConfigOptionTopicOptionConfig) GetProperties() []*TopicOptionConfigFieldsPropertiesTopicOptionProperty {
 	return v.TopicOptionConfigFields.Properties
@@ -219,6 +234,12 @@ type __premarshalGetTopicConfigOptionTopicOptionConfig struct {
 
 	Threshold int `json:"threshold"`
 
+	FuzzyMatchingTopic bool `json:"fuzzyMatchingTopic"`
+
+	AllowFuzzyMatching bool `json:"allowFuzzyMatching"`
+
+	DelayMinuteToPairWithFuzzyTopic int `json:"delayMinuteToPairWithFuzzyTopic"`
+
 	Properties []*TopicOptionConfigFieldsPropertiesTopicOptionProperty `json:"properties"`
 }
 
@@ -236,6 +257,9 @@ func (v *GetTopicConfigOptionTopicOptionConfig) __premarshalJSON() (*__premarsha
 	retval.TopicId = v.TopicOptionConfigFields.TopicId
 	retval.TimeWeight = v.TopicOptionConfigFields.TimeWeight
 	retval.Threshold = v.TopicOptionConfigFields.Threshold
+	retval.FuzzyMatchingTopic = v.TopicOptionConfigFields.FuzzyMatchingTopic
+	retval.AllowFuzzyMatching = v.TopicOptionConfigFields.AllowFuzzyMatching
+	retval.DelayMinuteToPairWithFuzzyTopic = v.TopicOptionConfigFields.DelayMinuteToPairWithFuzzyTopic
 	retval.Properties = v.TopicOptionConfigFields.Properties
 	return &retval, nil
 }
@@ -268,6 +292,21 @@ func (v *GetTopicConfigOptionsTopicOptionConfigsTopicOptionConfig) GetTimeWeight
 // GetThreshold returns GetTopicConfigOptionsTopicOptionConfigsTopicOptionConfig.Threshold, and is useful for accessing the field via an interface.
 func (v *GetTopicConfigOptionsTopicOptionConfigsTopicOptionConfig) GetThreshold() int {
 	return v.TopicOptionConfigFields.Threshold
+}
+
+// GetFuzzyMatchingTopic returns GetTopicConfigOptionsTopicOptionConfigsTopicOptionConfig.FuzzyMatchingTopic, and is useful for accessing the field via an interface.
+func (v *GetTopicConfigOptionsTopicOptionConfigsTopicOptionConfig) GetFuzzyMatchingTopic() bool {
+	return v.TopicOptionConfigFields.FuzzyMatchingTopic
+}
+
+// GetAllowFuzzyMatching returns GetTopicConfigOptionsTopicOptionConfigsTopicOptionConfig.AllowFuzzyMatching, and is useful for accessing the field via an interface.
+func (v *GetTopicConfigOptionsTopicOptionConfigsTopicOptionConfig) GetAllowFuzzyMatching() bool {
+	return v.TopicOptionConfigFields.AllowFuzzyMatching
+}
+
+// GetDelayMinuteToPairWithFuzzyTopic returns GetTopicConfigOptionsTopicOptionConfigsTopicOptionConfig.DelayMinuteToPairWithFuzzyTopic, and is useful for accessing the field via an interface.
+func (v *GetTopicConfigOptionsTopicOptionConfigsTopicOptionConfig) GetDelayMinuteToPairWithFuzzyTopic() int {
+	return v.TopicOptionConfigFields.DelayMinuteToPairWithFuzzyTopic
 }
 
 // GetProperties returns GetTopicConfigOptionsTopicOptionConfigsTopicOptionConfig.Properties, and is useful for accessing the field via an interface.
@@ -307,6 +346,12 @@ type __premarshalGetTopicConfigOptionsTopicOptionConfigsTopicOptionConfig struct
 
 	Threshold int `json:"threshold"`
 
+	FuzzyMatchingTopic bool `json:"fuzzyMatchingTopic"`
+
+	AllowFuzzyMatching bool `json:"allowFuzzyMatching"`
+
+	DelayMinuteToPairWithFuzzyTopic int `json:"delayMinuteToPairWithFuzzyTopic"`
+
 	Properties []*TopicOptionConfigFieldsPropertiesTopicOptionProperty `json:"properties"`
 }
 
@@ -324,6 +369,9 @@ func (v *GetTopicConfigOptionsTopicOptionConfigsTopicOptionConfig) __premarshalJ
 	retval.TopicId = v.TopicOptionConfigFields.TopicId
 	retval.TimeWeight = v.TopicOptionConfigFields.TimeWeight
 	retval.Threshold = v.TopicOptionConfigFields.Threshold
+	retval.FuzzyMatchingTopic = v.TopicOptionConfigFields.FuzzyMatchingTopic
+	retval.AllowFuzzyMatching = v.TopicOptionConfigFields.AllowFuzzyMatching
+	retval.DelayMinuteToPairWithFuzzyTopic = v.TopicOptionConfigFields.DelayMinuteToPairWithFuzzyTopic
 	retval.Properties = v.TopicOptionConfigFields.Properties
 	return &retval, nil
 }
@@ -435,10 +483,16 @@ func (v *GraphQLPaginator) GetSize() int { return v.Size }
 
 // TopicOptionConfigFields includes the GraphQL fields of TopicOptionConfig requested by the fragment TopicOptionConfigFields.
 type TopicOptionConfigFields struct {
-	TopicId    string                                                  `json:"topicId"`
-	TimeWeight int                                                     `json:"timeWeight"`
-	Threshold  int                                                     `json:"threshold"`
-	Properties []*TopicOptionConfigFieldsPropertiesTopicOptionProperty `json:"properties"`
+	TopicId    string `json:"topicId"`
+	TimeWeight int    `json:"timeWeight"`
+	Threshold  int    `json:"threshold"`
+	// 是否是模糊匹配话题
+	FuzzyMatchingTopic bool `json:"fuzzyMatchingTopic"`
+	// 是否允许被模糊匹配
+	AllowFuzzyMatching bool `json:"allowFuzzyMatching"`
+	// 等待多少分钟后可进行模糊匹配
+	DelayMinuteToPairWithFuzzyTopic int                                                     `json:"delayMinuteToPairWithFuzzyTopic"`
+	Properties                      []*TopicOptionConfigFieldsPropertiesTopicOptionProperty `json:"properties"`
 }
 
 // GetTopicId returns TopicOptionConfigFields.TopicId, and is useful for accessing the field via an interface.
@@ -449,6 +503,17 @@ func (v *TopicOptionConfigFields) GetTimeWeight() int { return v.TimeWeight }
 
 // GetThreshold returns TopicOptionConfigFields.Threshold, and is useful for accessing the field via an interface.
 func (v *TopicOptionConfigFields) GetThreshold() int { return v.Threshold }
+
+// GetFuzzyMatchingTopic returns TopicOptionConfigFields.FuzzyMatchingTopic, and is useful for accessing the field via an interface.
+func (v *TopicOptionConfigFields) GetFuzzyMatchingTopic() bool { return v.FuzzyMatchingTopic }
+
+// GetAllowFuzzyMatching returns TopicOptionConfigFields.AllowFuzzyMatching, and is useful for accessing the field via an interface.
+func (v *TopicOptionConfigFields) GetAllowFuzzyMatching() bool { return v.AllowFuzzyMatching }
+
+// GetDelayMinuteToPairWithFuzzyTopic returns TopicOptionConfigFields.DelayMinuteToPairWithFuzzyTopic, and is useful for accessing the field via an interface.
+func (v *TopicOptionConfigFields) GetDelayMinuteToPairWithFuzzyTopic() int {
+	return v.DelayMinuteToPairWithFuzzyTopic
+}
 
 // GetProperties returns TopicOptionConfigFields.Properties, and is useful for accessing the field via an interface.
 func (v *TopicOptionConfigFields) GetProperties() []*TopicOptionConfigFieldsPropertiesTopicOptionProperty {
@@ -794,6 +859,9 @@ fragment TopicOptionConfigFields on TopicOptionConfig {
 	topicId
 	timeWeight
 	threshold
+	fuzzyMatchingTopic
+	allowFuzzyMatching
+	delayMinuteToPairWithFuzzyTopic
 	properties {
 		id
 		required
@@ -849,6 +917,9 @@ fragment TopicOptionConfigFields on TopicOptionConfig {
 	topicId
 	timeWeight
 	threshold
+	fuzzyMatchingTopic
+	allowFuzzyMatching
+	delayMinuteToPairWithFuzzyTopic
 	properties {
 		id
 		required

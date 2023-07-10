@@ -14,6 +14,7 @@ type MatchingContext struct {
 	topic2matchings map[string][]*models.Matching
 	used            map[string]bool
 	topics          []string
+	fuzzyTopics     []string
 	userProfiles    map[string]loader.UserProfile
 	blacklist       map[string]struct{}
 	topicsOptions   map[string]*hoopoe.TopicOptionConfigFields

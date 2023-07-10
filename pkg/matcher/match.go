@@ -16,6 +16,10 @@ const (
 	MatchingReasonGenderNotMatched  MatchingReason = "GenderNotMatched"
 	MatchingReasonCannotMatchItSelf MatchingReason = "CannotMatchItSelf"
 	MatchingReasonUserRejected      MatchingReason = "UserRejected"
+
+	MatchingReasonCannotMatchingTwoFuzzyMatchings MatchingReason = "CannotMatchingTwoFuzzyMatchings"
+	MatchingReasonTopicNotMatched                 MatchingReason = "TopicNotMatched"
+	MatchingNormalMatchingShouldWaitToBeMatched   MatchingReason = "NormalMatchingShouldWaitToBeMatched"
 )
 
 func Matched(ctx context.Context, m1 *models.Matching, m2 *models.Matching) (MatchingReason, bool) {

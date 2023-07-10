@@ -394,8 +394,46 @@ func (r *mutationResolver) GetMatchingScore(ctx context.Context, id1 string, id2
 	}
 
 	m1, m2 := matchings[0], matchings[1]
+
+	configOption1 := midacontext.GetLoader[loader.Loader](ctx).TopicOptionConfig.Load(ctx, m1.TopicID)
+	configOption2 := midacontext.GetLoader[loader.Loader](ctx).TopicOptionConfig.Load(ctx, m2.TopicID)
+
+	if configOption1 != nil && configOption2 != nil && (configOption1.FuzzyMatchingTopic || configOption2.FuzzyMatchingTopic) {
+		if configOption1.FuzzyMatchingTopic && configOption2.FuzzyMatchingTopic {
+			return &matcher.EvaluatorResult{Properties: []int{}, FailedReason: matcher.MatchingReasonCannotMatchingTwoFuzzyMatchings}, nil
+		}
+		// 如果有任意一方是模糊匹配的话
+		ctx = matcher.WithMatchingContext(ctx, []*models.Matching{m1, m2})
+		reason, matched := matcher.Matched(ctx, m1, m2)
+		if matched {
+			if configOption1.FuzzyMatchingTopic {
+				// m1 是 fuzzy matching
+				result := matcher.EvaluateWithFuzzyMatching(configOption2, m2, m1)
+				if !time.Now().Add(time.Minute * -time.Duration(configOption2.DelayMinuteToPairWithFuzzyTopic)).After(m2.CreatedAt) {
+					result.FailedReason = matcher.MatchingNormalMatchingShouldWaitToBeMatched
+				} else {
+					result.FailedReason = reason
+				}
+				return &result, nil
+			} else {
+				// m2 是 fuzzy matching
+				result := matcher.EvaluateWithFuzzyMatching(configOption1, m1, m2)
+				if !time.Now().Add(time.Minute * -time.Duration(configOption1.DelayMinuteToPairWithFuzzyTopic)).After(m1.CreatedAt) {
+					result.FailedReason = matcher.MatchingNormalMatchingShouldWaitToBeMatched
+				} else {
+					result.FailedReason = reason
+				}
+				return &result, nil
+			}
+		} else {
+			return &matcher.EvaluatorResult{Properties: []int{}, FailedReason: reason}, nil
+		}
+	}
+
+	// 此时不会有模糊匹配了
 	if m1.TopicID != m2.TopicID {
-		return nil, whalecode.ErrMatchingNotMatchWithTopic
+		// 如果两个 matching 的 topic 不一样的话
+		return &matcher.EvaluatorResult{Properties: []int{}, FailedReason: matcher.MatchingReasonTopicNotMatched}, nil
 	}
 
 	ctx = matcher.WithMatchingContext(ctx, []*models.Matching{m1, m2})

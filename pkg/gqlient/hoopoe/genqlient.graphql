@@ -39,6 +39,9 @@ fragment TopicOptionConfigFields on TopicOptionConfig {
   topicId
   timeWeight
   threshold
+  fuzzyMatchingTopic
+  allowFuzzyMatching
+  delayMinuteToPairWithFuzzyTopic
   properties {
     id
     required
