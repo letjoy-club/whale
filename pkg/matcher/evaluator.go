@@ -28,7 +28,11 @@ func EvaluateWithFuzzyMatching(topicOption *hoopoe.TopicOptionConfigFields, matc
 			allWeight += topicOption.Properties[i].Weight
 		}
 	}
-	result.Score = result.TimeScore * topicOption.TimeWeight / allWeight
+	if allWeight > 0 {
+		result.Score = result.TimeScore * topicOption.TimeWeight / allWeight
+	} else {
+		result.Score = result.TimeScore
+	}
 	return result
 }
 
