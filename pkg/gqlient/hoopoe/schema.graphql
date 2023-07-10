@@ -49,7 +49,7 @@ input AddConcertParam {
   visible: Boolean!
 }
 
-input AddConfigurationParam {
+input AddHoopoeConfigParam {
   """配置名称"""
   name: String!
 
@@ -61,6 +61,9 @@ input AddConfigurationParam {
 
   """开始时间"""
   startAt: Time!
+
+  """结束时间"""
+  endAt: Time
 
   """配置内容"""
   content: String!
@@ -401,6 +404,12 @@ type LevelCompletion {
 
   """邀请次数"""
   invitedNum: Int!
+
+  """邀请并完成一次匹配人数"""
+  invitedMatchedNum: Int!
+
+  """邀请女生人数"""
+  invitedFemaleNum: Int!
 }
 
 type LevelDetail {
@@ -433,8 +442,14 @@ type LevelRequirement {
   """评价次数"""
   evaluationNum: Int!
 
-  """邀请次数"""
+  """邀请人数"""
   invitedNum: Int!
+
+  """邀请并完成一次匹配人数"""
+  invitedMatchedNum: Int!
+
+  """邀请女生人数"""
+  invitedFemaleNum: Int!
 }
 
 type LevelRights {
@@ -447,8 +462,11 @@ type LevelRights {
   """性别选择，用户端使用"""
   genderSelection: Boolean!
 
-  """加权举报次数"""
+  """加权举报次数（每周）"""
   weightedReport: Int!
+
+  """自定义话题数量（每周）"""
+  customTopic: Int!
 }
 
 type LoginResult {
@@ -486,10 +504,10 @@ type Mutation {
   ): String
 
   """【通用】新增配置"""
-  addConfiguration(param: AddConfigurationParam!): String
+  addHoopoeConfig(param: AddHoopoeConfigParam!): String
 
   """【通用】修改配置"""
-  updateConfiguration(id: Int!, param: UpdateConfigurationParam!): String
+  updateHoopoeConfig(id: Int!, param: UpdateHoopoeConfigParam!): String
   addAdminAccount(email: String!): AdminAccount!
   feishuLogin(param: FeishuLoginParam!): AdminAccount!
   updateAdminAccount(id: String!, param: UpdateAdminAccountParam!): AdminAccount!
@@ -1609,7 +1627,7 @@ input UpdateConcertParam {
   visible: Boolean
 }
 
-input UpdateConfigurationParam {
+input UpdateHoopoeConfigParam {
   """配置名称"""
   name: String
 
@@ -1621,6 +1639,9 @@ input UpdateConfigurationParam {
 
   """开始时间"""
   startAt: Time
+
+  """结束时间"""
+  endAt: Time
 
   """配置内容"""
   content: String
