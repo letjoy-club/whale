@@ -208,19 +208,16 @@ func CreateMatching(ctx context.Context, uid string, param models.CreateMatching
 }
 
 func checkMatchingParam(ctx context.Context, uid, topicID, cityID string) error {
-	_, err := hoopoe.GetTopic(ctx, midacontext.GetServices(ctx).Hoopoe, topicID)
+	// 基础检查
+	res, err := hoopoe.CreateMatchingCheck(ctx, midacontext.GetServices(ctx).Hoopoe, topicID, cityID, uid)
 	if err != nil {
 		return err
 	}
-
-	_, err = hoopoe.GetArea(ctx, midacontext.GetServices(ctx).Hoopoe, cityID)
-	if err != nil {
-		return err
+	if res.Topic == nil || !res.Topic.Enable {
+		return whalecode.ErrTopicNotExisted
 	}
-
-	res, err := hoopoe.CreateMatchingValid(ctx, midacontext.GetServices(ctx).Hoopoe, uid)
-	if err != nil {
-		return err
+	if res.Area == nil || !res.Area.Enabled {
+		return whalecode.ErrAreaNotSupport
 	}
 	if !res.GetUserInfoCompletenessCheck().Filled {
 		return whalecode.ErrUserInfoNotComplete
@@ -228,7 +225,7 @@ func checkMatchingParam(ctx context.Context, uid, topicID, cityID string) error 
 	if res.User.BlockInfo.UserBlocked || res.User.BlockInfo.MatchingBlocked {
 		return whalecode.ErrUserBlocked
 	}
-
+	// 额度检查
 	thunk := midacontext.GetLoader[loader.Loader](ctx).MatchingQuota.Load(ctx, uid)
 	quota, err := thunk()
 	if err != nil {
@@ -367,6 +364,7 @@ func CreateMatchingV2(ctx context.Context, uid string, param models.CreateMatchi
 }
 
 func CreateMatchingInvitation(ctx context.Context, uid string, param models.CreateMatchingInvitationParam) (*models.MatchingInvitation, error) {
+	// 额度检查
 	thunk := midacontext.GetLoader[loader.Loader](ctx).MatchingQuota.Load(ctx, uid)
 	quota, err := thunk()
 	if err != nil {
@@ -381,25 +379,38 @@ func CreateMatchingInvitation(ctx context.Context, uid string, param models.Crea
 	if err != nil {
 		return nil, err
 	}
-
 	if constraint.Remain <= 0 {
 		return nil, whalecode.ErrMatchingDurationQuotaNotEnough
 	}
-
-	_, err = hoopoe.GetTopic(ctx, midacontext.GetServices(ctx).Hoopoe, param.TopicID)
-	if err != nil {
-		return nil, err
+	// 基础检查
+	ids := []string{uid, param.InviteeID}
+	res, err := hoopoe.CreateMatchingInvitationCheck(ctx, midacontext.GetServices(ctx).Hoopoe, param.TopicID, param.CityID, ids)
+	if res.Topic == nil || !res.Topic.Enable {
+		return nil, whalecode.ErrTopicNotExisted
 	}
-
-	_, err = hoopoe.GetArea(ctx, midacontext.GetServices(ctx).Hoopoe, param.CityID)
-	if err != nil {
-		return nil, err
+	if res.Area == nil || !res.Area.Enabled {
+		return nil, whalecode.ErrAreaNotSupport
 	}
-
-	profileThunk := midacontext.GetLoader[loader.Loader](ctx).UserProfile.Load(ctx, param.InviteeID)
-	_, err = profileThunk()
-	if err != nil {
-		return nil, err
+	if res.BlacklistRelationship != nil {
+		for _, pair := range res.BlacklistRelationship {
+			if pair.A == uid {
+				return nil, whalecode.ErrInviteeInBlacklist
+			} else {
+				return nil, whalecode.ErrUserInBlacklist
+			}
+		}
+	}
+	if len(res.GetGetUserByIdsV2()) != 2 {
+		return nil, whalecode.ErrInviteeNotExist
+	}
+	for _, user := range res.GetGetUserByIdsV2() {
+		if user.BlockInfo.UserBlocked || user.BlockInfo.MatchingBlocked {
+			if user.Id == uid {
+				return nil, whalecode.ErrInviterBlocked
+			} else {
+				return nil, whalecode.ErrInviteeBlocked
+			}
+		}
 	}
 
 	db := dbutil.GetDB(ctx)
@@ -464,7 +475,7 @@ func CreateMatchingInvitation(ctx context.Context, uid string, param models.Crea
 		return nil, nil
 	}
 
-	topicName := GetTopicName(ctx, param.TopicID)
+	topicName := res.Topic.Name
 	if topicName != "" {
 		_, err = scream.SendUserNotification(ctx, midacontext.GetServices(ctx).Scream, scream.UserNotificationKindInvitationrecieved, invitation.InviteeID, map[string]interface{}{
 			"topicName":    topicName,

@@ -85,7 +85,15 @@ query GetBlacklistRelationship($ids: [String!]!) {
   }
 }
 
-query CreateMatchingValid($userId: String!) {
+query CreateMatchingCheck($topicId: String!, $cityId: AreaCode!, $userId: String!) {
+  topic(id: $topicId) {
+    id
+    enable
+  }
+  area(code: $cityId) {
+    code
+    enabled
+  }
   user(id: $userId) {
     blockInfo {
       userBlocked
@@ -94,5 +102,28 @@ query CreateMatchingValid($userId: String!) {
   }
   userInfoCompletenessCheck(userId: $userId) {
     filled
+  }
+}
+
+query CreateMatchingInvitationCheck($topicId: String!, $cityId: AreaCode!, $ids: [String!]!) {
+  topic(id: $topicId) {
+    id
+    name
+    enable
+  }
+  area(code: $cityId) {
+    code
+    enabled
+  }
+  getUserByIdsV2(ids: $ids) {
+    id
+    blockInfo {
+      userBlocked
+      matchingBlocked
+    }
+  }
+  blacklistRelationship(ids: $ids) {
+    a
+    b
   }
 }

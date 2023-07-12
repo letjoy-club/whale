@@ -9,57 +9,206 @@ import (
 	"github.com/Khan/genqlient/graphql"
 )
 
-// CreateMatchingValidResponse is returned by CreateMatchingValid on success.
-type CreateMatchingValidResponse struct {
-	// 【用户】获取用户信息
-	User *CreateMatchingValidUser `json:"user"`
-	// 【用户】 用户信息完整性检查
-	UserInfoCompletenessCheck *CreateMatchingValidUserInfoCompletenessCheckUserInfoCompleteness `json:"userInfoCompletenessCheck"`
+// CreateMatchingCheckArea includes the requested fields of the GraphQL type Area.
+type CreateMatchingCheckArea struct {
+	// 地区代码
+	Code string `json:"code"`
+	// 是否开通业务
+	Enabled bool `json:"enabled"`
 }
 
-// GetUser returns CreateMatchingValidResponse.User, and is useful for accessing the field via an interface.
-func (v *CreateMatchingValidResponse) GetUser() *CreateMatchingValidUser { return v.User }
+// GetCode returns CreateMatchingCheckArea.Code, and is useful for accessing the field via an interface.
+func (v *CreateMatchingCheckArea) GetCode() string { return v.Code }
 
-// GetUserInfoCompletenessCheck returns CreateMatchingValidResponse.UserInfoCompletenessCheck, and is useful for accessing the field via an interface.
-func (v *CreateMatchingValidResponse) GetUserInfoCompletenessCheck() *CreateMatchingValidUserInfoCompletenessCheckUserInfoCompleteness {
+// GetEnabled returns CreateMatchingCheckArea.Enabled, and is useful for accessing the field via an interface.
+func (v *CreateMatchingCheckArea) GetEnabled() bool { return v.Enabled }
+
+// CreateMatchingCheckResponse is returned by CreateMatchingCheck on success.
+type CreateMatchingCheckResponse struct {
+	// 【话题】话题查询
+	Topic *CreateMatchingCheckTopic `json:"topic"`
+	// 【地区】根据地区代码查询地区信息
+	Area *CreateMatchingCheckArea `json:"area"`
+	// 【用户】获取用户信息
+	User *CreateMatchingCheckUser `json:"user"`
+	// 【用户】 用户信息完整性检查
+	UserInfoCompletenessCheck *CreateMatchingCheckUserInfoCompletenessCheckUserInfoCompleteness `json:"userInfoCompletenessCheck"`
+}
+
+// GetTopic returns CreateMatchingCheckResponse.Topic, and is useful for accessing the field via an interface.
+func (v *CreateMatchingCheckResponse) GetTopic() *CreateMatchingCheckTopic { return v.Topic }
+
+// GetArea returns CreateMatchingCheckResponse.Area, and is useful for accessing the field via an interface.
+func (v *CreateMatchingCheckResponse) GetArea() *CreateMatchingCheckArea { return v.Area }
+
+// GetUser returns CreateMatchingCheckResponse.User, and is useful for accessing the field via an interface.
+func (v *CreateMatchingCheckResponse) GetUser() *CreateMatchingCheckUser { return v.User }
+
+// GetUserInfoCompletenessCheck returns CreateMatchingCheckResponse.UserInfoCompletenessCheck, and is useful for accessing the field via an interface.
+func (v *CreateMatchingCheckResponse) GetUserInfoCompletenessCheck() *CreateMatchingCheckUserInfoCompletenessCheckUserInfoCompleteness {
 	return v.UserInfoCompletenessCheck
 }
 
-// CreateMatchingValidUser includes the requested fields of the GraphQL type User.
-type CreateMatchingValidUser struct {
-	// 用户封禁信息
-	BlockInfo *CreateMatchingValidUserBlockInfo `json:"blockInfo"`
+// CreateMatchingCheckTopic includes the requested fields of the GraphQL type Topic.
+type CreateMatchingCheckTopic struct {
+	// 话题ID
+	Id string `json:"id"`
+	// 是否可用
+	Enable bool `json:"enable"`
 }
 
-// GetBlockInfo returns CreateMatchingValidUser.BlockInfo, and is useful for accessing the field via an interface.
-func (v *CreateMatchingValidUser) GetBlockInfo() *CreateMatchingValidUserBlockInfo {
+// GetId returns CreateMatchingCheckTopic.Id, and is useful for accessing the field via an interface.
+func (v *CreateMatchingCheckTopic) GetId() string { return v.Id }
+
+// GetEnable returns CreateMatchingCheckTopic.Enable, and is useful for accessing the field via an interface.
+func (v *CreateMatchingCheckTopic) GetEnable() bool { return v.Enable }
+
+// CreateMatchingCheckUser includes the requested fields of the GraphQL type User.
+type CreateMatchingCheckUser struct {
+	// 用户封禁信息
+	BlockInfo *CreateMatchingCheckUserBlockInfo `json:"blockInfo"`
+}
+
+// GetBlockInfo returns CreateMatchingCheckUser.BlockInfo, and is useful for accessing the field via an interface.
+func (v *CreateMatchingCheckUser) GetBlockInfo() *CreateMatchingCheckUserBlockInfo {
 	return v.BlockInfo
 }
 
-// CreateMatchingValidUserBlockInfo includes the requested fields of the GraphQL type UserBlockInfo.
-type CreateMatchingValidUserBlockInfo struct {
+// CreateMatchingCheckUserBlockInfo includes the requested fields of the GraphQL type UserBlockInfo.
+type CreateMatchingCheckUserBlockInfo struct {
 	// 是否用户封禁，封禁则整个APP无法使用
 	UserBlocked bool `json:"userBlocked"`
 	// 是否匹配封禁，封禁则无法加入新的匹配
 	MatchingBlocked bool `json:"matchingBlocked"`
 }
 
-// GetUserBlocked returns CreateMatchingValidUserBlockInfo.UserBlocked, and is useful for accessing the field via an interface.
-func (v *CreateMatchingValidUserBlockInfo) GetUserBlocked() bool { return v.UserBlocked }
+// GetUserBlocked returns CreateMatchingCheckUserBlockInfo.UserBlocked, and is useful for accessing the field via an interface.
+func (v *CreateMatchingCheckUserBlockInfo) GetUserBlocked() bool { return v.UserBlocked }
 
-// GetMatchingBlocked returns CreateMatchingValidUserBlockInfo.MatchingBlocked, and is useful for accessing the field via an interface.
-func (v *CreateMatchingValidUserBlockInfo) GetMatchingBlocked() bool { return v.MatchingBlocked }
+// GetMatchingBlocked returns CreateMatchingCheckUserBlockInfo.MatchingBlocked, and is useful for accessing the field via an interface.
+func (v *CreateMatchingCheckUserBlockInfo) GetMatchingBlocked() bool { return v.MatchingBlocked }
 
-// CreateMatchingValidUserInfoCompletenessCheckUserInfoCompleteness includes the requested fields of the GraphQL type UserInfoCompleteness.
-type CreateMatchingValidUserInfoCompletenessCheckUserInfoCompleteness struct {
+// CreateMatchingCheckUserInfoCompletenessCheckUserInfoCompleteness includes the requested fields of the GraphQL type UserInfoCompleteness.
+type CreateMatchingCheckUserInfoCompletenessCheckUserInfoCompleteness struct {
 	// 信息是否全部填写
 	Filled bool `json:"filled"`
 }
 
-// GetFilled returns CreateMatchingValidUserInfoCompletenessCheckUserInfoCompleteness.Filled, and is useful for accessing the field via an interface.
-func (v *CreateMatchingValidUserInfoCompletenessCheckUserInfoCompleteness) GetFilled() bool {
+// GetFilled returns CreateMatchingCheckUserInfoCompletenessCheckUserInfoCompleteness.Filled, and is useful for accessing the field via an interface.
+func (v *CreateMatchingCheckUserInfoCompletenessCheckUserInfoCompleteness) GetFilled() bool {
 	return v.Filled
 }
+
+// CreateMatchingInvitationCheckArea includes the requested fields of the GraphQL type Area.
+type CreateMatchingInvitationCheckArea struct {
+	// 地区代码
+	Code string `json:"code"`
+	// 是否开通业务
+	Enabled bool `json:"enabled"`
+}
+
+// GetCode returns CreateMatchingInvitationCheckArea.Code, and is useful for accessing the field via an interface.
+func (v *CreateMatchingInvitationCheckArea) GetCode() string { return v.Code }
+
+// GetEnabled returns CreateMatchingInvitationCheckArea.Enabled, and is useful for accessing the field via an interface.
+func (v *CreateMatchingInvitationCheckArea) GetEnabled() bool { return v.Enabled }
+
+// CreateMatchingInvitationCheckBlacklistRelationshipUserPair includes the requested fields of the GraphQL type UserPair.
+type CreateMatchingInvitationCheckBlacklistRelationshipUserPair struct {
+	A string `json:"a"`
+	B string `json:"b"`
+}
+
+// GetA returns CreateMatchingInvitationCheckBlacklistRelationshipUserPair.A, and is useful for accessing the field via an interface.
+func (v *CreateMatchingInvitationCheckBlacklistRelationshipUserPair) GetA() string { return v.A }
+
+// GetB returns CreateMatchingInvitationCheckBlacklistRelationshipUserPair.B, and is useful for accessing the field via an interface.
+func (v *CreateMatchingInvitationCheckBlacklistRelationshipUserPair) GetB() string { return v.B }
+
+// CreateMatchingInvitationCheckGetUserByIdsV2User includes the requested fields of the GraphQL type User.
+type CreateMatchingInvitationCheckGetUserByIdsV2User struct {
+	// 用户ID
+	Id string `json:"id"`
+	// 用户封禁信息
+	BlockInfo *CreateMatchingInvitationCheckGetUserByIdsV2UserBlockInfo `json:"blockInfo"`
+}
+
+// GetId returns CreateMatchingInvitationCheckGetUserByIdsV2User.Id, and is useful for accessing the field via an interface.
+func (v *CreateMatchingInvitationCheckGetUserByIdsV2User) GetId() string { return v.Id }
+
+// GetBlockInfo returns CreateMatchingInvitationCheckGetUserByIdsV2User.BlockInfo, and is useful for accessing the field via an interface.
+func (v *CreateMatchingInvitationCheckGetUserByIdsV2User) GetBlockInfo() *CreateMatchingInvitationCheckGetUserByIdsV2UserBlockInfo {
+	return v.BlockInfo
+}
+
+// CreateMatchingInvitationCheckGetUserByIdsV2UserBlockInfo includes the requested fields of the GraphQL type UserBlockInfo.
+type CreateMatchingInvitationCheckGetUserByIdsV2UserBlockInfo struct {
+	// 是否用户封禁，封禁则整个APP无法使用
+	UserBlocked bool `json:"userBlocked"`
+	// 是否匹配封禁，封禁则无法加入新的匹配
+	MatchingBlocked bool `json:"matchingBlocked"`
+}
+
+// GetUserBlocked returns CreateMatchingInvitationCheckGetUserByIdsV2UserBlockInfo.UserBlocked, and is useful for accessing the field via an interface.
+func (v *CreateMatchingInvitationCheckGetUserByIdsV2UserBlockInfo) GetUserBlocked() bool {
+	return v.UserBlocked
+}
+
+// GetMatchingBlocked returns CreateMatchingInvitationCheckGetUserByIdsV2UserBlockInfo.MatchingBlocked, and is useful for accessing the field via an interface.
+func (v *CreateMatchingInvitationCheckGetUserByIdsV2UserBlockInfo) GetMatchingBlocked() bool {
+	return v.MatchingBlocked
+}
+
+// CreateMatchingInvitationCheckResponse is returned by CreateMatchingInvitationCheck on success.
+type CreateMatchingInvitationCheckResponse struct {
+	// 【话题】话题查询
+	Topic *CreateMatchingInvitationCheckTopic `json:"topic"`
+	// 【地区】根据地区代码查询地区信息
+	Area *CreateMatchingInvitationCheckArea `json:"area"`
+	// 【用户】根据ID批量获取用户，管理端使用，用户可以不存在
+	GetUserByIdsV2 []*CreateMatchingInvitationCheckGetUserByIdsV2User `json:"getUserByIdsV2"`
+	// 【黑名单】获取指定 userId 之间的黑名单关系
+	BlacklistRelationship []*CreateMatchingInvitationCheckBlacklistRelationshipUserPair `json:"blacklistRelationship"`
+}
+
+// GetTopic returns CreateMatchingInvitationCheckResponse.Topic, and is useful for accessing the field via an interface.
+func (v *CreateMatchingInvitationCheckResponse) GetTopic() *CreateMatchingInvitationCheckTopic {
+	return v.Topic
+}
+
+// GetArea returns CreateMatchingInvitationCheckResponse.Area, and is useful for accessing the field via an interface.
+func (v *CreateMatchingInvitationCheckResponse) GetArea() *CreateMatchingInvitationCheckArea {
+	return v.Area
+}
+
+// GetGetUserByIdsV2 returns CreateMatchingInvitationCheckResponse.GetUserByIdsV2, and is useful for accessing the field via an interface.
+func (v *CreateMatchingInvitationCheckResponse) GetGetUserByIdsV2() []*CreateMatchingInvitationCheckGetUserByIdsV2User {
+	return v.GetUserByIdsV2
+}
+
+// GetBlacklistRelationship returns CreateMatchingInvitationCheckResponse.BlacklistRelationship, and is useful for accessing the field via an interface.
+func (v *CreateMatchingInvitationCheckResponse) GetBlacklistRelationship() []*CreateMatchingInvitationCheckBlacklistRelationshipUserPair {
+	return v.BlacklistRelationship
+}
+
+// CreateMatchingInvitationCheckTopic includes the requested fields of the GraphQL type Topic.
+type CreateMatchingInvitationCheckTopic struct {
+	// 话题ID
+	Id string `json:"id"`
+	// 名称
+	Name string `json:"name"`
+	// 是否可用
+	Enable bool `json:"enable"`
+}
+
+// GetId returns CreateMatchingInvitationCheckTopic.Id, and is useful for accessing the field via an interface.
+func (v *CreateMatchingInvitationCheckTopic) GetId() string { return v.Id }
+
+// GetName returns CreateMatchingInvitationCheckTopic.Name, and is useful for accessing the field via an interface.
+func (v *CreateMatchingInvitationCheckTopic) GetName() string { return v.Name }
+
+// GetEnable returns CreateMatchingInvitationCheckTopic.Enable, and is useful for accessing the field via an interface.
+func (v *CreateMatchingInvitationCheckTopic) GetEnable() bool { return v.Enable }
 
 type ExtraOptionKey string
 
@@ -590,13 +739,37 @@ func (v *TopicOptionConfigFieldsPropertiesTopicOptionPropertyOptionsTopicOption)
 	return v.Value
 }
 
-// __CreateMatchingValidInput is used internally by genqlient
-type __CreateMatchingValidInput struct {
-	UserId string `json:"userId"`
+// __CreateMatchingCheckInput is used internally by genqlient
+type __CreateMatchingCheckInput struct {
+	TopicId string `json:"topicId"`
+	CityId  string `json:"cityId"`
+	UserId  string `json:"userId"`
 }
 
-// GetUserId returns __CreateMatchingValidInput.UserId, and is useful for accessing the field via an interface.
-func (v *__CreateMatchingValidInput) GetUserId() string { return v.UserId }
+// GetTopicId returns __CreateMatchingCheckInput.TopicId, and is useful for accessing the field via an interface.
+func (v *__CreateMatchingCheckInput) GetTopicId() string { return v.TopicId }
+
+// GetCityId returns __CreateMatchingCheckInput.CityId, and is useful for accessing the field via an interface.
+func (v *__CreateMatchingCheckInput) GetCityId() string { return v.CityId }
+
+// GetUserId returns __CreateMatchingCheckInput.UserId, and is useful for accessing the field via an interface.
+func (v *__CreateMatchingCheckInput) GetUserId() string { return v.UserId }
+
+// __CreateMatchingInvitationCheckInput is used internally by genqlient
+type __CreateMatchingInvitationCheckInput struct {
+	TopicId string   `json:"topicId"`
+	CityId  string   `json:"cityId"`
+	Ids     []string `json:"ids"`
+}
+
+// GetTopicId returns __CreateMatchingInvitationCheckInput.TopicId, and is useful for accessing the field via an interface.
+func (v *__CreateMatchingInvitationCheckInput) GetTopicId() string { return v.TopicId }
+
+// GetCityId returns __CreateMatchingInvitationCheckInput.CityId, and is useful for accessing the field via an interface.
+func (v *__CreateMatchingInvitationCheckInput) GetCityId() string { return v.CityId }
+
+// GetIds returns __CreateMatchingInvitationCheckInput.Ids, and is useful for accessing the field via an interface.
+func (v *__CreateMatchingInvitationCheckInput) GetIds() []string { return v.Ids }
 
 // __GetAreaInput is used internally by genqlient
 type __GetAreaInput struct {
@@ -662,9 +835,17 @@ type __GetUserByIDsInput struct {
 // GetIds returns __GetUserByIDsInput.Ids, and is useful for accessing the field via an interface.
 func (v *__GetUserByIDsInput) GetIds() []string { return v.Ids }
 
-// The query or mutation executed by CreateMatchingValid.
-const CreateMatchingValid_Operation = `
-query CreateMatchingValid ($userId: String!) {
+// The query or mutation executed by CreateMatchingCheck.
+const CreateMatchingCheck_Operation = `
+query CreateMatchingCheck ($topicId: String!, $cityId: AreaCode!, $userId: String!) {
+	topic(id: $topicId) {
+		id
+		enable
+	}
+	area(code: $cityId) {
+		code
+		enabled
+	}
 	user(id: $userId) {
 		blockInfo {
 			userBlocked
@@ -677,21 +858,81 @@ query CreateMatchingValid ($userId: String!) {
 }
 `
 
-func CreateMatchingValid(
+func CreateMatchingCheck(
 	ctx context.Context,
 	client graphql.Client,
+	topicId string,
+	cityId string,
 	userId string,
-) (*CreateMatchingValidResponse, error) {
+) (*CreateMatchingCheckResponse, error) {
 	req := &graphql.Request{
-		OpName: "CreateMatchingValid",
-		Query:  CreateMatchingValid_Operation,
-		Variables: &__CreateMatchingValidInput{
-			UserId: userId,
+		OpName: "CreateMatchingCheck",
+		Query:  CreateMatchingCheck_Operation,
+		Variables: &__CreateMatchingCheckInput{
+			TopicId: topicId,
+			CityId:  cityId,
+			UserId:  userId,
 		},
 	}
 	var err error
 
-	var data CreateMatchingValidResponse
+	var data CreateMatchingCheckResponse
+	resp := &graphql.Response{Data: &data}
+
+	err = client.MakeRequest(
+		ctx,
+		req,
+		resp,
+	)
+
+	return &data, err
+}
+
+// The query or mutation executed by CreateMatchingInvitationCheck.
+const CreateMatchingInvitationCheck_Operation = `
+query CreateMatchingInvitationCheck ($topicId: String!, $cityId: AreaCode!, $ids: [String!]!) {
+	topic(id: $topicId) {
+		id
+		name
+		enable
+	}
+	area(code: $cityId) {
+		code
+		enabled
+	}
+	getUserByIdsV2(ids: $ids) {
+		id
+		blockInfo {
+			userBlocked
+			matchingBlocked
+		}
+	}
+	blacklistRelationship(ids: $ids) {
+		a
+		b
+	}
+}
+`
+
+func CreateMatchingInvitationCheck(
+	ctx context.Context,
+	client graphql.Client,
+	topicId string,
+	cityId string,
+	ids []string,
+) (*CreateMatchingInvitationCheckResponse, error) {
+	req := &graphql.Request{
+		OpName: "CreateMatchingInvitationCheck",
+		Query:  CreateMatchingInvitationCheck_Operation,
+		Variables: &__CreateMatchingInvitationCheckInput{
+			TopicId: topicId,
+			CityId:  cityId,
+			Ids:     ids,
+		},
+	}
+	var err error
+
+	var data CreateMatchingInvitationCheckResponse
 	resp := &graphql.Response{Data: &data}
 
 	err = client.MakeRequest(
