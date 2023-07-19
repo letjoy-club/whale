@@ -66,6 +66,7 @@ func PublishMatchedEvent(ctx context.Context, matching *models.Matching) error {
 		UserID:     matching.UserID,
 		TopicID:    matching.TopicID,
 		CityID:     matching.CityID,
+		MatchedAt:  time.Now(),
 		CreatedAt:  matching.CreatedAt,
 	})
 }
