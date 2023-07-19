@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-
 	"github.com/apache/pulsar-client-go/pulsar"
 	"github.com/fatih/color"
 )
@@ -27,7 +26,7 @@ func (p *Publisher) Pub(ctx context.Context, key string, data any) error {
 		return nil
 	}
 	buff, err := json.Marshal(data)
-	if err != nil {
+	if err == nil {
 		_, err = p.publisher.Send(ctx, &pulsar.ProducerMessage{
 			Payload: buff,
 			Key:     key,
