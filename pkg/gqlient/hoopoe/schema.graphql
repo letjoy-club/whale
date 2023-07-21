@@ -4,6 +4,8 @@ directive @extends on OBJECT | INTERFACE
 
 directive @external on FIELD_DEFINITION | OBJECT
 
+directive @fieldFuzzy(type: FuzzyType!) on FIELD_DEFINITION
+
 directive @goModel(model: String, models: [String!]) on OBJECT | INPUT_OBJECT | SCALAR | ENUM | INTERFACE | UNION
 
 directive @inaccessible on SCALAR | OBJECT | FIELD_DEFINITION | ARGUMENT_DEFINITION | INTERFACE | UNION | ENUM | ENUM_VALUE | INPUT_OBJECT | INPUT_FIELD_DEFINITION
@@ -41,8 +43,8 @@ type _Service {
 
 input AddConcertParam {
   name: String!
-  startAt: Time!
-  days: [Time!]!
+  startAt: String!
+  days: [String!]!
   address: String!
   cityId: String!
   singerIds: [Int!]!
@@ -257,11 +259,12 @@ input CityFilter {
 type Concert {
   id: Int!
   name: String!
-  startAt: Time!
-  days: [Time!]!
+  startAt: String!
+  days: [String!]!
   address: String!
   cityId: String!
   singerIds: [Int!]!
+  visible: Boolean!
   area: Area!
   singers: [Singer!]!
 }
@@ -344,6 +347,14 @@ input FeishuLoginParam {
   nickname: String!
 }
 
+enum FuzzyType {
+  """手机号"""
+  Phone
+
+  """姓名"""
+  Name
+}
+
 type GenderSelection {
   """性别"""
   gender: String!
@@ -407,9 +418,6 @@ type LevelCompletion {
 
   """邀请并完成一次匹配人数"""
   invitedMatchedNum: Int!
-
-  """邀请女生人数"""
-  invitedFemaleNum: Int!
 }
 
 type LevelDetail {
@@ -447,9 +455,6 @@ type LevelRequirement {
 
   """邀请并完成一次匹配人数"""
   invitedMatchedNum: Int!
-
-  """邀请女生人数"""
-  invitedFemaleNum: Int!
 }
 
 type LevelRights {
@@ -459,8 +464,8 @@ type LevelRights {
   """性别选择"""
   genderSelections: [GenderSelection!]!
 
-  """性别选择，用户端使用"""
-  genderSelection: Boolean!
+  """性别选择"""
+  genderSelection(userId: String): Boolean!
 
   """加权举报次数（每周）"""
   weightedReport: Int!
@@ -552,6 +557,66 @@ type Mutation {
     userId: String!
   ): String
 
+  """【标签】用户批量更新个人标签"""
+  updatePersonalTags(
+    """标签IDs"""
+    tagIds: [String!]!
+
+    """被打标签的人，管理端使用"""
+    userId: String
+  ): String
+
+  """【标签】用户给自己打标签"""
+  addPersonalTag(
+    """标签ID"""
+    tagId: String!
+
+    """被打标签的人，管理端使用"""
+    userId: String
+  ): String
+
+  """【标签】用户移除自己的标签"""
+  removePersonalTag(
+    """标签ID"""
+    tagId: String!
+
+    """被打标签的人，管理端使用"""
+    userId: String
+  ): String
+
+  """【标签】用户给其他人打标签"""
+  addEvaluateTag(
+    """用户ID"""
+    userId: String!
+
+    """标签，长度不超过10"""
+    tag: String!
+
+    """匹配ID，用于校验"""
+    matchingId: String!
+
+    """操作人ID，管理端使用"""
+    operatorId: String
+  ): String
+
+  """【标签】他人评价标签添加置顶"""
+  evaluateTagPin(
+    """评价标签ID"""
+    id: String!
+
+    """用户ID，管理端使用"""
+    userId: String
+  ): String
+
+  """【标签】他人评价标签取消置顶"""
+  evaluateTagCancelPin(
+    """评价标签ID"""
+    id: String!
+
+    """用户ID，管理端使用"""
+    userId: String
+  ): String
+
   """【标签】新增用户标签"""
   addUserTag(
     """标签ID"""
@@ -559,7 +624,7 @@ type Mutation {
 
     """被打标签的人，为空时表示给自己打标签"""
     userId: String
-  ): String
+  ): String @deprecated(reason: "no longer use")
 
   """【标签】移除用户标签"""
   removeUserTag(
@@ -568,13 +633,13 @@ type Mutation {
 
     """被打标签的人，为空时表示移除自己的标签"""
     userId: String
-  ): String
+  ): String @deprecated(reason: "no longer use")
 
   """【标签】用户更新个人标签"""
   updatePersonalTag(
     """个人所有标签ID列表"""
     tagIds: [String!]!
-  ): String @deprecated(reason: "暂不使用，无法保证代码正确")
+  ): String @deprecated(reason: "no longer use")
 
   """【标签】新增标签"""
   addTag(param: AddTagParam!): String
@@ -1106,32 +1171,53 @@ type Query {
     categoryId: Int!
   ): [Tag!]
 
+  """【标签】用户自己打的标签"""
+  userPersonalTags(
+    """用户ID"""
+    userId: String!
+  ): [Tag!]
+
+  """【标签】其他用户打的标签"""
+  userEvaluateTags(
+    """用户ID"""
+    userId: String!
+
+    """分页组件"""
+    paginator: GraphQLPaginator
+  ): [UserEvaluateTag!]
+
+  """【标签】其他用户打的标签总数量"""
+  userEvaluateTagsCount(
+    """用户ID"""
+    userId: String!
+  ): Summary!
+
   """【标签】我的标签-自己对自己打的标签"""
-  myTags: [Tag!]
+  myTags: [Tag!] @deprecated(reason: "no longer use")
 
   """【话题】评价时备选话题类别"""
   evaluateTagCategories(
     """话题ID"""
     topicId: String
-  ): [TagCategory!]
+  ): [TagCategory!] @deprecated(reason: "no longer use")
 
   """【标签】评价他们标签-按类别查询"""
   evaluateTags(
     """标签分类ID"""
     categoryId: Int!
-  ): [Tag!]
+  ): [Tag!] @deprecated(reason: "no longer use")
 
   """【标签】用户标签-自己对他人打的标签"""
   userTags(
     """用户ID"""
     userId: String!
-  ): [Tag!]
+  ): [Tag!] @deprecated(reason: "no longer use")
 
   """【标签】个人主页标签"""
   homePageTags(
     """用户ID"""
     userId: String!
-  ): [Tag!]
+  ): [Tag!] @deprecated(reason: "no longer use")
 
   """【话题】类别查询"""
   topicCategory(
@@ -1350,6 +1436,17 @@ type ReportPunishmentOption {
 type SendSmsCodeResult {
   """验证码序列号"""
   sequence: String!
+}
+
+type SimpleUser {
+  """用户ID"""
+  id: String!
+
+  """昵称"""
+  nickname: String!
+
+  """头像"""
+  avatar: String!
 }
 
 type Singer {
@@ -1619,8 +1716,8 @@ input UpdateAdminAccountParam {
 
 input UpdateConcertParam {
   name: String
-  startAt: Time
-  days: [Time!]
+  startAt: String
+  days: [String!]
   address: String
   cityId: String
   singerIds: [Int!]
@@ -1766,7 +1863,13 @@ type User {
   blockInfo: UserBlockInfo!
 
   """用户标签"""
-  tags: [Tag!]
+  tags: [Tag!] @deprecated(reason: "no longer use")
+
+  """本人打的标签"""
+  personalTags: [Tag!]
+
+  """他人评价标签"""
+  evaluateTags: [UserEvaluateTag!]
 
   """用户资料"""
   profile: UserProfile!
@@ -1842,6 +1945,17 @@ input UserCustomTopicParam {
 
   """话题显示城市"""
   cityId: String
+}
+
+type UserEvaluateTag {
+  """标签"""
+  tag: String!
+
+  """打标签的人"""
+  operator: SimpleUser!
+
+  """标记的"""
+  pin: Boolean!
 }
 
 input UserFilter {

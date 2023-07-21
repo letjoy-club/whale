@@ -138,7 +138,7 @@ func CheckMatchingResultAndCreateChatGroup(ctx context.Context, m *models.Matchi
 }
 
 func CreateMatching(ctx context.Context, uid string, param models.CreateMatchingParam) (*models.Matching, error) {
-	err := checkMatchingParam(ctx, uid, param.TopicID, param.CityID)
+	err := checkMatchingParam(ctx, uid, param.TopicID, param.CityID, param.Gender)
 	if err != nil {
 		return nil, err
 	}
@@ -207,7 +207,7 @@ func CreateMatching(ctx context.Context, uid string, param models.CreateMatching
 	return matching, err
 }
 
-func checkMatchingParam(ctx context.Context, uid, topicID, cityID string) error {
+func checkMatchingParam(ctx context.Context, uid, topicID, cityID string, gender models.Gender) error {
 	// 基础检查
 	res, err := hoopoe.CreateMatchingCheck(ctx, midacontext.GetServices(ctx).Hoopoe, topicID, cityID, uid)
 	if err != nil {
@@ -224,6 +224,11 @@ func checkMatchingParam(ctx context.Context, uid, topicID, cityID string) error 
 	}
 	if res.User.BlockInfo.UserBlocked || res.User.BlockInfo.MatchingBlocked {
 		return whalecode.ErrUserBlocked
+	}
+	if gender != models.GenderN {
+		if !res.LevelDetail.Rights.GenderSelection {
+			return whalecode.ErrCannotSelectGender
+		}
 	}
 	// 额度检查
 	thunk := midacontext.GetLoader[loader.Loader](ctx).MatchingQuota.Load(ctx, uid)
@@ -289,7 +294,7 @@ func SimplifyPreferredPeriods(periods []models.DatePeriod) []string {
 }
 
 func CreateMatchingV2(ctx context.Context, uid string, param models.CreateMatchingParamV2) (*models.Matching, error) {
-	err := checkMatchingParam(ctx, uid, param.TopicID, param.CityID)
+	err := checkMatchingParam(ctx, uid, param.TopicID, param.CityID, param.Gender)
 	if err != nil {
 		return nil, err
 	}
