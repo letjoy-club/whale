@@ -103,6 +103,11 @@ query CreateMatchingCheck($topicId: String!, $cityId: AreaCode!, $userId: String
   userInfoCompletenessCheck(userId: $userId) {
     filled
   }
+  levelDetail(userId: $userId){
+    rights {
+      genderSelection(userId: $userId)
+    }
+  }
 }
 
 query CreateMatchingInvitationCheck($topicId: String!, $cityId: AreaCode!, $ids: [String!]!) {

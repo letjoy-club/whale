@@ -23,6 +23,28 @@ func (v *CreateMatchingCheckArea) GetCode() string { return v.Code }
 // GetEnabled returns CreateMatchingCheckArea.Enabled, and is useful for accessing the field via an interface.
 func (v *CreateMatchingCheckArea) GetEnabled() bool { return v.Enabled }
 
+// CreateMatchingCheckLevelDetail includes the requested fields of the GraphQL type LevelDetail.
+type CreateMatchingCheckLevelDetail struct {
+	// 当前等级的权益
+	Rights *CreateMatchingCheckLevelDetailRightsLevelRights `json:"rights"`
+}
+
+// GetRights returns CreateMatchingCheckLevelDetail.Rights, and is useful for accessing the field via an interface.
+func (v *CreateMatchingCheckLevelDetail) GetRights() *CreateMatchingCheckLevelDetailRightsLevelRights {
+	return v.Rights
+}
+
+// CreateMatchingCheckLevelDetailRightsLevelRights includes the requested fields of the GraphQL type LevelRights.
+type CreateMatchingCheckLevelDetailRightsLevelRights struct {
+	// 性别选择
+	GenderSelection bool `json:"genderSelection"`
+}
+
+// GetGenderSelection returns CreateMatchingCheckLevelDetailRightsLevelRights.GenderSelection, and is useful for accessing the field via an interface.
+func (v *CreateMatchingCheckLevelDetailRightsLevelRights) GetGenderSelection() bool {
+	return v.GenderSelection
+}
+
 // CreateMatchingCheckResponse is returned by CreateMatchingCheck on success.
 type CreateMatchingCheckResponse struct {
 	// 【话题】话题查询
@@ -33,6 +55,8 @@ type CreateMatchingCheckResponse struct {
 	User *CreateMatchingCheckUser `json:"user"`
 	// 【用户】 用户信息完整性检查
 	UserInfoCompletenessCheck *CreateMatchingCheckUserInfoCompletenessCheckUserInfoCompleteness `json:"userInfoCompletenessCheck"`
+	// 【用户】等级详情
+	LevelDetail *CreateMatchingCheckLevelDetail `json:"levelDetail"`
 }
 
 // GetTopic returns CreateMatchingCheckResponse.Topic, and is useful for accessing the field via an interface.
@@ -47,6 +71,11 @@ func (v *CreateMatchingCheckResponse) GetUser() *CreateMatchingCheckUser { retur
 // GetUserInfoCompletenessCheck returns CreateMatchingCheckResponse.UserInfoCompletenessCheck, and is useful for accessing the field via an interface.
 func (v *CreateMatchingCheckResponse) GetUserInfoCompletenessCheck() *CreateMatchingCheckUserInfoCompletenessCheckUserInfoCompleteness {
 	return v.UserInfoCompletenessCheck
+}
+
+// GetLevelDetail returns CreateMatchingCheckResponse.LevelDetail, and is useful for accessing the field via an interface.
+func (v *CreateMatchingCheckResponse) GetLevelDetail() *CreateMatchingCheckLevelDetail {
+	return v.LevelDetail
 }
 
 // CreateMatchingCheckTopic includes the requested fields of the GraphQL type Topic.
@@ -854,6 +883,11 @@ query CreateMatchingCheck ($topicId: String!, $cityId: AreaCode!, $userId: Strin
 	}
 	userInfoCompletenessCheck(userId: $userId) {
 		filled
+	}
+	levelDetail(userId: $userId) {
+		rights {
+			genderSelection(userId: $userId)
+		}
 	}
 }
 `
