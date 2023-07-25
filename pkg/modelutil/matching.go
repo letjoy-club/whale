@@ -232,11 +232,11 @@ func checkMatchingParam(ctx context.Context, uid, topicID, cityID string, gender
 	if res.User.BlockInfo.UserBlocked || res.User.BlockInfo.MatchingBlocked {
 		return whalecode.ErrUserBlocked
 	}
-	if gender != models.GenderN {
-		if !res.LevelDetail.Rights.GenderSelection {
-			return whalecode.ErrCannotSelectGender
-		}
-	}
+	//if gender != models.GenderN {
+	//	if !res.LevelDetail.Rights.GenderSelection {
+	//		return whalecode.ErrCannotSelectGender
+	//	}
+	//}
 	// 额度检查
 	thunk := midacontext.GetLoader[loader.Loader](ctx).MatchingQuota.Load(ctx, uid)
 	quota, err := thunk()
