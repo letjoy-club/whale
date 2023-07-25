@@ -23,12 +23,19 @@ func Use(db *gorm.DB, opts ...gen.DOOption) *Query {
 		Matching:                    newMatching(db, opts...),
 		MatchingDurationConstraint:  newMatchingDurationConstraint(db, opts...),
 		MatchingInvitation:          newMatchingInvitation(db, opts...),
+		MatchingOfferRecord:         newMatchingOfferRecord(db, opts...),
+		MatchingOfferSummary:        newMatchingOfferSummary(db, opts...),
 		MatchingQuota:               newMatchingQuota(db, opts...),
+		MatchingReceiveLike:         newMatchingReceiveLike(db, opts...),
 		MatchingResult:              newMatchingResult(db, opts...),
 		MatchingResultConfirmAction: newMatchingResultConfirmAction(db, opts...),
 		MatchingReview:              newMatchingReview(db, opts...),
+		MatchingView:                newMatchingView(db, opts...),
+		MatchingViewHistory:         newMatchingViewHistory(db, opts...),
 		RecentMatching:              newRecentMatching(db, opts...),
 		UserJoinTopic:               newUserJoinTopic(db, opts...),
+		UserLikeMatching:            newUserLikeMatching(db, opts...),
+		UserViewMatching:            newUserViewMatching(db, opts...),
 		WhaleConfig:                 newWhaleConfig(db, opts...),
 	}
 }
@@ -41,12 +48,19 @@ type Query struct {
 	Matching                    matching
 	MatchingDurationConstraint  matchingDurationConstraint
 	MatchingInvitation          matchingInvitation
+	MatchingOfferRecord         matchingOfferRecord
+	MatchingOfferSummary        matchingOfferSummary
 	MatchingQuota               matchingQuota
+	MatchingReceiveLike         matchingReceiveLike
 	MatchingResult              matchingResult
 	MatchingResultConfirmAction matchingResultConfirmAction
 	MatchingReview              matchingReview
+	MatchingView                matchingView
+	MatchingViewHistory         matchingViewHistory
 	RecentMatching              recentMatching
 	UserJoinTopic               userJoinTopic
+	UserLikeMatching            userLikeMatching
+	UserViewMatching            userViewMatching
 	WhaleConfig                 whaleConfig
 }
 
@@ -60,12 +74,19 @@ func (q *Query) clone(db *gorm.DB) *Query {
 		Matching:                    q.Matching.clone(db),
 		MatchingDurationConstraint:  q.MatchingDurationConstraint.clone(db),
 		MatchingInvitation:          q.MatchingInvitation.clone(db),
+		MatchingOfferRecord:         q.MatchingOfferRecord.clone(db),
+		MatchingOfferSummary:        q.MatchingOfferSummary.clone(db),
 		MatchingQuota:               q.MatchingQuota.clone(db),
+		MatchingReceiveLike:         q.MatchingReceiveLike.clone(db),
 		MatchingResult:              q.MatchingResult.clone(db),
 		MatchingResultConfirmAction: q.MatchingResultConfirmAction.clone(db),
 		MatchingReview:              q.MatchingReview.clone(db),
+		MatchingView:                q.MatchingView.clone(db),
+		MatchingViewHistory:         q.MatchingViewHistory.clone(db),
 		RecentMatching:              q.RecentMatching.clone(db),
 		UserJoinTopic:               q.UserJoinTopic.clone(db),
+		UserLikeMatching:            q.UserLikeMatching.clone(db),
+		UserViewMatching:            q.UserViewMatching.clone(db),
 		WhaleConfig:                 q.WhaleConfig.clone(db),
 	}
 }
@@ -86,12 +107,19 @@ func (q *Query) ReplaceDB(db *gorm.DB) *Query {
 		Matching:                    q.Matching.replaceDB(db),
 		MatchingDurationConstraint:  q.MatchingDurationConstraint.replaceDB(db),
 		MatchingInvitation:          q.MatchingInvitation.replaceDB(db),
+		MatchingOfferRecord:         q.MatchingOfferRecord.replaceDB(db),
+		MatchingOfferSummary:        q.MatchingOfferSummary.replaceDB(db),
 		MatchingQuota:               q.MatchingQuota.replaceDB(db),
+		MatchingReceiveLike:         q.MatchingReceiveLike.replaceDB(db),
 		MatchingResult:              q.MatchingResult.replaceDB(db),
 		MatchingResultConfirmAction: q.MatchingResultConfirmAction.replaceDB(db),
 		MatchingReview:              q.MatchingReview.replaceDB(db),
+		MatchingView:                q.MatchingView.replaceDB(db),
+		MatchingViewHistory:         q.MatchingViewHistory.replaceDB(db),
 		RecentMatching:              q.RecentMatching.replaceDB(db),
 		UserJoinTopic:               q.UserJoinTopic.replaceDB(db),
+		UserLikeMatching:            q.UserLikeMatching.replaceDB(db),
+		UserViewMatching:            q.UserViewMatching.replaceDB(db),
 		WhaleConfig:                 q.WhaleConfig.replaceDB(db),
 	}
 }
@@ -102,12 +130,19 @@ type queryCtx struct {
 	Matching                    IMatchingDo
 	MatchingDurationConstraint  IMatchingDurationConstraintDo
 	MatchingInvitation          IMatchingInvitationDo
+	MatchingOfferRecord         IMatchingOfferRecordDo
+	MatchingOfferSummary        IMatchingOfferSummaryDo
 	MatchingQuota               IMatchingQuotaDo
+	MatchingReceiveLike         IMatchingReceiveLikeDo
 	MatchingResult              IMatchingResultDo
 	MatchingResultConfirmAction IMatchingResultConfirmActionDo
 	MatchingReview              IMatchingReviewDo
+	MatchingView                IMatchingViewDo
+	MatchingViewHistory         IMatchingViewHistoryDo
 	RecentMatching              IRecentMatchingDo
 	UserJoinTopic               IUserJoinTopicDo
+	UserLikeMatching            IUserLikeMatchingDo
+	UserViewMatching            IUserViewMatchingDo
 	WhaleConfig                 IWhaleConfigDo
 }
 
@@ -118,12 +153,19 @@ func (q *Query) WithContext(ctx context.Context) *queryCtx {
 		Matching:                    q.Matching.WithContext(ctx),
 		MatchingDurationConstraint:  q.MatchingDurationConstraint.WithContext(ctx),
 		MatchingInvitation:          q.MatchingInvitation.WithContext(ctx),
+		MatchingOfferRecord:         q.MatchingOfferRecord.WithContext(ctx),
+		MatchingOfferSummary:        q.MatchingOfferSummary.WithContext(ctx),
 		MatchingQuota:               q.MatchingQuota.WithContext(ctx),
+		MatchingReceiveLike:         q.MatchingReceiveLike.WithContext(ctx),
 		MatchingResult:              q.MatchingResult.WithContext(ctx),
 		MatchingResultConfirmAction: q.MatchingResultConfirmAction.WithContext(ctx),
 		MatchingReview:              q.MatchingReview.WithContext(ctx),
+		MatchingView:                q.MatchingView.WithContext(ctx),
+		MatchingViewHistory:         q.MatchingViewHistory.WithContext(ctx),
 		RecentMatching:              q.RecentMatching.WithContext(ctx),
 		UserJoinTopic:               q.UserJoinTopic.WithContext(ctx),
+		UserLikeMatching:            q.UserLikeMatching.WithContext(ctx),
+		UserViewMatching:            q.UserViewMatching.WithContext(ctx),
 		WhaleConfig:                 q.WhaleConfig.WithContext(ctx),
 	}
 }

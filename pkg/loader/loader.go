@@ -13,12 +13,21 @@ import (
 )
 
 type Loader struct {
+	AllMatching *AllMatchingLoader
+
 	Matching                   *dataloader.Loader[string, *models.Matching]
 	MatchingInvitation         *dataloader.Loader[string, *models.MatchingInvitation]
 	MatchingQuota              *dataloader.Loader[string, *models.MatchingQuota]
 	MatchingResult             *dataloader.Loader[int, *models.MatchingResult]
 	MatchingReviewed           *dataloader.Loader[string, MatchingReviewed]
 	MatchingDurationConstraint *dataloader.Loader[string, *models.MatchingDurationConstraint]
+	MatchingReceiveLike        *dataloader.Loader[string, *models.MatchingReceiveLike]
+	MatchingView               *dataloader.Loader[string, *models.MatchingView]
+	MatchingOfferSummary       *dataloader.Loader[string, *models.MatchingOfferSummary]
+	// 按照发起 matching id 分组的 matching offer
+	OutMatchingOfferRecord *dataloader.Loader[string, *MatchingOffers]
+	// 按照接受 matching id 分组的 matching offer
+	InMatchingOfferRecord *dataloader.Loader[string, *MatchingOffers]
 
 	UserJoinTopic  *dataloader.Loader[int, *models.UserJoinTopic]
 	RecentMatching *dataloader.Loader[string, *models.RecentMatching]
@@ -32,6 +41,8 @@ type Loader struct {
 
 	UserProfile        *dataloader.Loader[string, UserProfile]
 	UserAvatarNickname *dataloader.Loader[string, UserAvatarNickname]
+	UserLikeMatching   *dataloader.Loader[string, *UserLikeMatchingSummary]
+
 	// 查询城市的热门话题
 	HotTopics *dataloader.Loader[string, *models.HotTopicsInArea]
 
@@ -42,6 +53,8 @@ type Loader struct {
 
 func NewLoader(db *gorm.DB) *Loader {
 	return &Loader{
+		AllMatching: NewAllMatchingLoader(db),
+
 		CityTopicMatchings:  NewCityTopicMatchingLoader(db),
 		CityTopicRequestNum: NewCityTopicRequestNumLoader(db),
 		CityTopics:          NewCityTopicLoader(db),
@@ -53,10 +66,17 @@ func NewLoader(db *gorm.DB) *Loader {
 		MatchingResult:             NewMatchingResultLoader(db),
 		MatchingReviewed:           NewMatchingReviewedLoader(db),
 		MatchingDurationConstraint: NewMatchingDurationConstraintLoader(db),
+		MatchingView:               NewMatchingViewLoader(db),
+		MatchingReceiveLike:        NewMatchingReceiveLikeLoader(db),
+		MatchingOfferSummary:       NewMatchingOfferSummaryLoader(db),
+
+		InMatchingOfferRecord:  NewInMatchingOfferLoader(db),
+		OutMatchingOfferRecord: NewOutMatchingOfferLoader(db),
 
 		UserProfile:        NewUserProfileLoader(db),
 		UserAvatarNickname: NewUserAvatarNicknameLoader(db),
 		UserJoinTopic:      NewUserJoinTopicLoader(db),
+		UserLikeMatching:   NewUserLikeMatchingLoader(db),
 
 		RecentMatching: NewRecentMatchingLoader(db),
 

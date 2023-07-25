@@ -27,6 +27,17 @@ var (
 	ErrInviterBlocked           = midacode.NewError("INVITER_BLOCKED", "您已被封禁，无法发起邀请", midacode.LogLevelWarn)
 	ErrInviteeBlocked           = midacode.NewError("INVITEE_BLOCKED", "对方已被封禁，无法发起邀请", midacode.LogLevelWarn)
 
+	ErrMatchingOfferIsClosed                        = midacode.NewError("MATCHING_OFFER_IS_CLOSED", "邀约已经关闭", midacode.LogLevelWarn)
+	ErrCannotSendMatchingOfferToSelf                = midacode.NewError("CANNOT_SEND_MATCHING_OFFER_TO_SELF", "不能给自己发邀约", midacode.LogLevelWarn)
+	ErrCannotSendMatchingOfferToDifferentTopic      = midacode.NewError("CANNOT_SEND_MATCHING_OFFER_TO_DIFFERENT_TOPIC", "邀约话题不一致", midacode.LogLevelWarn)
+	ErrYourMatchingNotInMatchingState               = midacode.NewError("YOUR_MATCHING_NOT_IN_MATCHING_STATE", "你的匹配不在匹配中", midacode.LogLevelWarn)
+	ErrTheMatchingIsNotInMatchingState              = midacode.NewError("THE_MATCHING_IS_NOT_IN_MATCHING_STATE", "对方匹配不在匹配中", midacode.LogLevelWarn)
+	ErrAlreadySentOutMatchingOffer                  = midacode.NewError("ALREADY_SENT_OUT_MATCHING_OFFER", "已经发出过邀约", midacode.LogLevelWarn)
+	ErrMatchingOfferNotFound                        = midacode.NewError("MATCHING_OFFER_NOT_FOUND", "邀约不存在", midacode.LogLevelWarn)
+	ErrMatchingOfferIsCancelableOnlyWhenUnprocessed = midacode.NewError("MATCHING_OFFER_IS_CANCELABLE_ONLY_WHEN_UNPROCESSED", "邀约只有在未处理状态下才能取消", midacode.LogLevelWarn)
+	ErrMatchingOfferIsAcceptableOnlyWhenUnprocessed = midacode.NewError("MATCHING_OFFER_IS_ACCEPTABLE_ONLY_WHEN_UNPROCESSED", "邀约只有在未处理状态下才能接受", midacode.LogLevelWarn)
+	ErrMatchingOfferIsNotActive                     = midacode.NewError("MATCHING_OFFER_IS_NOT_ACTIVE", "邀约已经失效", midacode.LogLevelWarn)
+
 	ErrCannotInviteOtherTwiceForTheSameTopic          = midacode.NewError("CANNOT_INVITE_OTHER_TWICE_FOR_THE_SAME_TOPIC", "不能连续邀请同一个人两次同个话题", midacode.LogLevelWarn)
 	ErrCannotPerformActionWhenChatGroupAlreadyCreated = midacode.NewError("CANNOT_PERFORM_ACTION_WHEN_CHAT_GROUP_ALREADY_CREATED", "聊天室已经创建，不能执行该操作", midacode.LogLevelWarn)
 	ErrMatchingDurationQuotaNotEnough                 = midacode.NewError("MATCHING_DURATION_QUOTA_NOT_ENOUGH", "当前时间段匹配次数用尽", midacode.LogLevelWarn)

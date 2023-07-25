@@ -160,17 +160,24 @@ func CreateMatching(ctx context.Context, uid string, param models.CreateMatching
 		return nil, whalecode.ErrTopicIsAlreadyInMatching
 	}
 
+	thunk := midacontext.GetLoader[loader.Loader](ctx).UserProfile.Load(ctx, uid)
+	profile, err := thunk()
+
+	startMatchingAt := time.Now().Add(time.Minute * 30)
 	matching := &models.Matching{
-		ID:             shortid.NewWithTime("m_", 6),
-		TopicID:        param.TopicID,
-		UserID:         uid,
-		State:          models.MatchingStateMatching.String(),
-		Gender:         param.Gender.String(),
-		Remark:         *param.Remark,
-		CityID:         param.CityID,
-		ChatGroupState: string(models.ChatGroupStateUncreated),
-		Deadline:       time.Now().Add(time.Hour * 24 * 7),
-		AreaIDs:        param.AreaIds,
+		ID:              shortid.NewWithTime("m_", 6),
+		TopicID:         param.TopicID,
+		UserID:          uid,
+		State:           models.MatchingStateMatching.String(),
+		Gender:          param.Gender.String(),
+		Remark:          *param.Remark,
+		CityID:          param.CityID,
+		ChatGroupState:  string(models.ChatGroupStateUncreated),
+		Deadline:        time.Now().Add(time.Hour * 24 * 7),
+		AreaIDs:         param.AreaIds,
+		MyGender:        profile.Gender.String(),
+		Discoverable:    true,
+		StartMatchingAt: &startMatchingAt,
 	}
 
 	err = db.Transaction(func(tx *gorm.DB) error {

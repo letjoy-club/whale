@@ -32,6 +32,12 @@ type CitiesTopicsFilter struct {
 	CityID *string `json:"cityId,omitempty"`
 }
 
+type CityToTopicMatching struct {
+	CityID string             `json:"cityId"`
+	Topics []*TopicToMatching `json:"topics"`
+	City   *Area              `json:"city"`
+}
+
 type CreateCityTopicParam struct {
 	TopicIds []string `json:"topicIds"`
 	CityID   string   `json:"cityId"`
@@ -71,6 +77,18 @@ type CreateMatchingParamV2 struct {
 
 type CreateUserJoinTopicParam struct {
 	MatchingID string `json:"matchingId"`
+}
+
+type DiscoverMatchingFilter struct {
+	// 城市 ID，可以不填，不填则为全国
+	CityID *string `json:"cityId,omitempty"`
+	// 发起人性别，可以不填，不填则为不限
+	Gender *Gender `json:"gender,omitempty"`
+}
+
+type DiscoverMatchingResult struct {
+	Matchings []*Matching `json:"matchings"`
+	NextToken string      `json:"nextToken"`
 }
 
 type HotTopicsFilter struct {
@@ -143,6 +161,12 @@ type TopicOptionConfig struct {
 
 func (TopicOptionConfig) IsEntity() {}
 
+type TopicToMatching struct {
+	TopicID     string   `json:"topicId"`
+	MatchingIds []string `json:"matchingIds"`
+	Topic       *Topic   `json:"topic"`
+}
+
 type UpdateCityTopicParam struct {
 	TopicIds []string `json:"topicIds"`
 }
@@ -158,6 +182,12 @@ type UpdateHotTopicParam struct {
 	TopicMetrics []*UpdateHotTopicMetricsParam `json:"topicMetrics"`
 }
 
+type UpdateMatchingDurationConstraintParam struct {
+	StartDate *time.Time `json:"startDate,omitempty"`
+	StopDate  *time.Time `json:"stopDate,omitempty"`
+	Total     *int       `json:"total,omitempty"`
+}
+
 type UpdateMatchingInvitationParam struct {
 	CreatedAt *time.Time `json:"createdAt,omitempty"`
 	TopicID   *string    `json:"topicId,omitempty"`
@@ -167,13 +197,15 @@ type UpdateMatchingInvitationParam struct {
 }
 
 type UpdateMatchingParam struct {
-	TopicID   *string    `json:"topicId,omitempty"`
-	AreaIds   []string   `json:"areaIds,omitempty"`
-	CityID    *string    `json:"cityId,omitempty"`
-	Gender    *Gender    `json:"gender,omitempty"`
-	Remark    *string    `json:"remark,omitempty"`
-	CreatedAt *time.Time `json:"createdAt,omitempty"`
-	Deadline  *time.Time `json:"deadline,omitempty"`
+	TopicID         *string    `json:"topicId,omitempty"`
+	AreaIds         []string   `json:"areaIds,omitempty"`
+	CityID          *string    `json:"cityId,omitempty"`
+	Gender          *Gender    `json:"gender,omitempty"`
+	Remark          *string    `json:"remark,omitempty"`
+	Discoverable    *bool      `json:"discoverable,omitempty"`
+	StartMatchingAt *time.Time `json:"startMatchingAt,omitempty"`
+	CreatedAt       *time.Time `json:"createdAt,omitempty"`
+	Deadline        *time.Time `json:"deadline,omitempty"`
 }
 
 type UpdateMatchingQuotaParam struct {
@@ -426,6 +458,55 @@ func (e InvitationConfirmState) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
+type MatchingOfferState string
+
+const (
+	// 未处理
+	MatchingOfferStateUnprocessed MatchingOfferState = "Unprocessed"
+	// 被接受
+	MatchingOfferStateAccepted MatchingOfferState = "Accepted"
+	// 被拒绝
+	MatchingOfferStateRejected MatchingOfferState = "Rejected"
+	// 意向已取消
+	MatchingOfferStateCanceled MatchingOfferState = "Canceled"
+)
+
+var AllMatchingOfferState = []MatchingOfferState{
+	MatchingOfferStateUnprocessed,
+	MatchingOfferStateAccepted,
+	MatchingOfferStateRejected,
+	MatchingOfferStateCanceled,
+}
+
+func (e MatchingOfferState) IsValid() bool {
+	switch e {
+	case MatchingOfferStateUnprocessed, MatchingOfferStateAccepted, MatchingOfferStateRejected, MatchingOfferStateCanceled:
+		return true
+	}
+	return false
+}
+
+func (e MatchingOfferState) String() string {
+	return string(e)
+}
+
+func (e *MatchingOfferState) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = MatchingOfferState(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid MatchingOfferState", str)
+	}
+	return nil
+}
+
+func (e MatchingOfferState) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
 type MatchingResultConfirmState string
 
 const (
@@ -534,16 +615,19 @@ const (
 	ResultCreatedByMatching ResultCreatedBy = "Matching"
 	// 由邀请创建的结果
 	ResultCreatedByInvitation ResultCreatedBy = "Invitation"
+	// 由匹配邀约创建的结果
+	ResultCreatedByOffer ResultCreatedBy = "Offer"
 )
 
 var AllResultCreatedBy = []ResultCreatedBy{
 	ResultCreatedByMatching,
 	ResultCreatedByInvitation,
+	ResultCreatedByOffer,
 }
 
 func (e ResultCreatedBy) IsValid() bool {
 	switch e {
-	case ResultCreatedByMatching, ResultCreatedByInvitation:
+	case ResultCreatedByMatching, ResultCreatedByInvitation, ResultCreatedByOffer:
 		return true
 	}
 	return false

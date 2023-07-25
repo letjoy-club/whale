@@ -81,6 +81,8 @@ enum ResultCreatedBy {
   Matching
   "由邀请创建的结果"
   Invitation
+  "由匹配邀约创建的结果"
+  Offer
 }
 
 enum DatePeriod {
@@ -128,6 +130,9 @@ type Matching @key(fields: "id") {
   # query
   matchingResult: MatchingResult
   reviewed: Boolean!
+
+  viewCount: Int!
+  likeCount: Int!
 
   user: User!
   topic: Topic!

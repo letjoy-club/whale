@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"go/types"
 	"os"
+	"strings"
 
 	"github.com/vektah/gqlparser/v2/ast"
 
@@ -12,15 +13,33 @@ import (
 	"github.com/99designs/gqlgen/plugin/modelgen"
 )
 
+func DirectiveStr(fd ast.DirectiveList) string {
+	names := []string{}
+	for _, d := range fd {
+		names = append(names, d.Name)
+	}
+	return "[" + strings.Join(names, ",") + "]"
+}
+
 // Defining mutation function
-func constraintFieldHook(td *ast.Definition, fd *ast.FieldDefinition, f *modelgen.Field) (*modelgen.Field, error) {
+func toStrArrFieldHook(td *ast.Definition, fd *ast.FieldDefinition, f *modelgen.Field) (*modelgen.Field, error) {
 	if f, err := modelgen.DefaultFieldMutateHook(td, fd, f); err != nil {
 		return f, err
 	}
-
-	c := fd.Directives.ForName("list")
+	fmt.Printf("field hook %s.%s, %s@%s \n", td.Name, f.Name, f.GoName, DirectiveStr(fd.Directives))
+	c := fd.Directives.ForName("strArr")
 	if c != nil {
-		f.Type = types.NewArray(f.Type, 0)
+		fmt.Println(f.GoName, "->", "[]string")
+		f.Type = types.NewSlice(types.Typ[types.String])
+		f.GoName = "[]string"
+		// f.Type = types.String
+	}
+
+	c = fd.Directives.ForName("str")
+	if c != nil {
+		fmt.Println(f.GoName, "->", "string")
+		f.Type = types.Typ[types.String]
+		f.GoName = "string"
 	}
 	return f, nil
 }
@@ -34,7 +53,7 @@ func main() {
 
 	// Attaching the mutation function onto modelgen plugin
 	p := modelgen.Plugin{
-		FieldHook: constraintFieldHook,
+		FieldHook: toStrArrFieldHook,
 	}
 
 	err = api.Generate(cfg, api.ReplacePlugin(&p))

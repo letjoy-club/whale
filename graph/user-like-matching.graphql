@@ -1,0 +1,22 @@
+type UserLikeMatching {
+  toMatchingId: String!
+  createdAt: Time!
+
+  # query
+  user: User! @adminOnly
+  matching: DiscoverMatching!
+}
+
+extend type Query {
+  "【广场】我喜欢的匹配"
+  likedMatchings(userId: String, paginator: GraphQLPaginator): [UserLikeMatching!]!
+  "【广场】我喜欢的匹配数量"
+  likedMatchingCount(userId: String): Summary!
+}
+
+extend type Mutation {
+  "【广场】喜欢匹配"
+  likeMatching(userId: String, matchingId: String!): String!
+  "【广场】取消喜欢匹配"
+  unlikeMatching(userId: String, matchingId: String!): String!
+}
