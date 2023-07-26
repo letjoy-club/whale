@@ -44,6 +44,10 @@ func main() {
 	redis := whaleConf.Redis()
 	loader := loader.NewLoader(db)
 	whaleConf.QCloud.Init()
+	cls := whaleConf.QCloud.CLS.Client
+	if cls != nil && whaleConf.QCloud.CLS.TopicID != "" {
+		cls.Start()
+	}
 
 	publisher := whaleConf.MatchingPublisher()
 	subscriber := whaleConf.CreateSubscriber()
