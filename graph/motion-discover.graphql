@@ -85,7 +85,7 @@ type DiscoverMotion {
 }
 
 type DiscoverMotionResult {
-  matchings: [DiscoverMotion!]!
+  motions: [DiscoverMotion!]!
   nextToken: String!
 }
 
@@ -111,7 +111,7 @@ extend type Query {
   "【广场】发现 V2"
   discoverCategoryMotions(
     userId: String
-    DiscoverMotionFilter: DiscoverTopicCategoryMotionFilter
+    filter: DiscoverTopicCategoryMotionFilter
     topicCategoryId: String!
     nextToken: String
   ): DiscoverMotionResult!

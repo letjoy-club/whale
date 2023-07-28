@@ -6,11 +6,11 @@ package graph
 
 import (
 	"context"
-	"fmt"
 	"whale/pkg/dbquery"
 	"whale/pkg/loader"
 	"whale/pkg/models"
 	"whale/pkg/modelutil"
+	"whale/pkg/utils"
 
 	"github.com/golang-module/carbon"
 	"github.com/letjoy-club/mida-tool/dbutil"
@@ -217,8 +217,45 @@ func (r *mutationResolver) RejectMotionOffer(ctx context.Context, myMotionID str
 }
 
 // DiscoverCategoryMotions is the resolver for the discoverCategoryMotions field.
-func (r *queryResolver) DiscoverCategoryMotions(ctx context.Context, userID *string, discoverMotionFilter *models.DiscoverTopicCategoryMotionFilter, topicCategoryID string, nextToken *string) (*models.DiscoverMotionResult, error) {
-	panic(fmt.Errorf("not implemented: DiscoverCategoryMotions - discoverCategoryMotions"))
+func (r *queryResolver) DiscoverCategoryMotions(ctx context.Context, userID *string, filter *models.DiscoverTopicCategoryMotionFilter, topicCategoryID string, nextToken *string) (*models.DiscoverMotionResult, error) {
+	err := midacontext.GetLoader[loader.Loader](ctx).AllMotion.Load(ctx)
+	if err != nil {
+		return nil, err
+	}
+	next := ""
+	if nextToken != nil {
+		next = *nextToken
+	}
+	opt := loader.UserDiscoverMotionOpt{
+		N:         4,
+		NextToken: next,
+	}
+	if filter != nil {
+		if filter.CityID != nil {
+			opt.CityID = *filter.CityID
+		}
+		if filter.Gender != nil {
+			opt.Gender = *filter.Gender
+		}
+	}
+	opt.NextToken = next
+
+	token := midacontext.GetClientToken(ctx)
+
+	uid := graphqlutil.GetID(token, userID)
+	var ids []string
+	var retNext string
+	if uid != "" {
+		ids, retNext = midacontext.GetLoader[loader.Loader](ctx).AllMotion.LoadForUser(ctx, uid, topicCategoryID, opt)
+	} else {
+		ids = midacontext.GetLoader[loader.Loader](ctx).AllMotion.LoadForAnoumynous(ctx, topicCategoryID, opt)
+	}
+	thunk := midacontext.GetLoader[loader.Loader](ctx).Motion.LoadMany(ctx, ids)
+	motions, err := utils.ReturnThunk(thunk)
+	if err != nil {
+		return nil, err
+	}
+	return &models.DiscoverMotionResult{Motions: motions, NextToken: retNext}, nil
 }
 
 // OutMotionOffers is the resolver for the outMotionOffers field.

@@ -152,15 +152,15 @@ func (l *AllMotionLoader) GetCityToMotions() map[string]CityMotions {
 
 var motionReloadInterval = time.Minute * 5
 
-func (l *AllMotionLoader) LoadForAnoumynous(ctx context.Context, categoryID string, topicIDs []string, opt UserDiscoverOpt) (retIDs []string) {
+func (l *AllMotionLoader) LoadForAnoumynous(ctx context.Context, categoryID string, opt UserDiscoverMotionOpt) (retIDs []string) {
 	if opt.CityID == "" {
-		ret, _ := l.categoryMap.Load(categoryID, topicIDs, opt.Gender.String(), 0, opt.N)
+		ret, _ := l.categoryMap.Load(categoryID, opt.TopicIDs, opt.Gender.String(), 0, opt.N)
 		return ret
 	}
 	if l.cityMotionMap[opt.CityID] == nil {
 		return []string{}
 	}
-	ret, _ := l.cityMotionMap[opt.CityID].Load(categoryID, topicIDs, opt.Gender.String(), 0, opt.N)
+	ret, _ := l.cityMotionMap[opt.CityID].Load(categoryID, opt.TopicIDs, opt.Gender.String(), 0, opt.N)
 	return ret
 }
 

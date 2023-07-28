@@ -14,6 +14,7 @@ import (
 
 type Loader struct {
 	AllMatching *AllMatchingLoader
+	AllMotion   *AllMotionLoader
 
 	Matching                   *dataloader.Loader[string, *models.Matching]
 	MatchingInvitation         *dataloader.Loader[string, *models.MatchingInvitation]
@@ -61,6 +62,7 @@ type Loader struct {
 func NewLoader(db *gorm.DB) *Loader {
 	return &Loader{
 		AllMatching: NewAllMatchingLoader(db),
+		AllMotion:   NewAllMotionLoader(db),
 
 		CityTopicMatchings:  NewCityTopicMatchingLoader(db),
 		CityTopicRequestNum: NewCityTopicRequestNumLoader(db),

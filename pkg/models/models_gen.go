@@ -114,7 +114,7 @@ type DiscoverMatchingResult struct {
 }
 
 type DiscoverMotionResult struct {
-	Matchings []*Motion `json:"matchings"`
+	Motions   []*Motion `json:"motions"`
 	NextToken string    `json:"nextToken"`
 }
 

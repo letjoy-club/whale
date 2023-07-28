@@ -154,7 +154,7 @@ type ComplexityRoot struct {
 	}
 
 	DiscoverMotionResult struct {
-		Matchings func(childComplexity int) int
+		Motions   func(childComplexity int) int
 		NextToken func(childComplexity int) int
 	}
 
@@ -419,7 +419,7 @@ type ComplexityRoot struct {
 		CitiesTopicsCount           func(childComplexity int, filter *models.CitiesTopicsFilter) int
 		CityDistribution            func(childComplexity int) int
 		CityTopics                  func(childComplexity int, cityID string) int
-		DiscoverCategoryMotions     func(childComplexity int, userID *string, discoverMotionFilter *models.DiscoverTopicCategoryMotionFilter, topicCategoryID string, nextToken *string) int
+		DiscoverCategoryMotions     func(childComplexity int, userID *string, filter *models.DiscoverTopicCategoryMotionFilter, topicCategoryID string, nextToken *string) int
 		DiscoverMatchingOfTopic     func(childComplexity int, userID *string, topicID string, filter *models.DiscoverMatchingFilter, nextToken *string) int
 		HotTopics                   func(childComplexity int, filter *models.HotTopicsFilter, paginator *graphqlutil.GraphQLPaginator) int
 		HotTopicsCount              func(childComplexity int, filter *models.HotTopicsFilter) int
@@ -751,7 +751,7 @@ type QueryResolver interface {
 	TopicDistribution(ctx context.Context) ([]*models.TopicToMatching, error)
 	CityDistribution(ctx context.Context) ([]*models.CityToTopicMatching, error)
 	MatchingDurationConstraints(ctx context.Context, userID string) (*models.MatchingDurationConstraint, error)
-	DiscoverCategoryMotions(ctx context.Context, userID *string, discoverMotionFilter *models.DiscoverTopicCategoryMotionFilter, topicCategoryID string, nextToken *string) (*models.DiscoverMotionResult, error)
+	DiscoverCategoryMotions(ctx context.Context, userID *string, filter *models.DiscoverTopicCategoryMotionFilter, topicCategoryID string, nextToken *string) (*models.DiscoverMotionResult, error)
 	OutMotionOffers(ctx context.Context, motionID string) ([]*models.MotionOfferRecord, error)
 	InMotionOffers(ctx context.Context, motionID string) ([]*models.MotionOfferRecord, error)
 	Motion(ctx context.Context, id string) (*models.Motion, error)
@@ -1174,12 +1174,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.DiscoverMotion.UserID(childComplexity), true
 
-	case "DiscoverMotionResult.matchings":
-		if e.complexity.DiscoverMotionResult.Matchings == nil {
+	case "DiscoverMotionResult.motions":
+		if e.complexity.DiscoverMotionResult.Motions == nil {
 			break
 		}
 
-		return e.complexity.DiscoverMotionResult.Matchings(childComplexity), true
+		return e.complexity.DiscoverMotionResult.Motions(childComplexity), true
 
 	case "DiscoverMotionResult.nextToken":
 		if e.complexity.DiscoverMotionResult.NextToken == nil {
@@ -2859,7 +2859,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.DiscoverCategoryMotions(childComplexity, args["userId"].(*string), args["DiscoverMotionFilter"].(*models.DiscoverTopicCategoryMotionFilter), args["topicCategoryId"].(string), args["nextToken"].(*string)), true
+		return e.complexity.Query.DiscoverCategoryMotions(childComplexity, args["userId"].(*string), args["filter"].(*models.DiscoverTopicCategoryMotionFilter), args["topicCategoryId"].(string), args["nextToken"].(*string)), true
 
 	case "Query.discoverMatchingOfTopic":
 		if e.complexity.Query.DiscoverMatchingOfTopic == nil {
@@ -5047,14 +5047,14 @@ func (ec *executionContext) field_Query_discoverCategoryMotions_args(ctx context
 	}
 	args["userId"] = arg0
 	var arg1 *models.DiscoverTopicCategoryMotionFilter
-	if tmp, ok := rawArgs["DiscoverMotionFilter"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("DiscoverMotionFilter"))
+	if tmp, ok := rawArgs["filter"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
 		arg1, err = ec.unmarshalODiscoverTopicCategoryMotionFilter2ᚖwhaleᚋpkgᚋmodelsᚐDiscoverTopicCategoryMotionFilter(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["DiscoverMotionFilter"] = arg1
+	args["filter"] = arg1
 	var arg2 string
 	if tmp, ok := rawArgs["topicCategoryId"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("topicCategoryId"))
@@ -8391,8 +8391,8 @@ func (ec *executionContext) fieldContext_DiscoverMotion_areas(ctx context.Contex
 	return fc, nil
 }
 
-func (ec *executionContext) _DiscoverMotionResult_matchings(ctx context.Context, field graphql.CollectedField, obj *models.DiscoverMotionResult) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_DiscoverMotionResult_matchings(ctx, field)
+func (ec *executionContext) _DiscoverMotionResult_motions(ctx context.Context, field graphql.CollectedField, obj *models.DiscoverMotionResult) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DiscoverMotionResult_motions(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -8405,7 +8405,7 @@ func (ec *executionContext) _DiscoverMotionResult_matchings(ctx context.Context,
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Matchings, nil
+		return obj.Motions, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -8422,7 +8422,7 @@ func (ec *executionContext) _DiscoverMotionResult_matchings(ctx context.Context,
 	return ec.marshalNDiscoverMotion2ᚕᚖwhaleᚋpkgᚋmodelsᚐMotionᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_DiscoverMotionResult_matchings(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_DiscoverMotionResult_motions(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "DiscoverMotionResult",
 		Field:      field,
@@ -21383,7 +21383,7 @@ func (ec *executionContext) _Query_discoverCategoryMotions(ctx context.Context, 
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().DiscoverCategoryMotions(rctx, fc.Args["userId"].(*string), fc.Args["DiscoverMotionFilter"].(*models.DiscoverTopicCategoryMotionFilter), fc.Args["topicCategoryId"].(string), fc.Args["nextToken"].(*string))
+		return ec.resolvers.Query().DiscoverCategoryMotions(rctx, fc.Args["userId"].(*string), fc.Args["filter"].(*models.DiscoverTopicCategoryMotionFilter), fc.Args["topicCategoryId"].(string), fc.Args["nextToken"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -21408,8 +21408,8 @@ func (ec *executionContext) fieldContext_Query_discoverCategoryMotions(ctx conte
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "matchings":
-				return ec.fieldContext_DiscoverMotionResult_matchings(ctx, field)
+			case "motions":
+				return ec.fieldContext_DiscoverMotionResult_motions(ctx, field)
 			case "nextToken":
 				return ec.fieldContext_DiscoverMotionResult_nextToken(ctx, field)
 			}
@@ -29998,8 +29998,8 @@ func (ec *executionContext) _DiscoverMotionResult(ctx context.Context, sel ast.S
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("DiscoverMotionResult")
-		case "matchings":
-			out.Values[i] = ec._DiscoverMotionResult_matchings(ctx, field, obj)
+		case "motions":
+			out.Values[i] = ec._DiscoverMotionResult_motions(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
