@@ -4,12 +4,12 @@ import (
 	"context"
 	"time"
 	"whale/pkg/dbquery"
-	"whale/pkg/keyer"
 	"whale/pkg/loader"
 	"whale/pkg/models"
 	"whale/pkg/whalecode"
 
 	"github.com/letjoy-club/mida-tool/dbutil"
+	"github.com/letjoy-club/mida-tool/keyer"
 	"github.com/letjoy-club/mida-tool/midacode"
 	"github.com/letjoy-club/mida-tool/midacontext"
 	"github.com/letjoy-club/mida-tool/redisutil"
@@ -201,14 +201,14 @@ func AcceptInOffer(ctx context.Context, userID, myMatchingID, targetMatchingID s
 		}
 	}
 
-	if myMatching.State != models.MatchingStateMatching.String() {
-		return whalecode.ErrYourMatchingNotInMatchingState
-	}
-
-	if targetMatching.State != models.MatchingStateMatching.String() {
-		// 可能已经匹配到或者已经取消
-		return whalecode.ErrTheMatchingIsNotInMatchingState
-	}
+	// if myMatching.State != models.MatchingStateMatching.String() {
+	// 	return whalecode.ErrYourMatchingNotInMatchingState
+	// }
+	//
+	// if targetMatching.State != models.MatchingStateMatching.String() {
+	// 	// 可能已经匹配到或者已经取消
+	// 	return whalecode.ErrTheMatchingIsNotInMatchingState
+	// }
 
 	release, err := redisutil.LockAll(ctx, keyer.UserMatching(myMatching.UserID), keyer.UserMatching(targetMatching.UserID))
 	if err != nil {
@@ -255,9 +255,9 @@ func AcceptInOffer(ctx context.Context, userID, myMatchingID, targetMatchingID s
 			return whalecode.ErrMatchingOfferNotFound
 		}
 
-		if err := CloseMatchingOfferRelatedToMatchingID(ctx, tx, myMatchingID); err != nil {
-			return err
-		}
+		// if err := CloseMatchingOfferRelatedToMatchingID(ctx, tx, myMatchingID); err != nil {
+		// 	return err
+		// }
 		rx, err = MatchingOfferSummary.WithContext(ctx).Where(
 			MatchingOfferSummary.MatchingID.In(myMatchingID, targetMatchingID),
 		).UpdateSimple(MatchingOfferSummary.Active.Value(false))

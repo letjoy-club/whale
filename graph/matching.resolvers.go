@@ -10,7 +10,6 @@ import (
 	"strings"
 	"time"
 	"whale/pkg/dbquery"
-	"whale/pkg/keyer"
 	"whale/pkg/loader"
 	"whale/pkg/matcher"
 	"whale/pkg/models"
@@ -19,6 +18,7 @@ import (
 
 	"github.com/letjoy-club/mida-tool/dbutil"
 	"github.com/letjoy-club/mida-tool/graphqlutil"
+	"github.com/letjoy-club/mida-tool/keyer"
 	"github.com/letjoy-club/mida-tool/midacode"
 	"github.com/letjoy-club/mida-tool/midacontext"
 	"github.com/letjoy-club/mida-tool/redisutil"
@@ -351,6 +351,7 @@ func (r *mutationResolver) ReviewMatching(ctx context.Context, matchingID string
 		ToMatchingID:     peerMatchingID,
 		Comment:          param.Comment,
 	})
+	midacontext.GetLoader[loader.Loader](ctx).MatchingReviewed.Clear(ctx, matchingID)
 	return nil, err
 }
 

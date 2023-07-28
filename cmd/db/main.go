@@ -37,6 +37,11 @@ func main() {
 		&models.MatchingResult{},
 		&models.Matching{},
 
+		&models.Motion{},
+		&models.MotionOfferRecord{},
+		&models.MotionViewHistory{},
+		&models.LikeMotion{},
+
 		// 用户点赞匹配
 		&models.UserLikeMatching{},
 		&models.MatchingReceiveLike{},

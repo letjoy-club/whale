@@ -32,6 +32,12 @@ type Loader struct {
 	UserJoinTopic  *dataloader.Loader[int, *models.UserJoinTopic]
 	RecentMatching *dataloader.Loader[string, *models.RecentMatching]
 
+	Motion               *dataloader.Loader[string, *models.Motion]
+	UserLikeMotion       *dataloader.Loader[string, *UserLikeMotion]
+	UserSubmitMotion     *dataloader.Loader[string, *UserSubmitMotion]
+	InMotionOfferRecord  *dataloader.Loader[string, *MotionOffers]
+	OutMotionOfferRecord *dataloader.Loader[string, *MotionOffers]
+
 	// 从 recentMatching 中查询最近的 city, topic 对应的 matching id 信息
 	CityTopicMatchings *dataloader.Loader[CityTopicKey, CityTopicMatchings]
 	// 从 matching 表中获取最近的 topic 匹配中/已匹配数量
@@ -47,6 +53,7 @@ type Loader struct {
 	HotTopics *dataloader.Loader[string, *models.HotTopicsInArea]
 
 	TopicOptionConfig *TopicOptionConfigLoader
+	TopicCategory     *TopicCategoryLoader
 	// 配置
 	WhaleConfig *dataloader.Loader[string, *models.WhaleConfig]
 }
@@ -72,6 +79,12 @@ func NewLoader(db *gorm.DB) *Loader {
 
 		InMatchingOfferRecord:  NewInMatchingOfferLoader(db),
 		OutMatchingOfferRecord: NewOutMatchingOfferLoader(db),
+
+		InMotionOfferRecord:  NewInMotionOfferLoader(db),
+		OutMotionOfferRecord: NewOutMotionOfferLoader(db),
+		Motion:               NewMotionLoader(db),
+		UserLikeMotion:       NewUserLikeMotionLoader(db),
+		UserSubmitMotion:     NewUserSubmitMotionLoader(db),
 
 		UserProfile:        NewUserProfileLoader(db),
 		UserAvatarNickname: NewUserAvatarNicknameLoader(db),

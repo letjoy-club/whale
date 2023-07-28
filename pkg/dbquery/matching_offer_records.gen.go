@@ -33,6 +33,7 @@ func newMatchingOfferRecord(db *gorm.DB, opts ...gen.DOOption) matchingOfferReco
 	_matchingOfferRecord.UserID = field.NewString(tableName, "user_id")
 	_matchingOfferRecord.State = field.NewString(tableName, "state")
 	_matchingOfferRecord.ReactedAt = field.NewTime(tableName, "reacted_at")
+	_matchingOfferRecord.Remark = field.NewString(tableName, "remark")
 	_matchingOfferRecord.CreatedAt = field.NewTime(tableName, "created_at")
 
 	_matchingOfferRecord.fillFieldMap()
@@ -51,6 +52,7 @@ type matchingOfferRecord struct {
 	UserID       field.String
 	State        field.String
 	ReactedAt    field.Time
+	Remark       field.String
 	CreatedAt    field.Time
 
 	fieldMap map[string]field.Expr
@@ -75,6 +77,7 @@ func (m *matchingOfferRecord) updateTableName(table string) *matchingOfferRecord
 	m.UserID = field.NewString(table, "user_id")
 	m.State = field.NewString(table, "state")
 	m.ReactedAt = field.NewTime(table, "reacted_at")
+	m.Remark = field.NewString(table, "remark")
 	m.CreatedAt = field.NewTime(table, "created_at")
 
 	m.fillFieldMap()
@@ -100,7 +103,7 @@ func (m *matchingOfferRecord) GetFieldByName(fieldName string) (field.OrderExpr,
 }
 
 func (m *matchingOfferRecord) fillFieldMap() {
-	m.fieldMap = make(map[string]field.Expr, 8)
+	m.fieldMap = make(map[string]field.Expr, 9)
 	m.fieldMap["id"] = m.ID
 	m.fieldMap["to_matching_id"] = m.ToMatchingID
 	m.fieldMap["to_user_id"] = m.ToUserID
@@ -108,6 +111,7 @@ func (m *matchingOfferRecord) fillFieldMap() {
 	m.fieldMap["user_id"] = m.UserID
 	m.fieldMap["state"] = m.State
 	m.fieldMap["reacted_at"] = m.ReactedAt
+	m.fieldMap["remark"] = m.Remark
 	m.fieldMap["created_at"] = m.CreatedAt
 }
 

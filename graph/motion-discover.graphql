@@ -1,0 +1,145 @@
+enum MotionOfferState {
+  "未处理"
+  Pending
+  "被接受"
+  Accepted
+  "被拒绝"
+  Rejected
+  "意向已取消"
+  Canceled
+  "处理超时"
+  Timeout
+  "结束"
+  Finished
+}
+
+type Motion {
+  id: String!
+
+  userId: String!
+  cityId: String!
+  remark: String!
+
+  properties: [MotionProperty!]!
+  dayRange: [String!]!
+  preferredPeriods: [DatePeriod!]!
+  gender: Gender!
+
+  # query
+  viewCount: Int!
+  likeCount: Int!
+
+  topic: Topic!
+  topicOptionConfig: TopicOptionConfig
+  user: User!
+  city: Area!
+  areas: [Area!]!
+}
+
+type MotionOfferRecord {
+  toMotionId: String!
+  motionId: String!
+  state: MotionOfferState!
+
+  "管理员限定"
+  createdAt: Time! @adminOnly
+
+  "管理员限定"
+  reactAt: Time
+
+  remark: String!
+
+  # query
+  toMotion: DiscoverMotion!
+  motion: DiscoverMotion!
+}
+
+type MotionProperty {
+  id: String!
+  values: [String!]!
+}
+
+type DiscoverMotion {
+  id: String!
+  userId: String!
+  topicId: String!
+  properties: [MotionProperty!]!
+  cityId: String!
+  areaIds: [String!]!
+  gender: Gender!
+  dayRange: [String!]!
+  preferredPeriods: [DatePeriod!]!
+  remark: String!
+
+  # query
+  "是否标记为喜欢"
+  liked: Boolean!
+  "是否向其提交过意向"
+  submitted: Boolean!
+
+  topic: Topic!
+  topicOptionConfig: TopicOptionConfig
+  user: User!
+  city: Area!
+  areas: [Area!]!
+}
+
+type DiscoverMotionResult {
+  matchings: [DiscoverMotion!]!
+  nextToken: String!
+}
+
+input DiscoverTopicCategoryMotionFilter {
+  "城市 ID，可以不填，不填则为全国"
+  cityId: String
+
+  "发起人性别，可以不填，不填则为不限"
+  gender: Gender
+
+  "话题 id，不填则为不限"
+  topicIds: [String!]
+}
+
+type AvailableMotionOffer {
+  "可发起的意向"
+  motion: Motion
+  "下次获得一次配额的时间"
+  nextQuotaTime: Time
+}
+
+extend type Query {
+  "【广场】发现 V2"
+  discoverCategoryMotions(
+    userId: String
+    DiscoverMotionFilter: DiscoverTopicCategoryMotionFilter
+    topicCategoryId: String!
+    nextToken: String
+  ): DiscoverMotionResult!
+
+  "【广场】我的收到活动意向"
+  outMotionOffers(motionId: String!): [MotionOfferRecord!]!
+
+  "【广场】我发出的活动意向"
+  inMotionOffers(motionId: String!): [MotionOfferRecord!]!
+}
+
+extend type Mutation {
+  "【广场】获取可以发起响应的意向 id V2"
+  getAvailableMotionOffer(
+    "用户 ID，不填"
+    userId: String
+    targetMotionId: String!
+  ): AvailableMotionOffer!
+
+  "【广场】发起活动意向 V2"
+  createMotionOffer(myMotionId: String!, targetMotionId: String!): String
+
+  "【广场】取消活动意向 V2"
+  cancelMotionOffer(myMotionId: String!, targetMotionId: String!): String
+
+  "【广场】接受活动意向 V2"
+  acceptMotionOffer(myMotionId: String!, targetMotionId: String!): String
+
+  "【广场】拒绝活动意向 V2"
+  rejectMotionOffer(myMotionId: String!, targetMotionId: String!): String
+}

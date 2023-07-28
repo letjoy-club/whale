@@ -42,11 +42,7 @@ type MatchingOfferRecord struct {
 	State     string
 	ReactedAt *time.Time
 
-	CreatedAt time.Time `gorm:"autoCreateTime"`
-}
+	Remark string `gorm:"text"`
 
-type MatchingOffer struct {
-	ID string `json:"id"`
-	// Unprocessed, Accepted, Rejected, Canceled
-	State string `json:"state"`
+	CreatedAt time.Time `gorm:"autoCreateTime"`
 }

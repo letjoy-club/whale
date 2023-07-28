@@ -103,9 +103,21 @@ models:
   MatchingOfferSummary:
     model:
       - whale/pkg/models.MatchingOfferSummary
+  Motion:
+    model:
+      - whale/pkg/models.Motion
+  MotionProperty:
+    model:
+      - whale/pkg/models.MotionProperty
+  MotionOfferRecord:
+    model:
+      - whale/pkg/models.MotionOfferRecord
   DiscoverMatching:
     model:
       - whale/pkg/models.Matching
+  DiscoverMotion:
+    model:
+      - whale/pkg/models.Motion
   RecentMatching:
     model:
       - whale/pkg/models.RecentMatching

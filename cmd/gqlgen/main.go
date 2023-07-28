@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"go/types"
 	"os"
 	"strings"
 
@@ -21,29 +20,6 @@ func DirectiveStr(fd ast.DirectiveList) string {
 	return "[" + strings.Join(names, ",") + "]"
 }
 
-// Defining mutation function
-func toStrArrFieldHook(td *ast.Definition, fd *ast.FieldDefinition, f *modelgen.Field) (*modelgen.Field, error) {
-	if f, err := modelgen.DefaultFieldMutateHook(td, fd, f); err != nil {
-		return f, err
-	}
-	fmt.Printf("field hook %s.%s, %s@%s \n", td.Name, f.Name, f.GoName, DirectiveStr(fd.Directives))
-	c := fd.Directives.ForName("strArr")
-	if c != nil {
-		fmt.Println(f.GoName, "->", "[]string")
-		f.Type = types.NewSlice(types.Typ[types.String])
-		f.GoName = "[]string"
-		// f.Type = types.String
-	}
-
-	c = fd.Directives.ForName("str")
-	if c != nil {
-		fmt.Println(f.GoName, "->", "string")
-		f.Type = types.Typ[types.String]
-		f.GoName = "string"
-	}
-	return f, nil
-}
-
 func main() {
 	cfg, err := config.LoadConfigFromDefaultLocations()
 	if err != nil {
@@ -53,7 +29,9 @@ func main() {
 
 	// Attaching the mutation function onto modelgen plugin
 	p := modelgen.Plugin{
-		FieldHook: toStrArrFieldHook,
+		MutateHook: func(b *modelgen.ModelBuild) *modelgen.ModelBuild {
+			return b
+		},
 	}
 
 	err = api.Generate(cfg, api.ReplacePlugin(&p))

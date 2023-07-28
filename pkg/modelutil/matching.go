@@ -324,7 +324,7 @@ func CreateMatchingV2(ctx context.Context, uid string, param models.CreateMatchi
 	}
 
 	matching := &models.Matching{
-		ID:               shortid.NewWithTime("m_", 6),
+		ID:               shortid.NewWithTime("m_", 4),
 		TopicID:          param.TopicID,
 		UserID:           uid,
 		State:            models.MatchingStateMatching.String(),
@@ -515,7 +515,10 @@ func FinishMatching(ctx context.Context, matchingID string, uid string) error {
 	}
 
 	if matching.State != models.MatchingStateMatched.String() {
-		return midacode.ErrStateMayHaveChanged
+		if models.MatchingStateFinished == models.MatchingState(matching.State) {
+			return nil
+		}
+		return whalecode.ErrMatchingStateShouldBeMatched
 	}
 
 	matchingResultThunk := midacontext.GetLoader[loader.Loader](ctx).MatchingResult.Load(ctx, matching.ResultID)

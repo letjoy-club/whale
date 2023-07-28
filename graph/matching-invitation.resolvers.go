@@ -7,7 +7,6 @@ package graph
 import (
 	"context"
 	"whale/pkg/dbquery"
-	"whale/pkg/keyer"
 	"whale/pkg/loader"
 	"whale/pkg/models"
 	"whale/pkg/modelutil"
@@ -15,6 +14,7 @@ import (
 
 	"github.com/letjoy-club/mida-tool/dbutil"
 	"github.com/letjoy-club/mida-tool/graphqlutil"
+	"github.com/letjoy-club/mida-tool/keyer"
 	"github.com/letjoy-club/mida-tool/midacode"
 	"github.com/letjoy-club/mida-tool/midacontext"
 	"github.com/letjoy-club/mida-tool/redisutil"

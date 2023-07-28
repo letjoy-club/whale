@@ -20,6 +20,12 @@ query GetTopic($id: String!) {
   }
 }
 
+query GetTopicCategories($paginator: GraphQLPaginator!) {
+  topicCategories(paginator: $paginator) {
+    id
+  }
+}
+
 query GetTopicName($id: String!) {
   topic(id: $id) {
     id
@@ -71,10 +77,10 @@ query GetTopicConfigOptions($paginator: GraphQLPaginator!) {
   }
 }
 
-query GetTopics {
-  topics {
+query GetTopics($paginator: GraphQLPaginator!) {
+  topics(paginator: $paginator) {
     id
-    name
+    category
   }
 }
 

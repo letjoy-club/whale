@@ -330,6 +330,26 @@ func (v *GetBlacklistRelationshipResponse) GetBlacklistRelationship() []*GetBlac
 	return v.BlacklistRelationship
 }
 
+// GetTopicCategoriesResponse is returned by GetTopicCategories on success.
+type GetTopicCategoriesResponse struct {
+	// 【话题】类别列表查询
+	TopicCategories []*GetTopicCategoriesTopicCategoriesTopicCategory `json:"topicCategories"`
+}
+
+// GetTopicCategories returns GetTopicCategoriesResponse.TopicCategories, and is useful for accessing the field via an interface.
+func (v *GetTopicCategoriesResponse) GetTopicCategories() []*GetTopicCategoriesTopicCategoriesTopicCategory {
+	return v.TopicCategories
+}
+
+// GetTopicCategoriesTopicCategoriesTopicCategory includes the requested fields of the GraphQL type TopicCategory.
+type GetTopicCategoriesTopicCategoriesTopicCategory struct {
+	// 类别ID
+	Id int `json:"id"`
+}
+
+// GetId returns GetTopicCategoriesTopicCategoriesTopicCategory.Id, and is useful for accessing the field via an interface.
+func (v *GetTopicCategoriesTopicCategoriesTopicCategory) GetId() int { return v.Id }
+
 // GetTopicConfigOptionResponse is returned by GetTopicConfigOption on success.
 type GetTopicConfigOptionResponse struct {
 	TopicOptionConfig *GetTopicConfigOptionTopicOptionConfig `json:"topicOptionConfig"`
@@ -608,15 +628,15 @@ func (v *GetTopicsResponse) GetTopics() []*GetTopicsTopicsTopic { return v.Topic
 type GetTopicsTopicsTopic struct {
 	// 话题ID
 	Id string `json:"id"`
-	// 名称
-	Name string `json:"name"`
+	// 类别
+	Category string `json:"category"`
 }
 
 // GetId returns GetTopicsTopicsTopic.Id, and is useful for accessing the field via an interface.
 func (v *GetTopicsTopicsTopic) GetId() string { return v.Id }
 
-// GetName returns GetTopicsTopicsTopic.Name, and is useful for accessing the field via an interface.
-func (v *GetTopicsTopicsTopic) GetName() string { return v.Name }
+// GetCategory returns GetTopicsTopicsTopic.Category, and is useful for accessing the field via an interface.
+func (v *GetTopicsTopicsTopic) GetCategory() string { return v.Category }
 
 // GetUserByIDsGetUserByIdsUser includes the requested fields of the GraphQL type User.
 type GetUserByIDsGetUserByIdsUser struct {
@@ -824,6 +844,14 @@ type __GetBlacklistRelationshipInput struct {
 // GetIds returns __GetBlacklistRelationshipInput.Ids, and is useful for accessing the field via an interface.
 func (v *__GetBlacklistRelationshipInput) GetIds() []string { return v.Ids }
 
+// __GetTopicCategoriesInput is used internally by genqlient
+type __GetTopicCategoriesInput struct {
+	Paginator *GraphQLPaginator `json:"paginator,omitempty"`
+}
+
+// GetPaginator returns __GetTopicCategoriesInput.Paginator, and is useful for accessing the field via an interface.
+func (v *__GetTopicCategoriesInput) GetPaginator() *GraphQLPaginator { return v.Paginator }
+
 // __GetTopicConfigOptionInput is used internally by genqlient
 type __GetTopicConfigOptionInput struct {
 	TopicId string `json:"topicId"`
@@ -855,6 +883,14 @@ type __GetTopicNameInput struct {
 
 // GetId returns __GetTopicNameInput.Id, and is useful for accessing the field via an interface.
 func (v *__GetTopicNameInput) GetId() string { return v.Id }
+
+// __GetTopicsInput is used internally by genqlient
+type __GetTopicsInput struct {
+	Paginator *GraphQLPaginator `json:"paginator,omitempty"`
+}
+
+// GetPaginator returns __GetTopicsInput.Paginator, and is useful for accessing the field via an interface.
+func (v *__GetTopicsInput) GetPaginator() *GraphQLPaginator { return v.Paginator }
 
 // __GetUserByIDsInput is used internally by genqlient
 type __GetUserByIDsInput struct {
@@ -1123,6 +1159,41 @@ func GetTopic(
 	return &data, err
 }
 
+// The query or mutation executed by GetTopicCategories.
+const GetTopicCategories_Operation = `
+query GetTopicCategories ($paginator: GraphQLPaginator!) {
+	topicCategories(paginator: $paginator) {
+		id
+	}
+}
+`
+
+func GetTopicCategories(
+	ctx context.Context,
+	client graphql.Client,
+	paginator *GraphQLPaginator,
+) (*GetTopicCategoriesResponse, error) {
+	req := &graphql.Request{
+		OpName: "GetTopicCategories",
+		Query:  GetTopicCategories_Operation,
+		Variables: &__GetTopicCategoriesInput{
+			Paginator: paginator,
+		},
+	}
+	var err error
+
+	var data GetTopicCategoriesResponse
+	resp := &graphql.Response{Data: &data}
+
+	err = client.MakeRequest(
+		ctx,
+		req,
+		resp,
+	)
+
+	return &data, err
+}
+
 // The query or mutation executed by GetTopicConfigOption.
 const GetTopicConfigOption_Operation = `
 query GetTopicConfigOption ($topicId: String!) {
@@ -1277,10 +1348,10 @@ func GetTopicName(
 
 // The query or mutation executed by GetTopics.
 const GetTopics_Operation = `
-query GetTopics {
-	topics {
+query GetTopics ($paginator: GraphQLPaginator!) {
+	topics(paginator: $paginator) {
 		id
-		name
+		category
 	}
 }
 `
@@ -1288,10 +1359,14 @@ query GetTopics {
 func GetTopics(
 	ctx context.Context,
 	client graphql.Client,
+	paginator *GraphQLPaginator,
 ) (*GetTopicsResponse, error) {
 	req := &graphql.Request{
 		OpName: "GetTopics",
 		Query:  GetTopics_Operation,
+		Variables: &__GetTopicsInput{
+			Paginator: paginator,
+		},
 	}
 	var err error
 

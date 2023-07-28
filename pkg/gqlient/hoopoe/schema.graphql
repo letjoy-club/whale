@@ -599,8 +599,8 @@ type Mutation {
     operatorId: String
   ): String
 
-  """【标签】他人评价标签添加置顶"""
-  evaluateTagPin(
+  """【标签】置顶他人评价标签"""
+  evaluateTagLike(
     """评价标签ID"""
     id: String!
 
@@ -608,8 +608,8 @@ type Mutation {
     userId: String
   ): String
 
-  """【标签】他人评价标签取消置顶"""
-  evaluateTagCancelPin(
+  """【标签】删除他人评价标签"""
+  evaluateTagDislike(
     """评价标签ID"""
     id: String!
 
@@ -1272,6 +1272,9 @@ type Query {
 
   """【话题】列表查询数量，管理端功能"""
   topicsCount(filter: TopicFilter): Summary!
+
+  """【话题】根据ID批量获取话题，管理端使用，用户可以不存在"""
+  getTopicByIds(ids: [String!]!): [Topic]!
   topicOptionConfig(topicId: String!): TopicOptionConfig
   topicOptionConfigs(filter: TopicOptionConfigFilter, paginator: GraphQLPaginator): [TopicOptionConfig!]!
   topicOptionConfigsCount(filter: TopicOptionConfigFilter): Summary!
@@ -1948,14 +1951,14 @@ input UserCustomTopicParam {
 }
 
 type UserEvaluateTag {
+  """ID"""
+  id: String!
+
   """标签"""
   tag: String!
 
   """打标签的人"""
   operator: SimpleUser!
-
-  """标记的"""
-  pin: Boolean!
 }
 
 input UserFilter {

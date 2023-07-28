@@ -128,6 +128,8 @@ type Matching @key(fields: "id") {
   createdAt: Time!
 
   # query
+  "匹配意向"
+  matchingOfferSummary: MatchingOfferSummary!
   matchingResult: MatchingResult
   reviewed: Boolean!
 

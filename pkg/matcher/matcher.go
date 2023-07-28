@@ -6,12 +6,12 @@ import (
 	"time"
 	"whale/pkg/dbquery"
 	"whale/pkg/gqlient/scream"
-	"whale/pkg/keyer"
 	"whale/pkg/loader"
 	"whale/pkg/models"
 	"whale/pkg/modelutil"
 
 	"github.com/letjoy-club/mida-tool/dbutil"
+	"github.com/letjoy-club/mida-tool/keyer"
 	"github.com/letjoy-club/mida-tool/logger"
 	"github.com/letjoy-club/mida-tool/midacode"
 	"github.com/letjoy-club/mida-tool/midacontext"

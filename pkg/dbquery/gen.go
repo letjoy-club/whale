@@ -20,6 +20,7 @@ func Use(db *gorm.DB, opts ...gen.DOOption) *Query {
 		db:                          db,
 		CityTopics:                  newCityTopics(db, opts...),
 		HotTopicsInArea:             newHotTopicsInArea(db, opts...),
+		LikeMotion:                  newLikeMotion(db, opts...),
 		Matching:                    newMatching(db, opts...),
 		MatchingDurationConstraint:  newMatchingDurationConstraint(db, opts...),
 		MatchingInvitation:          newMatchingInvitation(db, opts...),
@@ -32,6 +33,9 @@ func Use(db *gorm.DB, opts ...gen.DOOption) *Query {
 		MatchingReview:              newMatchingReview(db, opts...),
 		MatchingView:                newMatchingView(db, opts...),
 		MatchingViewHistory:         newMatchingViewHistory(db, opts...),
+		Motion:                      newMotion(db, opts...),
+		MotionOfferRecord:           newMotionOfferRecord(db, opts...),
+		MotionViewHistory:           newMotionViewHistory(db, opts...),
 		RecentMatching:              newRecentMatching(db, opts...),
 		UserJoinTopic:               newUserJoinTopic(db, opts...),
 		UserLikeMatching:            newUserLikeMatching(db, opts...),
@@ -45,6 +49,7 @@ type Query struct {
 
 	CityTopics                  cityTopics
 	HotTopicsInArea             hotTopicsInArea
+	LikeMotion                  likeMotion
 	Matching                    matching
 	MatchingDurationConstraint  matchingDurationConstraint
 	MatchingInvitation          matchingInvitation
@@ -57,6 +62,9 @@ type Query struct {
 	MatchingReview              matchingReview
 	MatchingView                matchingView
 	MatchingViewHistory         matchingViewHistory
+	Motion                      motion
+	MotionOfferRecord           motionOfferRecord
+	MotionViewHistory           motionViewHistory
 	RecentMatching              recentMatching
 	UserJoinTopic               userJoinTopic
 	UserLikeMatching            userLikeMatching
@@ -71,6 +79,7 @@ func (q *Query) clone(db *gorm.DB) *Query {
 		db:                          db,
 		CityTopics:                  q.CityTopics.clone(db),
 		HotTopicsInArea:             q.HotTopicsInArea.clone(db),
+		LikeMotion:                  q.LikeMotion.clone(db),
 		Matching:                    q.Matching.clone(db),
 		MatchingDurationConstraint:  q.MatchingDurationConstraint.clone(db),
 		MatchingInvitation:          q.MatchingInvitation.clone(db),
@@ -83,6 +92,9 @@ func (q *Query) clone(db *gorm.DB) *Query {
 		MatchingReview:              q.MatchingReview.clone(db),
 		MatchingView:                q.MatchingView.clone(db),
 		MatchingViewHistory:         q.MatchingViewHistory.clone(db),
+		Motion:                      q.Motion.clone(db),
+		MotionOfferRecord:           q.MotionOfferRecord.clone(db),
+		MotionViewHistory:           q.MotionViewHistory.clone(db),
 		RecentMatching:              q.RecentMatching.clone(db),
 		UserJoinTopic:               q.UserJoinTopic.clone(db),
 		UserLikeMatching:            q.UserLikeMatching.clone(db),
@@ -104,6 +116,7 @@ func (q *Query) ReplaceDB(db *gorm.DB) *Query {
 		db:                          db,
 		CityTopics:                  q.CityTopics.replaceDB(db),
 		HotTopicsInArea:             q.HotTopicsInArea.replaceDB(db),
+		LikeMotion:                  q.LikeMotion.replaceDB(db),
 		Matching:                    q.Matching.replaceDB(db),
 		MatchingDurationConstraint:  q.MatchingDurationConstraint.replaceDB(db),
 		MatchingInvitation:          q.MatchingInvitation.replaceDB(db),
@@ -116,6 +129,9 @@ func (q *Query) ReplaceDB(db *gorm.DB) *Query {
 		MatchingReview:              q.MatchingReview.replaceDB(db),
 		MatchingView:                q.MatchingView.replaceDB(db),
 		MatchingViewHistory:         q.MatchingViewHistory.replaceDB(db),
+		Motion:                      q.Motion.replaceDB(db),
+		MotionOfferRecord:           q.MotionOfferRecord.replaceDB(db),
+		MotionViewHistory:           q.MotionViewHistory.replaceDB(db),
 		RecentMatching:              q.RecentMatching.replaceDB(db),
 		UserJoinTopic:               q.UserJoinTopic.replaceDB(db),
 		UserLikeMatching:            q.UserLikeMatching.replaceDB(db),
@@ -127,6 +143,7 @@ func (q *Query) ReplaceDB(db *gorm.DB) *Query {
 type queryCtx struct {
 	CityTopics                  ICityTopicsDo
 	HotTopicsInArea             IHotTopicsInAreaDo
+	LikeMotion                  ILikeMotionDo
 	Matching                    IMatchingDo
 	MatchingDurationConstraint  IMatchingDurationConstraintDo
 	MatchingInvitation          IMatchingInvitationDo
@@ -139,6 +156,9 @@ type queryCtx struct {
 	MatchingReview              IMatchingReviewDo
 	MatchingView                IMatchingViewDo
 	MatchingViewHistory         IMatchingViewHistoryDo
+	Motion                      IMotionDo
+	MotionOfferRecord           IMotionOfferRecordDo
+	MotionViewHistory           IMotionViewHistoryDo
 	RecentMatching              IRecentMatchingDo
 	UserJoinTopic               IUserJoinTopicDo
 	UserLikeMatching            IUserLikeMatchingDo
@@ -150,6 +170,7 @@ func (q *Query) WithContext(ctx context.Context) *queryCtx {
 	return &queryCtx{
 		CityTopics:                  q.CityTopics.WithContext(ctx),
 		HotTopicsInArea:             q.HotTopicsInArea.WithContext(ctx),
+		LikeMotion:                  q.LikeMotion.WithContext(ctx),
 		Matching:                    q.Matching.WithContext(ctx),
 		MatchingDurationConstraint:  q.MatchingDurationConstraint.WithContext(ctx),
 		MatchingInvitation:          q.MatchingInvitation.WithContext(ctx),
@@ -162,6 +183,9 @@ func (q *Query) WithContext(ctx context.Context) *queryCtx {
 		MatchingReview:              q.MatchingReview.WithContext(ctx),
 		MatchingView:                q.MatchingView.WithContext(ctx),
 		MatchingViewHistory:         q.MatchingViewHistory.WithContext(ctx),
+		Motion:                      q.Motion.WithContext(ctx),
+		MotionOfferRecord:           q.MotionOfferRecord.WithContext(ctx),
+		MotionViewHistory:           q.MotionViewHistory.WithContext(ctx),
 		RecentMatching:              q.RecentMatching.WithContext(ctx),
 		UserJoinTopic:               q.UserJoinTopic.WithContext(ctx),
 		UserLikeMatching:            q.UserLikeMatching.WithContext(ctx),

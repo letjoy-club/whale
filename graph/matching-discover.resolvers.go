@@ -6,10 +6,14 @@ package graph
 
 import (
 	"context"
+	"whale/pkg/dbquery"
 	"whale/pkg/loader"
 	"whale/pkg/models"
 	"whale/pkg/modelutil"
+	"whale/pkg/whalecode"
 
+	"github.com/golang-module/carbon"
+	"github.com/letjoy-club/mida-tool/dbutil"
 	"github.com/letjoy-club/mida-tool/graphqlutil"
 	"github.com/letjoy-club/mida-tool/midacode"
 	"github.com/letjoy-club/mida-tool/midacontext"
@@ -24,9 +28,9 @@ func (r *discoverMatchingResolver) PreferredPeriods(ctx context.Context, obj *mo
 	}), nil
 }
 
-// TopicOptionConfig is the resolver for the topicOptionConfig field.
-func (r *discoverMatchingResolver) TopicOptionConfig(ctx context.Context, obj *models.Matching) (*models.TopicOptionConfig, error) {
-	return &models.TopicOptionConfig{TopicID: obj.TopicID}, nil
+// Gender is the resolver for the gender field.
+func (r *discoverMatchingResolver) Gender(ctx context.Context, obj *models.Matching) (models.Gender, error) {
+	return models.Gender(obj.Gender), nil
 }
 
 // Liked is the resolver for the liked field.
@@ -57,6 +61,16 @@ func (r *discoverMatchingResolver) LikeCount(ctx context.Context, obj *models.Ma
 		return 0, err
 	}
 	return like.LikeNum, nil
+}
+
+// Topic is the resolver for the topic field.
+func (r *discoverMatchingResolver) Topic(ctx context.Context, obj *models.Matching) (*models.Topic, error) {
+	return &models.Topic{ID: obj.TopicID}, nil
+}
+
+// TopicOptionConfig is the resolver for the topicOptionConfig field.
+func (r *discoverMatchingResolver) TopicOptionConfig(ctx context.Context, obj *models.Matching) (*models.TopicOptionConfig, error) {
+	return &models.TopicOptionConfig{TopicID: obj.TopicID}, nil
 }
 
 // User is the resolver for the user field.
@@ -139,6 +153,33 @@ func (r *matchingOfferSummaryResolver) OutMatchingOffers(ctx context.Context, ob
 		return nil, err
 	}
 	return record.OfferRecords(), nil
+}
+
+// GetAvailableMatchingOffer is the resolver for the getAvailableMatchingOffer field.
+func (r *mutationResolver) GetAvailableMatchingOffer(ctx context.Context, userID *string, targetMatchingID string) (*models.Matching, error) {
+	token := midacontext.GetClientToken(ctx)
+	if !token.IsAdmin() && !token.IsUser() {
+		return nil, midacode.ErrNotPermitted
+	}
+	uid := graphqlutil.GetID(token, userID)
+	if uid == "" {
+		return nil, whalecode.ErrUserIDCannotBeEmpty
+	}
+	thunk := midacontext.GetLoader[loader.Loader](ctx).Matching.Load(ctx, targetMatchingID)
+	targetMatching, err := thunk()
+	if err != nil {
+		return nil, err
+	}
+	if targetMatching.UserID == uid {
+		return nil, whalecode.ErrCannotSendMatchingOfferToSelf
+	}
+	db := dbutil.GetDB(ctx)
+	Matching := dbquery.Use(db).Matching
+	matching, err := Matching.WithContext(ctx).Where(Matching.UserID.Eq(uid), Matching.TopicID.Eq(targetMatching.TopicID), Matching.Discoverable.Is(true)).Order(Matching.CreatedAt.Desc()).Take()
+	if err != nil {
+		return nil, nil
+	}
+	return matching, nil
 }
 
 // SendMatchingOffer is the resolver for the sendMatchingOffer field.
@@ -271,6 +312,17 @@ func (r *queryResolver) OutMatchingOffer(ctx context.Context, matchingID string)
 		return nil, err
 	}
 	return records.OfferRecords(), nil
+}
+
+// YesterdayMatchingCount is the resolver for the yesterdayMatchingCount field.
+func (r *queryResolver) YesterdayMatchingCount(ctx context.Context) (int, error) {
+	db := dbutil.GetDB(ctx)
+	Matching := dbquery.Use(db).Matching
+	now := carbon.Now()
+	start := now.StartOfDay().AddDays(-3)
+	end := now.StartOfDay()
+	count, err := Matching.WithContext(ctx).Where(Matching.CreatedAt.Between(start.ToStdTime(), end.ToStdTime())).Count()
+	return int(count), err
 }
 
 // DiscoverMatching returns DiscoverMatchingResolver implementation.
