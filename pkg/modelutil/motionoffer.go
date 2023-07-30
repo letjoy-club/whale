@@ -25,7 +25,7 @@ func CreateMotionOffer(ctx context.Context, myUserID, myMotionID, targetMotionID
 	myMotion := motions[0]
 	targetMotion := motions[1]
 
-	if myMotion.UserID != myUserID {
+	if myMotion.UserID == myUserID {
 		return whalecode.ErrCannotSendMatchingOfferToSelf
 	}
 
@@ -57,7 +57,7 @@ func CreateMotionOffer(ctx context.Context, myUserID, myMotionID, targetMotionID
 	}
 	defer release(ctx)
 
-	db := dbutil.GetDB(ctx)
+	db := dbutil.GetDB(ctx).Debug()
 	err = dbquery.Use(db).Transaction(func(tx *dbquery.Query) error {
 		MotionOfferRecord := tx.MotionOfferRecord
 		err := MotionOfferRecord.WithContext(ctx).Create(&models.MotionOfferRecord{

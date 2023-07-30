@@ -20,6 +20,19 @@ type Motion {
   cityId: String!
   remark: String!
 
+  "是否可发起或者被发起配对"
+  active: Boolean!
+
+  inOfferNum: Int!
+  outOfferNum: Int!
+  pendingInNum: Int!
+  pendingOutNum: Int!
+  activeNum: Int!
+
+  discoverable: Boolean!
+  basicQuota: Int!
+  remainQuota: Int!
+
   properties: [MotionProperty!]!
   dayRange: [String!]!
   preferredPeriods: [DatePeriod!]!

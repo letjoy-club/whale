@@ -21,20 +21,20 @@ type Motion struct {
 	// 优先时间段
 	PreferredPeriods []string `gorm:"serializer:json;type:json"`
 
-	ViewCount int
-	LikeCount int
+	ViewCount int `gorm:"default:0"`
+	LikeCount int `gorm:"default:0"`
 
-	InOfferNum  int
-	OutOfferNum int
+	InOfferNum  int `gorm:"default:0"`
+	OutOfferNum int `gorm:"default:0"`
 
-	PendingInNum  int
-	PendingOutNum int
-	ActiveNum     int
+	PendingInNum  int `gorm:"default:0"`
+	PendingOutNum int `gorm:"default:0"`
+	ActiveNum     int `gorm:"default:0"`
 
 	Discoverable bool
 
-	BasicQuota  int
-	RemainQuota int
+	BasicQuota  int `gorm:"default:0"`
+	RemainQuota int `gorm:"default:0"`
 
 	Deadline  time.Time
 	UpdatedAt time.Time

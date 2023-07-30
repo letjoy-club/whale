@@ -36,6 +36,7 @@ func NewInMotionOfferLoader(db *gorm.DB) *dataloader.Loader[string, *MotionOffer
 		if _, ok := m[v.ToMotionID]; !ok {
 			m[v.ToMotionID] = &MotionOffers{
 				motionID: v.ToMotionID,
+				Offers:   []*models.MotionOfferRecord{v},
 			}
 		} else {
 			m[v.ToMotionID].Offers = append(m[v.ToMotionID].Offers, v)
@@ -53,6 +54,7 @@ func NewOutMotionOfferLoader(db *gorm.DB) *dataloader.Loader[string, *MotionOffe
 		if _, ok := m[v.MotionID]; !ok {
 			m[v.MotionID] = &MotionOffers{
 				motionID: v.MotionID,
+				Offers:   []*models.MotionOfferRecord{v},
 			}
 		} else {
 			m[v.MotionID].Offers = append(m[v.MotionID].Offers, v)

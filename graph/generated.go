@@ -336,15 +336,24 @@ type ComplexityRoot struct {
 	}
 
 	Motion struct {
+		Active            func(childComplexity int) int
+		ActiveNum         func(childComplexity int) int
 		Areas             func(childComplexity int) int
+		BasicQuota        func(childComplexity int) int
 		City              func(childComplexity int) int
 		CityID            func(childComplexity int) int
 		DayRange          func(childComplexity int) int
+		Discoverable      func(childComplexity int) int
 		Gender            func(childComplexity int) int
 		ID                func(childComplexity int) int
+		InOfferNum        func(childComplexity int) int
 		LikeCount         func(childComplexity int) int
+		OutOfferNum       func(childComplexity int) int
+		PendingInNum      func(childComplexity int) int
+		PendingOutNum     func(childComplexity int) int
 		PreferredPeriods  func(childComplexity int) int
 		Properties        func(childComplexity int) int
+		RemainQuota       func(childComplexity int) int
 		Remark            func(childComplexity int) int
 		Topic             func(childComplexity int) int
 		TopicOptionConfig func(childComplexity int) int
@@ -2137,12 +2146,33 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.MatchingResultConfirmAction.UserID(childComplexity), true
 
+	case "Motion.active":
+		if e.complexity.Motion.Active == nil {
+			break
+		}
+
+		return e.complexity.Motion.Active(childComplexity), true
+
+	case "Motion.activeNum":
+		if e.complexity.Motion.ActiveNum == nil {
+			break
+		}
+
+		return e.complexity.Motion.ActiveNum(childComplexity), true
+
 	case "Motion.areas":
 		if e.complexity.Motion.Areas == nil {
 			break
 		}
 
 		return e.complexity.Motion.Areas(childComplexity), true
+
+	case "Motion.basicQuota":
+		if e.complexity.Motion.BasicQuota == nil {
+			break
+		}
+
+		return e.complexity.Motion.BasicQuota(childComplexity), true
 
 	case "Motion.city":
 		if e.complexity.Motion.City == nil {
@@ -2165,6 +2195,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Motion.DayRange(childComplexity), true
 
+	case "Motion.discoverable":
+		if e.complexity.Motion.Discoverable == nil {
+			break
+		}
+
+		return e.complexity.Motion.Discoverable(childComplexity), true
+
 	case "Motion.gender":
 		if e.complexity.Motion.Gender == nil {
 			break
@@ -2179,12 +2216,40 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Motion.ID(childComplexity), true
 
+	case "Motion.inOfferNum":
+		if e.complexity.Motion.InOfferNum == nil {
+			break
+		}
+
+		return e.complexity.Motion.InOfferNum(childComplexity), true
+
 	case "Motion.likeCount":
 		if e.complexity.Motion.LikeCount == nil {
 			break
 		}
 
 		return e.complexity.Motion.LikeCount(childComplexity), true
+
+	case "Motion.outOfferNum":
+		if e.complexity.Motion.OutOfferNum == nil {
+			break
+		}
+
+		return e.complexity.Motion.OutOfferNum(childComplexity), true
+
+	case "Motion.pendingInNum":
+		if e.complexity.Motion.PendingInNum == nil {
+			break
+		}
+
+		return e.complexity.Motion.PendingInNum(childComplexity), true
+
+	case "Motion.pendingOutNum":
+		if e.complexity.Motion.PendingOutNum == nil {
+			break
+		}
+
+		return e.complexity.Motion.PendingOutNum(childComplexity), true
 
 	case "Motion.preferredPeriods":
 		if e.complexity.Motion.PreferredPeriods == nil {
@@ -2199,6 +2264,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Motion.Properties(childComplexity), true
+
+	case "Motion.remainQuota":
+		if e.complexity.Motion.RemainQuota == nil {
+			break
+		}
+
+		return e.complexity.Motion.RemainQuota(childComplexity), true
 
 	case "Motion.remark":
 		if e.complexity.Motion.Remark == nil {
@@ -6090,6 +6162,24 @@ func (ec *executionContext) fieldContext_AvailableMotionOffer_motion(ctx context
 				return ec.fieldContext_Motion_cityId(ctx, field)
 			case "remark":
 				return ec.fieldContext_Motion_remark(ctx, field)
+			case "active":
+				return ec.fieldContext_Motion_active(ctx, field)
+			case "inOfferNum":
+				return ec.fieldContext_Motion_inOfferNum(ctx, field)
+			case "outOfferNum":
+				return ec.fieldContext_Motion_outOfferNum(ctx, field)
+			case "pendingInNum":
+				return ec.fieldContext_Motion_pendingInNum(ctx, field)
+			case "pendingOutNum":
+				return ec.fieldContext_Motion_pendingOutNum(ctx, field)
+			case "activeNum":
+				return ec.fieldContext_Motion_activeNum(ctx, field)
+			case "discoverable":
+				return ec.fieldContext_Motion_discoverable(ctx, field)
+			case "basicQuota":
+				return ec.fieldContext_Motion_basicQuota(ctx, field)
+			case "remainQuota":
+				return ec.fieldContext_Motion_remainQuota(ctx, field)
 			case "properties":
 				return ec.fieldContext_Motion_properties(ctx, field)
 			case "dayRange":
@@ -15279,6 +15369,402 @@ func (ec *executionContext) fieldContext_Motion_remark(ctx context.Context, fiel
 	return fc, nil
 }
 
+func (ec *executionContext) _Motion_active(ctx context.Context, field graphql.CollectedField, obj *models.Motion) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Motion_active(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Active, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Motion_active(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Motion",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Motion_inOfferNum(ctx context.Context, field graphql.CollectedField, obj *models.Motion) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Motion_inOfferNum(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.InOfferNum, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Motion_inOfferNum(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Motion",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Motion_outOfferNum(ctx context.Context, field graphql.CollectedField, obj *models.Motion) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Motion_outOfferNum(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.OutOfferNum, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Motion_outOfferNum(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Motion",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Motion_pendingInNum(ctx context.Context, field graphql.CollectedField, obj *models.Motion) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Motion_pendingInNum(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PendingInNum, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Motion_pendingInNum(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Motion",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Motion_pendingOutNum(ctx context.Context, field graphql.CollectedField, obj *models.Motion) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Motion_pendingOutNum(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PendingOutNum, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Motion_pendingOutNum(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Motion",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Motion_activeNum(ctx context.Context, field graphql.CollectedField, obj *models.Motion) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Motion_activeNum(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ActiveNum, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Motion_activeNum(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Motion",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Motion_discoverable(ctx context.Context, field graphql.CollectedField, obj *models.Motion) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Motion_discoverable(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Discoverable, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Motion_discoverable(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Motion",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Motion_basicQuota(ctx context.Context, field graphql.CollectedField, obj *models.Motion) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Motion_basicQuota(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.BasicQuota, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Motion_basicQuota(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Motion",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Motion_remainQuota(ctx context.Context, field graphql.CollectedField, obj *models.Motion) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Motion_remainQuota(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RemainQuota, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Motion_remainQuota(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Motion",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Motion_properties(ctx context.Context, field graphql.CollectedField, obj *models.Motion) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Motion_properties(ctx, field)
 	if err != nil {
@@ -18285,6 +18771,24 @@ func (ec *executionContext) fieldContext_Mutation_createMotion(ctx context.Conte
 				return ec.fieldContext_Motion_cityId(ctx, field)
 			case "remark":
 				return ec.fieldContext_Motion_remark(ctx, field)
+			case "active":
+				return ec.fieldContext_Motion_active(ctx, field)
+			case "inOfferNum":
+				return ec.fieldContext_Motion_inOfferNum(ctx, field)
+			case "outOfferNum":
+				return ec.fieldContext_Motion_outOfferNum(ctx, field)
+			case "pendingInNum":
+				return ec.fieldContext_Motion_pendingInNum(ctx, field)
+			case "pendingOutNum":
+				return ec.fieldContext_Motion_pendingOutNum(ctx, field)
+			case "activeNum":
+				return ec.fieldContext_Motion_activeNum(ctx, field)
+			case "discoverable":
+				return ec.fieldContext_Motion_discoverable(ctx, field)
+			case "basicQuota":
+				return ec.fieldContext_Motion_basicQuota(ctx, field)
+			case "remainQuota":
+				return ec.fieldContext_Motion_remainQuota(ctx, field)
 			case "properties":
 				return ec.fieldContext_Motion_properties(ctx, field)
 			case "dayRange":
@@ -18372,6 +18876,24 @@ func (ec *executionContext) fieldContext_Mutation_updateMotion(ctx context.Conte
 				return ec.fieldContext_Motion_cityId(ctx, field)
 			case "remark":
 				return ec.fieldContext_Motion_remark(ctx, field)
+			case "active":
+				return ec.fieldContext_Motion_active(ctx, field)
+			case "inOfferNum":
+				return ec.fieldContext_Motion_inOfferNum(ctx, field)
+			case "outOfferNum":
+				return ec.fieldContext_Motion_outOfferNum(ctx, field)
+			case "pendingInNum":
+				return ec.fieldContext_Motion_pendingInNum(ctx, field)
+			case "pendingOutNum":
+				return ec.fieldContext_Motion_pendingOutNum(ctx, field)
+			case "activeNum":
+				return ec.fieldContext_Motion_activeNum(ctx, field)
+			case "discoverable":
+				return ec.fieldContext_Motion_discoverable(ctx, field)
+			case "basicQuota":
+				return ec.fieldContext_Motion_basicQuota(ctx, field)
+			case "remainQuota":
+				return ec.fieldContext_Motion_remainQuota(ctx, field)
 			case "properties":
 				return ec.fieldContext_Motion_properties(ctx, field)
 			case "dayRange":
@@ -21623,6 +22145,24 @@ func (ec *executionContext) fieldContext_Query_motion(ctx context.Context, field
 				return ec.fieldContext_Motion_cityId(ctx, field)
 			case "remark":
 				return ec.fieldContext_Motion_remark(ctx, field)
+			case "active":
+				return ec.fieldContext_Motion_active(ctx, field)
+			case "inOfferNum":
+				return ec.fieldContext_Motion_inOfferNum(ctx, field)
+			case "outOfferNum":
+				return ec.fieldContext_Motion_outOfferNum(ctx, field)
+			case "pendingInNum":
+				return ec.fieldContext_Motion_pendingInNum(ctx, field)
+			case "pendingOutNum":
+				return ec.fieldContext_Motion_pendingOutNum(ctx, field)
+			case "activeNum":
+				return ec.fieldContext_Motion_activeNum(ctx, field)
+			case "discoverable":
+				return ec.fieldContext_Motion_discoverable(ctx, field)
+			case "basicQuota":
+				return ec.fieldContext_Motion_basicQuota(ctx, field)
+			case "remainQuota":
+				return ec.fieldContext_Motion_remainQuota(ctx, field)
 			case "properties":
 				return ec.fieldContext_Motion_properties(ctx, field)
 			case "dayRange":
@@ -21710,6 +22250,24 @@ func (ec *executionContext) fieldContext_Query_userMotions(ctx context.Context, 
 				return ec.fieldContext_Motion_cityId(ctx, field)
 			case "remark":
 				return ec.fieldContext_Motion_remark(ctx, field)
+			case "active":
+				return ec.fieldContext_Motion_active(ctx, field)
+			case "inOfferNum":
+				return ec.fieldContext_Motion_inOfferNum(ctx, field)
+			case "outOfferNum":
+				return ec.fieldContext_Motion_outOfferNum(ctx, field)
+			case "pendingInNum":
+				return ec.fieldContext_Motion_pendingInNum(ctx, field)
+			case "pendingOutNum":
+				return ec.fieldContext_Motion_pendingOutNum(ctx, field)
+			case "activeNum":
+				return ec.fieldContext_Motion_activeNum(ctx, field)
+			case "discoverable":
+				return ec.fieldContext_Motion_discoverable(ctx, field)
+			case "basicQuota":
+				return ec.fieldContext_Motion_basicQuota(ctx, field)
+			case "remainQuota":
+				return ec.fieldContext_Motion_remainQuota(ctx, field)
 			case "properties":
 				return ec.fieldContext_Motion_properties(ctx, field)
 			case "dayRange":
@@ -21856,6 +22414,24 @@ func (ec *executionContext) fieldContext_Query_activeMotions(ctx context.Context
 				return ec.fieldContext_Motion_cityId(ctx, field)
 			case "remark":
 				return ec.fieldContext_Motion_remark(ctx, field)
+			case "active":
+				return ec.fieldContext_Motion_active(ctx, field)
+			case "inOfferNum":
+				return ec.fieldContext_Motion_inOfferNum(ctx, field)
+			case "outOfferNum":
+				return ec.fieldContext_Motion_outOfferNum(ctx, field)
+			case "pendingInNum":
+				return ec.fieldContext_Motion_pendingInNum(ctx, field)
+			case "pendingOutNum":
+				return ec.fieldContext_Motion_pendingOutNum(ctx, field)
+			case "activeNum":
+				return ec.fieldContext_Motion_activeNum(ctx, field)
+			case "discoverable":
+				return ec.fieldContext_Motion_discoverable(ctx, field)
+			case "basicQuota":
+				return ec.fieldContext_Motion_basicQuota(ctx, field)
+			case "remainQuota":
+				return ec.fieldContext_Motion_remainQuota(ctx, field)
 			case "properties":
 				return ec.fieldContext_Motion_properties(ctx, field)
 			case "dayRange":
@@ -21943,6 +22519,24 @@ func (ec *executionContext) fieldContext_Query_motions(ctx context.Context, fiel
 				return ec.fieldContext_Motion_cityId(ctx, field)
 			case "remark":
 				return ec.fieldContext_Motion_remark(ctx, field)
+			case "active":
+				return ec.fieldContext_Motion_active(ctx, field)
+			case "inOfferNum":
+				return ec.fieldContext_Motion_inOfferNum(ctx, field)
+			case "outOfferNum":
+				return ec.fieldContext_Motion_outOfferNum(ctx, field)
+			case "pendingInNum":
+				return ec.fieldContext_Motion_pendingInNum(ctx, field)
+			case "pendingOutNum":
+				return ec.fieldContext_Motion_pendingOutNum(ctx, field)
+			case "activeNum":
+				return ec.fieldContext_Motion_activeNum(ctx, field)
+			case "discoverable":
+				return ec.fieldContext_Motion_discoverable(ctx, field)
+			case "basicQuota":
+				return ec.fieldContext_Motion_basicQuota(ctx, field)
+			case "remainQuota":
+				return ec.fieldContext_Motion_remainQuota(ctx, field)
 			case "properties":
 				return ec.fieldContext_Motion_properties(ctx, field)
 			case "dayRange":
@@ -32665,6 +33259,51 @@ func (ec *executionContext) _Motion(ctx context.Context, sel ast.SelectionSet, o
 			}
 		case "remark":
 			out.Values[i] = ec._Motion_remark(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "active":
+			out.Values[i] = ec._Motion_active(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "inOfferNum":
+			out.Values[i] = ec._Motion_inOfferNum(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "outOfferNum":
+			out.Values[i] = ec._Motion_outOfferNum(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "pendingInNum":
+			out.Values[i] = ec._Motion_pendingInNum(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "pendingOutNum":
+			out.Values[i] = ec._Motion_pendingOutNum(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "activeNum":
+			out.Values[i] = ec._Motion_activeNum(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "discoverable":
+			out.Values[i] = ec._Motion_discoverable(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "basicQuota":
+			out.Values[i] = ec._Motion_basicQuota(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "remainQuota":
+			out.Values[i] = ec._Motion_remainQuota(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
 			}

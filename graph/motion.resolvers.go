@@ -87,8 +87,21 @@ func (r *mutationResolver) CloseMotion(ctx context.Context, id string) (*string,
 
 // Motion is the resolver for the motion field.
 func (r *queryResolver) Motion(ctx context.Context, id string) (*models.Motion, error) {
+	token := midacontext.GetClientToken(ctx)
+	if !token.IsAdmin() && !token.IsUser() {
+		return nil, midacode.ErrNotPermitted
+	}
 	thunk := midacontext.GetLoader[loader.Loader](ctx).Motion.Load(ctx, id)
-	return thunk()
+	motion, err := thunk()
+	if err != nil {
+		return nil, err
+	}
+	if token.IsUser() {
+		if motion.UserID != token.UserID() {
+			return nil, midacode.ErrNotPermitted
+		}
+	}
+	return motion, nil
 }
 
 // UserMotions is the resolver for the userMotions field.
