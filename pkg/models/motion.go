@@ -4,17 +4,17 @@ import "time"
 
 type Motion struct {
 	ID      string   `gorm:"primaryKey"`
-	UserID  string   `gorm:"index"`
-	TopicID string   `gorm:"index"`
-	CityID  string   `gorm:"index"`
+	UserID  string   `gorm:"index;type:varchar(32)"`
+	TopicID string   `gorm:"index;type:varchar(32)"`
+	CityID  string   `gorm:"index;type:varchar(32)"`
 	AreaIDs []string `gorm:"type:json;serializer:json"`
 
 	Properties []MotionProperty `gorm:"type:json;serializer:json"`
 	Active     bool
-	Remark     string
+	Remark     string `gorm:"type:varchar(255)"`
 
-	MyGender string
-	Gender   string
+	MyGender string `gorm:"type:varchar(32)"`
+	Gender   string `gorm:"type:varchar(32)"`
 
 	// 特定日期区间，格式 20060102
 	DayRange []string `gorm:"serializer:json;type:json"`
@@ -33,9 +33,6 @@ type Motion struct {
 
 	Discoverable bool
 
-	BasicQuota  int `gorm:"default:0"`
-	RemainQuota int `gorm:"default:0"`
-
 	Deadline  time.Time
 	UpdatedAt time.Time
 	CreatedAt time.Time
@@ -44,13 +41,6 @@ type Motion struct {
 type RecentLikeMotion struct {
 	MotionID string
 	UserIDs  []string
-}
-
-type LikeMotion struct {
-	ID        int    `gorm:"primaryKey"`
-	UserID    string `gorm:"index"`
-	MotionID  string `gorm:"index"`
-	CreatedAt time.Time
 }
 
 type MotionProperty struct {
@@ -63,10 +53,12 @@ type MotionOfferRecord struct {
 	MotionID   string `gorm:"index:motion_to_motion,unique"`
 	ToMotionID string `gorm:"index:motion_to_motion,unique"`
 
-	UserID string
-	// Pending, Accepted, Rejected, Timeout, Closed
-	State       string
-	ChatGroupID string
+	UserID   string `gorm:"index;type:varchar(32)"`
+	ToUserID string `gorm:"index;type:varchar(32)"`
+
+	// Pending, Accepted, Rejected, Canceled, Timeout, Finished
+	State       string `gorm:"type:varchar(32)"`
+	ChatGroupID string `gorm:"type:varchar(32)"`
 
 	ReactAt *time.Time
 	Remark  string
@@ -77,7 +69,7 @@ type MotionOfferRecord struct {
 
 type MotionViewHistory struct {
 	ID        int      `gorm:"primaryKey"`
-	UserID    string   `gorm:"index"`
+	UserID    string   `gorm:"index;type:varchar(32)"`
 	MotionIDs []string `gorm:"type:json;serializer:json"`
 	CreatedAt time.Time
 }

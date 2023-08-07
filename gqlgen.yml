@@ -94,15 +94,9 @@ models:
   UserJoinTopic:
     model:
       - whale/pkg/models.UserJoinTopic
-  UserLikeMatching:
+  UserLikeMotion:
     model:
-      - whale/pkg/models.UserLikeMatching
-  MatchingOfferRecord:
-    model:
-      - whale/pkg/models.MatchingOfferRecord
-  MatchingOfferSummary:
-    model:
-      - whale/pkg/models.MatchingOfferSummary
+      - whale/pkg/models.UserLikeMotion
   Motion:
     model:
       - whale/pkg/models.Motion
@@ -112,9 +106,6 @@ models:
   MotionOfferRecord:
     model:
       - whale/pkg/models.MotionOfferRecord
-  DiscoverMatching:
-    model:
-      - whale/pkg/models.Matching
   DiscoverMotion:
     model:
       - whale/pkg/models.Motion

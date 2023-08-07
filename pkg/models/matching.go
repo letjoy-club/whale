@@ -145,7 +145,8 @@ func (Matching) IsEntity() {}
 type MatchingResult struct {
 	ID          int      `gorm:"primaryKey"`
 	MatchingIDs []string `gorm:"serializer:json;type:json"`
-	TopicID     string   `gorm:"index"`
+	MotionIDs   []string `gorm:"serializer:json;type:json"`
+	TopicID     string   `gorm:"index;type:varchar(32)"`
 	UserIDs     []string `gorm:"serializer:json;type:json"`
 
 	ConfirmStates  []string `gorm:"serializer:json;type:json"`

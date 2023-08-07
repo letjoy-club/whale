@@ -26,9 +26,25 @@ func CreateMotion(ctx context.Context, userID string, param *models.CreateMotion
 		return nil, err
 	}
 
+	if err := checkMatchingParam(ctx, userID, param.TopicID, param.CityID, param.Gender); err != nil {
+		return nil, err
+	}
+
 	db := dbutil.GetDB(ctx)
 	Motion := dbquery.Use(db).Motion
-	basicQuota := 2
+
+	count, err := Motion.WithContext(ctx).Where(
+		Motion.Active.Is(true),
+		Motion.TopicID.Eq(param.TopicID),
+		Motion.UserID.Eq(userID),
+	).Count()
+	if err != nil {
+		return nil, err
+	}
+	if count > 0 {
+		return nil, whalecode.ErrIsAlreadyHasActiveMotionOfTopic
+	}
+
 	motion := &models.Motion{
 		ID:       shortid.NewWithTime("mo_", 4),
 		UserID:   userID,
@@ -42,12 +58,10 @@ func CreateMotion(ctx context.Context, userID string, param *models.CreateMotion
 		Properties: lo.Map(param.Properties, func(p *models.MotionPropertyParam, i int) models.MotionProperty {
 			return models.MotionProperty{ID: p.ID, Values: p.Values}
 		}),
-		BasicQuota:       basicQuota,
 		Discoverable:     true,
 		AreaIDs:          param.AreaIds,
 		DayRange:         param.DayRange,
 		PreferredPeriods: SimplifyPreferredPeriods(param.PreferredPeriods),
-		RemainQuota:      basicQuota,
 	}
 	if err := Motion.WithContext(ctx).Create(motion); err != nil {
 		return nil, err
@@ -105,12 +119,14 @@ func CloseMotion(ctx context.Context, userID, motionID string) error {
 		return err
 	}
 
-	if motion.UserID != userID {
-		return midacode.ErrNotPermitted
+	if userID != "" {
+		if motion.UserID != userID {
+			return midacode.ErrNotPermitted
+		}
 	}
 
 	if !motion.Active {
-		return whalecode.ErrMatchingOfferIsNotActive
+		return nil
 	}
 
 	inMotionOfferThunk := midacontext.GetLoader[loader.Loader](ctx).InMotionOfferRecord.Load(ctx, motionID)
@@ -133,10 +149,21 @@ func CloseMotion(ctx context.Context, userID, motionID string) error {
 	myOutOfferIDs := []string{}
 	myInOfferIDs := []string{}
 
+	for _, offer := range inMotionOffer.Offers {
+		if offer.State == models.MotionOfferStatePending.String() {
+			myInOfferIDs = append(myInOfferIDs, offer.MotionID)
+		}
+	}
+
+	for _, offer := range outMotionOffer.Offers {
+		if offer.State == models.MotionOfferStatePending.String() {
+			myOutOfferIDs = append(myOutOfferIDs, offer.ToMotionID)
+		}
+	}
+
 	db := dbutil.GetDB(ctx)
 	err = dbquery.Use(db).Transaction(func(tx *dbquery.Query) error {
 		Motion := tx.Motion
-		MotionOfferRecord := tx.MotionOfferRecord
 		latestMotion, err := Motion.WithContext(ctx).Where(Motion.ID.Eq(motionID)).Take()
 		if err != nil {
 			return err
@@ -145,63 +172,14 @@ func CloseMotion(ctx context.Context, userID, motionID string) error {
 			return midacode.ErrStateMayHaveChanged
 		}
 
-		// 关闭我收到的所有邀约
-		for _, offer := range inMotionOffer.Offers {
-			if offer.State == string(models.MotionOfferStatePending) {
-				myInOfferIDs = append(myInOfferIDs, offer.MotionID)
-			}
-		}
-		if len(myInOfferIDs) > 0 {
-			// 关闭对方的邀约，回复对方的配额
-			rx, err := Motion.WithContext(ctx).Where(Motion.ID.In(myInOfferIDs...)).UpdateSimple(
-				Motion.RemainQuota.Add(1),
-				Motion.PendingOutNum.Add(-1),
-			)
-			if err != nil {
-				return err
-			}
-			if rx.RowsAffected != int64(len(myInOfferIDs)) {
-				return midacode.ErrStateMayHaveChanged
-			}
-			// 对方的邀约状态改为 rejected
-			rx, err = MotionOfferRecord.WithContext(ctx).Where(MotionOfferRecord.MotionID.In(myInOfferIDs...)).UpdateSimple(
-				MotionOfferRecord.State.Value(string(models.MatchingOfferStateRejected)),
-				MotionOfferRecord.ReactAt.Value(time.Now()),
-			)
-			if err != nil {
-				return err
-			}
-			if rx.RowsAffected != int64(len(myInOfferIDs)) {
-				return midacode.ErrStateMayHaveChanged
-			}
-		}
+		fields := []field.AssignExpr{}
+		fields = append(fields, Motion.Discoverable.Value(false))
 
-		// 关闭我发给对方的所有邀约
-		for _, offer := range outMotionOffer.Offers {
-			if offer.State == string(models.MotionOfferStatePending) {
-				myOutOfferIDs = append(myOutOfferIDs, offer.ToMotionID)
-			}
+		if len(myInOfferIDs) > 0 || len(myOutOfferIDs) > 0 {
+			// 不关闭，但是不可见
+			fields = append(fields, Motion.Active.Value(false))
 		}
-		if len(myOutOfferIDs) > 0 {
-			// 关闭我发给对方的邀约
-			rx, err := Motion.WithContext(ctx).Where(Motion.ID.In(myOutOfferIDs...)).UpdateSimple(
-				Motion.PendingInNum.Add(-1),
-			)
-			if err != nil {
-				return err
-			}
-			if rx.RowsAffected != int64(len(myOutOfferIDs)) {
-				return midacode.ErrStateMayHaveChanged
-			}
-		}
-
-		// 关闭我的 motion
-		rx, err := Motion.WithContext(ctx).Where(Motion.ID.Eq(motionID)).UpdateSimple(
-			Motion.Active.Value(false),
-			Motion.RemainQuota.Add(0),
-			Motion.PendingOutNum.Add(0),
-			Motion.PendingInNum.Add(0),
-		)
+		rx, err := Motion.WithContext(ctx).Where(Motion.ID.Eq(motionID)).UpdateSimple(fields...)
 		if err != nil {
 			return err
 		}

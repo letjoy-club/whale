@@ -46,8 +46,6 @@ func newMotion(db *gorm.DB, opts ...gen.DOOption) motion {
 	_motion.PendingOutNum = field.NewInt(tableName, "pending_out_num")
 	_motion.ActiveNum = field.NewInt(tableName, "active_num")
 	_motion.Discoverable = field.NewBool(tableName, "discoverable")
-	_motion.BasicQuota = field.NewInt(tableName, "basic_quota")
-	_motion.RemainQuota = field.NewInt(tableName, "remain_quota")
 	_motion.Deadline = field.NewTime(tableName, "deadline")
 	_motion.UpdatedAt = field.NewTime(tableName, "updated_at")
 	_motion.CreatedAt = field.NewTime(tableName, "created_at")
@@ -81,8 +79,6 @@ type motion struct {
 	PendingOutNum    field.Int
 	ActiveNum        field.Int
 	Discoverable     field.Bool
-	BasicQuota       field.Int
-	RemainQuota      field.Int
 	Deadline         field.Time
 	UpdatedAt        field.Time
 	CreatedAt        field.Time
@@ -122,8 +118,6 @@ func (m *motion) updateTableName(table string) *motion {
 	m.PendingOutNum = field.NewInt(table, "pending_out_num")
 	m.ActiveNum = field.NewInt(table, "active_num")
 	m.Discoverable = field.NewBool(table, "discoverable")
-	m.BasicQuota = field.NewInt(table, "basic_quota")
-	m.RemainQuota = field.NewInt(table, "remain_quota")
 	m.Deadline = field.NewTime(table, "deadline")
 	m.UpdatedAt = field.NewTime(table, "updated_at")
 	m.CreatedAt = field.NewTime(table, "created_at")
@@ -149,7 +143,7 @@ func (m *motion) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 }
 
 func (m *motion) fillFieldMap() {
-	m.fieldMap = make(map[string]field.Expr, 25)
+	m.fieldMap = make(map[string]field.Expr, 23)
 	m.fieldMap["id"] = m.ID
 	m.fieldMap["user_id"] = m.UserID
 	m.fieldMap["topic_id"] = m.TopicID
@@ -170,8 +164,6 @@ func (m *motion) fillFieldMap() {
 	m.fieldMap["pending_out_num"] = m.PendingOutNum
 	m.fieldMap["active_num"] = m.ActiveNum
 	m.fieldMap["discoverable"] = m.Discoverable
-	m.fieldMap["basic_quota"] = m.BasicQuota
-	m.fieldMap["remain_quota"] = m.RemainQuota
 	m.fieldMap["deadline"] = m.Deadline
 	m.fieldMap["updated_at"] = m.UpdatedAt
 	m.fieldMap["created_at"] = m.CreatedAt

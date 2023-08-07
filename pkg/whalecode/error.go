@@ -28,6 +28,7 @@ var (
 	ErrInviterBlocked           = midacode.NewError("INVITER_BLOCKED", "您已被封禁，无法发起邀请", midacode.LogLevelWarn)
 	ErrInviteeBlocked           = midacode.NewError("INVITEE_BLOCKED", "对方已被封禁，无法发起邀请", midacode.LogLevelWarn)
 
+	ErrIsAlreadyHasActiveMotionOfTopic              = midacode.NewError("IS_ALREADY_HAS_ACTIVE_MOTION_OF_TOPIC", "已经有该话题的活动卡片", midacode.LogLevelWarn)
 	ErrMotionOfferQuotaNotEnough                    = midacode.NewError("MOTION_OFFER_QUOTA_NOT_ENOUGH", "邀约次数不足", midacode.LogLevelWarn)
 	MotionOfferIsNotPending                         = midacode.NewError("MOTION_OFFER_IS_NOT_PENDING", "邀约不是待处理状态", midacode.LogLevelWarn)
 	ErrMatchingOfferIsClosed                        = midacode.NewError("MATCHING_OFFER_IS_CLOSED", "邀约已经关闭", midacode.LogLevelWarn)
@@ -40,10 +41,14 @@ var (
 	ErrMatchingOfferIsCancelableOnlyWhenUnprocessed = midacode.NewError("MATCHING_OFFER_IS_CANCELABLE_ONLY_WHEN_UNPROCESSED", "邀约只有在未处理状态下才能取消", midacode.LogLevelWarn)
 	ErrMatchingOfferIsAcceptableOnlyWhenUnprocessed = midacode.NewError("MATCHING_OFFER_IS_ACCEPTABLE_ONLY_WHEN_UNPROCESSED", "邀约只有在未处理状态下才能接受", midacode.LogLevelWarn)
 	ErrMatchingOfferIsNotActive                     = midacode.NewError("MATCHING_OFFER_IS_NOT_ACTIVE", "邀约已经失效", midacode.LogLevelWarn)
+	ErrYourMotionIsNotActive                        = midacode.NewError("YOUR_MOTION_IS_NOT_ACTIVE", "你的活动已关闭", midacode.LogLevelWarn)
+	ErrTheMotionIsNotActive                         = midacode.NewError("THE_MOTION_IS_NOT_ACTIVE", "对方的活动不在已关闭", midacode.LogLevelWarn)
 	ErrFinishChatBeforeCloseMotion                  = midacode.NewError("FINISH_CHAT_BEFORE_CLOSE_MOTION", "请先结束聊天再关闭活动", midacode.LogLevelWarn)
 
 	ErrCannotInviteOtherTwiceForTheSameTopic          = midacode.NewError("CANNOT_INVITE_OTHER_TWICE_FOR_THE_SAME_TOPIC", "不能连续邀请同一个人两次同个话题", midacode.LogLevelWarn)
 	ErrCannotPerformActionWhenChatGroupAlreadyCreated = midacode.NewError("CANNOT_PERFORM_ACTION_WHEN_CHAT_GROUP_ALREADY_CREATED", "聊天室已经创建，不能执行该操作", midacode.LogLevelWarn)
 	ErrMatchingDurationQuotaNotEnough                 = midacode.NewError("MATCHING_DURATION_QUOTA_NOT_ENOUGH", "当前时间段匹配次数用尽", midacode.LogLevelWarn)
+	ErrStartDateShouldLessThanNow                     = midacode.NewError("START_DATE_SHOULD_LESS_THAN_NOW", "开始时间不能大于当前时间", midacode.LogLevelWarn)
+	ErrStopDateShoulGreateThanNow                     = midacode.NewError("STOP_DATE_SHOULD_GREATE_THAN_NOW", "结束时间不能小于当前时间", midacode.LogLevelWarn)
 	ErrMatchingNotMatchWithTopic                      = midacode.NewError("MATCHING_NOT_MATCH_WITH_TOPIC", "匹配信息与话题地区/话题不匹配", midacode.LogLevelWarn)
 )

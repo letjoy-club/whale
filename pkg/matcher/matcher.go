@@ -55,10 +55,6 @@ func (m *Matcher) Match(ctx context.Context) error {
 
 	matchings, err := Matching.WithContext(ctx).Where(
 		Matching.State.Eq(string(models.MatchingStateMatching)),
-		Matching.WithContext(ctx).Or(
-			Matching.StartMatchingAt.Lt(time.Now()),
-			Matching.StartMatchingAt.IsNull(),
-		),
 	).Find()
 	if err != nil {
 		return err
@@ -314,25 +310,6 @@ func NewMatchingResult(ctx context.Context, matchings []*models.Matching, score 
 			return midacode.ErrStateMayHaveChanged
 		}
 
-		// 确保 matching offer summary 存在
-		_, err = modelutil.GetMatchingOfferSummary(ctx, matchings[0])
-		if err != nil {
-			return err
-		}
-		_, err = modelutil.GetMatchingOfferSummary(ctx, matchings[1])
-		if err != nil {
-			return err
-		}
-
-		// 更新 matchingOfferSummary 状态
-		err = modelutil.DeactiveMatchingSummaryAndUpdateMatchingOffer(ctx, tx, matchings[0].ID)
-		if err != nil {
-			return err
-		}
-		err = modelutil.DeactiveMatchingSummaryAndUpdateMatchingOffer(ctx, tx, matchings[1].ID)
-		if err != nil {
-			return err
-		}
 		return nil
 	})
 

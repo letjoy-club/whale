@@ -6,13 +6,13 @@ package graph
 
 import (
 	"context"
+	"time"
 	"whale/pkg/dbquery"
 	"whale/pkg/loader"
 	"whale/pkg/models"
 	"whale/pkg/modelutil"
 	"whale/pkg/utils"
 
-	"github.com/golang-module/carbon"
 	"github.com/letjoy-club/mida-tool/dbutil"
 	"github.com/letjoy-club/mida-tool/graphqlutil"
 	"github.com/letjoy-club/mida-tool/midacode"
@@ -33,12 +33,15 @@ func (r *discoverMotionResolver) PreferredPeriods(ctx context.Context, obj *mode
 }
 
 // Liked is the resolver for the liked field.
-func (r *discoverMotionResolver) Liked(ctx context.Context, obj *models.Motion) (bool, error) {
+func (r *discoverMotionResolver) Liked(ctx context.Context, obj *models.Motion, userID *string) (bool, error) {
 	token := midacontext.GetClientToken(ctx)
-	if !token.IsUser() {
+	if !token.IsUser() && !token.IsAdmin() {
 		return false, nil
 	}
-	uid := token.UserID()
+	uid := graphqlutil.GetID(token, userID)
+	if uid == "" {
+		return false, nil
+	}
 	thunk := midacontext.GetLoader[loader.Loader](ctx).UserLikeMotion.Load(ctx, uid)
 	u, err := thunk()
 	if err != nil {
@@ -48,12 +51,15 @@ func (r *discoverMotionResolver) Liked(ctx context.Context, obj *models.Motion) 
 }
 
 // Submitted is the resolver for the submitted field.
-func (r *discoverMotionResolver) Submitted(ctx context.Context, obj *models.Motion) (bool, error) {
+func (r *discoverMotionResolver) Submitted(ctx context.Context, obj *models.Motion, userID *string) (bool, error) {
 	token := midacontext.GetClientToken(ctx)
-	if !token.IsUser() {
+	if !token.IsUser() && !token.IsAdmin() {
 		return false, nil
 	}
-	uid := token.UserID()
+	uid := graphqlutil.GetID(token, userID)
+	if uid == "" {
+		return false, nil
+	}
 	thunk := midacontext.GetLoader[loader.Loader](ctx).UserSubmitMotion.Load(ctx, uid)
 	u, err := thunk()
 	if err != nil {
@@ -99,6 +105,20 @@ func (r *motionResolver) PreferredPeriods(ctx context.Context, obj *models.Motio
 // Gender is the resolver for the gender field.
 func (r *motionResolver) Gender(ctx context.Context, obj *models.Motion) (models.Gender, error) {
 	return models.Gender(obj.Gender), nil
+}
+
+// Liked is the resolver for the liked field.
+func (r *motionResolver) Liked(ctx context.Context, obj *models.Motion) (bool, error) {
+	token := midacontext.GetClientToken(ctx)
+	if token.IsUser() {
+		thunk := midacontext.GetLoader[loader.Loader](ctx).UserLikeMotion.Load(ctx, obj.UserID)
+		u, err := thunk()
+		if err != nil {
+			return false, err
+		}
+		return u.IsLike(obj.ID), nil
+	}
+	return false, nil
 }
 
 // Topic is the resolver for the topic field.
@@ -151,10 +171,15 @@ func (r *mutationResolver) GetAvailableMotionOffer(ctx context.Context, userID *
 	if !token.IsUser() && !token.IsAdmin() {
 		return nil, midacode.ErrNotPermitted
 	}
+	thunk := midacontext.GetLoader[loader.Loader](ctx).Motion.Load(ctx, targetMotionID)
+	motion, err := thunk()
+	if err != nil {
+		return nil, err
+	}
 	uid := graphqlutil.GetID(token, userID)
 	db := dbutil.GetDB(ctx)
 	Motion := dbquery.Use(db).Motion
-	motion, err := Motion.WithContext(ctx).Where(Motion.UserID.Eq(uid)).Where(Motion.Active.Is(true)).Take()
+	motion, err = Motion.WithContext(ctx).Where(Motion.UserID.Eq(uid), Motion.TopicID.Eq(motion.TopicID)).Where(Motion.Discoverable.Is(true)).Take()
 	if err != nil {
 		if midacode.ItemIsNotFound(err) == midacode.ErrItemNotFound {
 			return &models.AvailableMotionOffer{}, nil
@@ -162,21 +187,7 @@ func (r *mutationResolver) GetAvailableMotionOffer(ctx context.Context, userID *
 		return nil, err
 	}
 
-	next := carbon.Now().EndOfCentury().ToStdTime()
-	if motion.RemainQuota == 0 {
-		thunk := midacontext.GetLoader[loader.Loader](ctx).OutMotionOfferRecord.Load(ctx, targetMotionID)
-		records, err := thunk()
-		if err != nil {
-			return nil, err
-		}
-		for _, record := range records.Offers {
-			if record.State == models.MotionOfferStatePending.String() {
-				if record.ExpiredAt.Before(next) {
-					next = record.CreatedAt
-				}
-			}
-		}
-	}
+	next := time.Now()
 	return &models.AvailableMotionOffer{Motion: motion, NextQuotaTime: &next}, nil
 }
 
@@ -227,8 +238,9 @@ func (r *queryResolver) DiscoverCategoryMotions(ctx context.Context, userID *str
 		next = *nextToken
 	}
 	opt := loader.UserDiscoverMotionOpt{
-		N:         4,
+		N:         6,
 		NextToken: next,
+		Gender:    models.GenderN,
 	}
 	if filter != nil {
 		if filter.CityID != nil {
@@ -236,6 +248,9 @@ func (r *queryResolver) DiscoverCategoryMotions(ctx context.Context, userID *str
 		}
 		if filter.Gender != nil {
 			opt.Gender = *filter.Gender
+		}
+		if len(filter.TopicIds) > 0 {
+			opt.TopicIDs = filter.TopicIds
 		}
 	}
 	opt.NextToken = next

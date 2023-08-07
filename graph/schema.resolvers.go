@@ -61,12 +61,6 @@ func (r *matchingResolver) PreferredPeriods(ctx context.Context, obj *models.Mat
 	}), nil
 }
 
-// MatchingOfferSummary is the resolver for the matchingOfferSummary field.
-func (r *matchingResolver) MatchingOfferSummary(ctx context.Context, obj *models.Matching) (*models.MatchingOfferSummary, error) {
-	thunk := midacontext.GetLoader[loader.Loader](ctx).MatchingOfferSummary.Load(ctx, obj.ID)
-	return thunk()
-}
-
 // MatchingResult is the resolver for the matchingResult field.
 func (r *matchingResolver) MatchingResult(ctx context.Context, obj *models.Matching) (*models.MatchingResult, error) {
 	token := midacontext.GetClientToken(ctx)

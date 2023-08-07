@@ -43,7 +43,6 @@ type Config struct {
 type ResolverRoot interface {
 	CityToTopicMatching() CityToTopicMatchingResolver
 	CityTopics() CityTopicsResolver
-	DiscoverMatching() DiscoverMatchingResolver
 	DiscoverMotion() DiscoverMotionResolver
 	Entity() EntityResolver
 	EvaluatorResult() EvaluatorResultResolver
@@ -51,8 +50,6 @@ type ResolverRoot interface {
 	Matching() MatchingResolver
 	MatchingInvitation() MatchingInvitationResolver
 	MatchingOfTopic() MatchingOfTopicResolver
-	MatchingOfferRecord() MatchingOfferRecordResolver
-	MatchingOfferSummary() MatchingOfferSummaryResolver
 	MatchingPreview() MatchingPreviewResolver
 	MatchingResult() MatchingResultResolver
 	Motion() MotionResolver
@@ -65,7 +62,7 @@ type ResolverRoot interface {
 	TopicToMatching() TopicToMatchingResolver
 	User() UserResolver
 	UserJoinTopic() UserJoinTopicResolver
-	UserLikeMatching() UserLikeMatchingResolver
+	UserLikeMotion() UserLikeMotionResolver
 }
 
 type DirectiveRoot struct {
@@ -109,30 +106,6 @@ type ComplexityRoot struct {
 		UpdatedAt func(childComplexity int) int
 	}
 
-	DiscoverMatching struct {
-		Areas             func(childComplexity int) int
-		City              func(childComplexity int) int
-		CityID            func(childComplexity int) int
-		DayRange          func(childComplexity int) int
-		Gender            func(childComplexity int) int
-		ID                func(childComplexity int) int
-		LikeCount         func(childComplexity int) int
-		Liked             func(childComplexity int) int
-		PreferredPeriods  func(childComplexity int) int
-		Properties        func(childComplexity int) int
-		Remark            func(childComplexity int) int
-		Topic             func(childComplexity int) int
-		TopicOptionConfig func(childComplexity int) int
-		User              func(childComplexity int) int
-		UserID            func(childComplexity int) int
-		ViewCount         func(childComplexity int) int
-	}
-
-	DiscoverMatchingResult struct {
-		Matchings func(childComplexity int) int
-		NextToken func(childComplexity int) int
-	}
-
 	DiscoverMotion struct {
 		AreaIDs           func(childComplexity int) int
 		Areas             func(childComplexity int) int
@@ -141,16 +114,18 @@ type ComplexityRoot struct {
 		DayRange          func(childComplexity int) int
 		Gender            func(childComplexity int) int
 		ID                func(childComplexity int) int
-		Liked             func(childComplexity int) int
+		LikeCount         func(childComplexity int) int
+		Liked             func(childComplexity int, userID *string) int
 		PreferredPeriods  func(childComplexity int) int
 		Properties        func(childComplexity int) int
 		Remark            func(childComplexity int) int
-		Submitted         func(childComplexity int) int
+		Submitted         func(childComplexity int, userID *string) int
 		Topic             func(childComplexity int) int
 		TopicID           func(childComplexity int) int
 		TopicOptionConfig func(childComplexity int) int
 		User              func(childComplexity int) int
 		UserID            func(childComplexity int) int
+		ViewCount         func(childComplexity int) int
 	}
 
 	DiscoverMotionResult struct {
@@ -187,31 +162,30 @@ type ComplexityRoot struct {
 	}
 
 	Matching struct {
-		AreaIDs              func(childComplexity int) int
-		Areas                func(childComplexity int) int
-		City                 func(childComplexity int) int
-		CityID               func(childComplexity int) int
-		CreatedAt            func(childComplexity int) int
-		DayRange             func(childComplexity int) int
-		Deadline             func(childComplexity int) int
-		Gender               func(childComplexity int) int
-		ID                   func(childComplexity int) int
-		InChatGroup          func(childComplexity int) int
-		LikeCount            func(childComplexity int) int
-		MatchingOfferSummary func(childComplexity int) int
-		MatchingResult       func(childComplexity int) int
-		PreferredPeriods     func(childComplexity int) int
-		Properties           func(childComplexity int) int
-		RejectedUserIDs      func(childComplexity int) int
-		Remark               func(childComplexity int) int
-		Reviewed             func(childComplexity int) int
-		State                func(childComplexity int) int
-		Topic                func(childComplexity int) int
-		TopicID              func(childComplexity int) int
-		UpdatedAt            func(childComplexity int) int
-		User                 func(childComplexity int) int
-		UserID               func(childComplexity int) int
-		ViewCount            func(childComplexity int) int
+		AreaIDs          func(childComplexity int) int
+		Areas            func(childComplexity int) int
+		City             func(childComplexity int) int
+		CityID           func(childComplexity int) int
+		CreatedAt        func(childComplexity int) int
+		DayRange         func(childComplexity int) int
+		Deadline         func(childComplexity int) int
+		Gender           func(childComplexity int) int
+		ID               func(childComplexity int) int
+		InChatGroup      func(childComplexity int) int
+		LikeCount        func(childComplexity int) int
+		MatchingResult   func(childComplexity int) int
+		PreferredPeriods func(childComplexity int) int
+		Properties       func(childComplexity int) int
+		RejectedUserIDs  func(childComplexity int) int
+		Remark           func(childComplexity int) int
+		Reviewed         func(childComplexity int) int
+		State            func(childComplexity int) int
+		Topic            func(childComplexity int) int
+		TopicID          func(childComplexity int) int
+		UpdatedAt        func(childComplexity int) int
+		User             func(childComplexity int) int
+		UserID           func(childComplexity int) int
+		ViewCount        func(childComplexity int) int
 	}
 
 	MatchingDurationConstraint struct {
@@ -254,31 +228,6 @@ type ComplexityRoot struct {
 		Remark    func(childComplexity int) int
 		User      func(childComplexity int) int
 		UserID    func(childComplexity int) int
-	}
-
-	MatchingOfferRecord struct {
-		CreatedAt    func(childComplexity int) int
-		Matching     func(childComplexity int) int
-		MatchingID   func(childComplexity int) int
-		ReactedAt    func(childComplexity int) int
-		Remark       func(childComplexity int) int
-		State        func(childComplexity int) int
-		ToMatching   func(childComplexity int) int
-		ToMatchingID func(childComplexity int) int
-	}
-
-	MatchingOfferSummary struct {
-		Active                 func(childComplexity int) int
-		BasicQuota             func(childComplexity int) int
-		InMatchingOffers       func(childComplexity int) int
-		InOfferNum             func(childComplexity int) int
-		MatchingID             func(childComplexity int) int
-		OutMatchingOffers      func(childComplexity int) int
-		OutOfferNum            func(childComplexity int) int
-		UnprocessedInOfferNum  func(childComplexity int) int
-		UnprocessedOutOfferNum func(childComplexity int) int
-		UpdatedAt              func(childComplexity int) int
-		UserID                 func(childComplexity int) int
 	}
 
 	MatchingPreview struct {
@@ -339,7 +288,6 @@ type ComplexityRoot struct {
 		Active            func(childComplexity int) int
 		ActiveNum         func(childComplexity int) int
 		Areas             func(childComplexity int) int
-		BasicQuota        func(childComplexity int) int
 		City              func(childComplexity int) int
 		CityID            func(childComplexity int) int
 		DayRange          func(childComplexity int) int
@@ -348,12 +296,12 @@ type ComplexityRoot struct {
 		ID                func(childComplexity int) int
 		InOfferNum        func(childComplexity int) int
 		LikeCount         func(childComplexity int) int
+		Liked             func(childComplexity int) int
 		OutOfferNum       func(childComplexity int) int
 		PendingInNum      func(childComplexity int) int
 		PendingOutNum     func(childComplexity int) int
 		PreferredPeriods  func(childComplexity int) int
 		Properties        func(childComplexity int) int
-		RemainQuota       func(childComplexity int) int
 		Remark            func(childComplexity int) int
 		Topic             func(childComplexity int) int
 		TopicOptionConfig func(childComplexity int) int
@@ -379,12 +327,10 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		AcceptMatchingOffer              func(childComplexity int, myMatchingID string, targetMatchingID string) int
 		AcceptMotionOffer                func(childComplexity int, myMotionID string, targetMotionID string) int
 		AddMatchingToRecent              func(childComplexity int, matchingID string) int
 		CancelMatching                   func(childComplexity int, matchingID string) int
 		CancelMatchingInvitation         func(childComplexity int, invitationID string) int
-		CancelMatchingOffer              func(childComplexity int, myMatchingID string, targetMatchingID string) int
 		CancelMotionOffer                func(childComplexity int, myMotionID string, targetMotionID string) int
 		CheckAndCreateChatGroup          func(childComplexity int, matchingID string) int
 		CloseMotion                      func(childComplexity int, id string) int
@@ -399,21 +345,18 @@ type ComplexityRoot struct {
 		CreateMotionOffer                func(childComplexity int, myMotionID string, targetMotionID string) int
 		CreateUserJoinTopic              func(childComplexity int, param models.CreateUserJoinTopicParam) int
 		FinishMatching                   func(childComplexity int, matchingID string) int
-		GetAvailableMatchingOffer        func(childComplexity int, userID *string, targetMatchingID string) int
 		GetAvailableMotionOffer          func(childComplexity int, userID *string, targetMotionID string) int
 		GetMatchingScore                 func(childComplexity int, id1 string, id2 string) int
-		LikeMatching                     func(childComplexity int, userID *string, matchingID string) int
+		LikeMotion                       func(childComplexity int, userID *string, motionID string) int
 		RefreshTopicMetrics              func(childComplexity int) int
-		RejectMatchingOffer              func(childComplexity int, myMatchingID string, targetMatchingID string) int
 		RejectMotionOffer                func(childComplexity int, myMotionID string, targetMotionID string) int
 		ReviewMatching                   func(childComplexity int, matchingID string, param models.ReviewMatchingParam) int
-		SendMatchingOffer                func(childComplexity int, myMatchingID string, targetMatchingID string) int
 		StartMatching                    func(childComplexity int) int
-		UnlikeMatching                   func(childComplexity int, userID *string, matchingID string) int
+		UnlikeMotion                     func(childComplexity int, userID *string, motionID string) int
 		UpdateCityTopics                 func(childComplexity int, cityID string, param models.UpdateCityTopicParam) int
 		UpdateHotTopicsInArea            func(childComplexity int, cityID string, param models.UpdateHotTopicParam) int
 		UpdateMatching                   func(childComplexity int, matchingID string, param models.UpdateMatchingParam) int
-		UpdateMatchingDurationConstraint func(childComplexity int, id int, param models.UpdateMatchingDurationConstraintParam) int
+		UpdateMatchingDurationConstraint func(childComplexity int, userID string, param models.UpdateMatchingDurationConstraintParam) int
 		UpdateMatchingInvitation         func(childComplexity int, invitationID string, param models.UpdateMatchingInvitationParam) int
 		UpdateMatchingQuota              func(childComplexity int, userID string, param models.UpdateMatchingQuotaParam) int
 		UpdateMotion                     func(childComplexity int, id string, param models.UpdateMotionParam) int
@@ -429,17 +372,15 @@ type ComplexityRoot struct {
 		CityDistribution            func(childComplexity int) int
 		CityTopics                  func(childComplexity int, cityID string) int
 		DiscoverCategoryMotions     func(childComplexity int, userID *string, filter *models.DiscoverTopicCategoryMotionFilter, topicCategoryID string, nextToken *string) int
-		DiscoverMatchingOfTopic     func(childComplexity int, userID *string, topicID string, filter *models.DiscoverMatchingFilter, nextToken *string) int
 		HotTopics                   func(childComplexity int, filter *models.HotTopicsFilter, paginator *graphqlutil.GraphQLPaginator) int
 		HotTopicsCount              func(childComplexity int, filter *models.HotTopicsFilter) int
 		HotTopicsInArea             func(childComplexity int, cityID *string) int
-		InMatchingOffer             func(childComplexity int, matchingID string) int
 		InMotionOffers              func(childComplexity int, motionID string) int
 		Invitation                  func(childComplexity int, userID *string, id string) int
 		Invitations                 func(childComplexity int, userID *string, paginator *graphqlutil.GraphQLPaginator) int
 		InvitationsCount            func(childComplexity int, userID *string) int
-		LikedMatchingCount          func(childComplexity int, userID *string) int
-		LikedMatchings              func(childComplexity int, userID *string, paginator *graphqlutil.GraphQLPaginator) int
+		LikedMotions                func(childComplexity int, userID *string, paginator *graphqlutil.GraphQLPaginator) int
+		LikedMotionsCount           func(childComplexity int, userID *string) int
 		Matching                    func(childComplexity int, id string) int
 		MatchingDurationConstraints func(childComplexity int, userID string) int
 		MatchingInvitations         func(childComplexity int, filter *models.MatchingInvitationFilter, paginator *graphqlutil.GraphQLPaginator) int
@@ -451,9 +392,9 @@ type ComplexityRoot struct {
 		Matchings                   func(childComplexity int, filter *models.MatchingFilter, paginator *graphqlutil.GraphQLPaginator) int
 		MatchingsCount              func(childComplexity int, filter *models.MatchingFilter) int
 		Motion                      func(childComplexity int, id string) int
+		MotionSummary               func(childComplexity int) int
 		Motions                     func(childComplexity int, filter *models.MotionFilter, paginator *graphqlutil.GraphQLPaginator) int
 		MotionsCount                func(childComplexity int, filter *models.MotionFilter) int
-		OutMatchingOffer            func(childComplexity int, matchingID string) int
 		OutMotionOffers             func(childComplexity int, motionID string) int
 		PreviewMatchingsOfTopic     func(childComplexity int, cityID string, topicID string, limit *int) int
 		RecentMatching              func(childComplexity int, id string) int
@@ -548,11 +489,12 @@ type ComplexityRoot struct {
 		UserID           func(childComplexity int) int
 	}
 
-	UserLikeMatching struct {
-		CreatedAt    func(childComplexity int) int
-		Matching     func(childComplexity int) int
-		ToMatchingID func(childComplexity int) int
-		User         func(childComplexity int) int
+	UserLikeMotion struct {
+		CreatedAt  func(childComplexity int) int
+		Motion     func(childComplexity int) int
+		ToMotionID func(childComplexity int) int
+		ToUserID   func(childComplexity int) int
+		UserID     func(childComplexity int) int
 	}
 
 	_Service struct {
@@ -567,25 +509,13 @@ type CityTopicsResolver interface {
 	Topics(ctx context.Context, obj *models.CityTopics) ([]*models.Topic, error)
 	City(ctx context.Context, obj *models.CityTopics) (*models.Area, error)
 }
-type DiscoverMatchingResolver interface {
-	PreferredPeriods(ctx context.Context, obj *models.Matching) ([]models.DatePeriod, error)
-	Gender(ctx context.Context, obj *models.Matching) (models.Gender, error)
-	Liked(ctx context.Context, obj *models.Matching) (bool, error)
-	ViewCount(ctx context.Context, obj *models.Matching) (int, error)
-	LikeCount(ctx context.Context, obj *models.Matching) (int, error)
-	Topic(ctx context.Context, obj *models.Matching) (*models.Topic, error)
-	TopicOptionConfig(ctx context.Context, obj *models.Matching) (*models.TopicOptionConfig, error)
-	User(ctx context.Context, obj *models.Matching) (*models.User, error)
-	City(ctx context.Context, obj *models.Matching) (*models.Area, error)
-	Areas(ctx context.Context, obj *models.Matching) ([]*models.Area, error)
-}
 type DiscoverMotionResolver interface {
 	Gender(ctx context.Context, obj *models.Motion) (models.Gender, error)
 
 	PreferredPeriods(ctx context.Context, obj *models.Motion) ([]models.DatePeriod, error)
 
-	Liked(ctx context.Context, obj *models.Motion) (bool, error)
-	Submitted(ctx context.Context, obj *models.Motion) (bool, error)
+	Liked(ctx context.Context, obj *models.Motion, userID *string) (bool, error)
+	Submitted(ctx context.Context, obj *models.Motion, userID *string) (bool, error)
 	Topic(ctx context.Context, obj *models.Motion) (*models.Topic, error)
 	TopicOptionConfig(ctx context.Context, obj *models.Motion) (*models.TopicOptionConfig, error)
 	User(ctx context.Context, obj *models.Motion) (*models.User, error)
@@ -611,7 +541,6 @@ type MatchingResolver interface {
 
 	PreferredPeriods(ctx context.Context, obj *models.Matching) ([]models.DatePeriod, error)
 
-	MatchingOfferSummary(ctx context.Context, obj *models.Matching) (*models.MatchingOfferSummary, error)
 	MatchingResult(ctx context.Context, obj *models.Matching) (*models.MatchingResult, error)
 	Reviewed(ctx context.Context, obj *models.Matching) (bool, error)
 	ViewCount(ctx context.Context, obj *models.Matching) (int, error)
@@ -638,19 +567,6 @@ type MatchingOfTopicResolver interface {
 	City(ctx context.Context, obj *models.Matching) (*models.Area, error)
 	Areas(ctx context.Context, obj *models.Matching) ([]*models.Area, error)
 }
-type MatchingOfferRecordResolver interface {
-	State(ctx context.Context, obj *models.MatchingOfferRecord) (models.MatchingOfferState, error)
-
-	ToMatching(ctx context.Context, obj *models.MatchingOfferRecord) (*models.Matching, error)
-	Matching(ctx context.Context, obj *models.MatchingOfferRecord) (*models.Matching, error)
-}
-type MatchingOfferSummaryResolver interface {
-	UnprocessedInOfferNum(ctx context.Context, obj *models.MatchingOfferSummary) (int, error)
-
-	UnprocessedOutOfferNum(ctx context.Context, obj *models.MatchingOfferSummary) (int, error)
-	InMatchingOffers(ctx context.Context, obj *models.MatchingOfferSummary) ([]*models.MatchingOfferRecord, error)
-	OutMatchingOffers(ctx context.Context, obj *models.MatchingOfferSummary) ([]*models.MatchingOfferRecord, error)
-}
 type MatchingPreviewResolver interface {
 	PreferredPeriods(ctx context.Context, obj *models.Matching) ([]models.DatePeriod, error)
 	TopicOptionConfig(ctx context.Context, obj *models.Matching) (*models.TopicOptionConfig, error)
@@ -672,6 +588,7 @@ type MatchingResultResolver interface {
 type MotionResolver interface {
 	PreferredPeriods(ctx context.Context, obj *models.Motion) ([]models.DatePeriod, error)
 	Gender(ctx context.Context, obj *models.Motion) (models.Gender, error)
+	Liked(ctx context.Context, obj *models.Motion) (bool, error)
 
 	Topic(ctx context.Context, obj *models.Motion) (*models.Topic, error)
 	TopicOptionConfig(ctx context.Context, obj *models.Motion) (*models.TopicOptionConfig, error)
@@ -688,11 +605,6 @@ type MotionOfferRecordResolver interface {
 type MutationResolver interface {
 	CheckAndCreateChatGroup(ctx context.Context, matchingID string) (*string, error)
 	RefreshTopicMetrics(ctx context.Context) (*string, error)
-	GetAvailableMatchingOffer(ctx context.Context, userID *string, targetMatchingID string) (*models.Matching, error)
-	SendMatchingOffer(ctx context.Context, myMatchingID string, targetMatchingID string) (*string, error)
-	CancelMatchingOffer(ctx context.Context, myMatchingID string, targetMatchingID string) (*string, error)
-	AcceptMatchingOffer(ctx context.Context, myMatchingID string, targetMatchingID string) (*string, error)
-	RejectMatchingOffer(ctx context.Context, myMatchingID string, targetMatchingID string) (*string, error)
 	CreateMatchingInvitation(ctx context.Context, userID *string, param models.CreateMatchingInvitationParam) (*models.MatchingInvitation, error)
 	CancelMatchingInvitation(ctx context.Context, invitationID string) (*string, error)
 	ConfirmMatchingInvitation(ctx context.Context, userID *string, invitationID string, confirm bool) (*string, error)
@@ -701,7 +613,7 @@ type MutationResolver interface {
 	CreateMatchingV2(ctx context.Context, userID *string, param models.CreateMatchingParamV2) (*models.Matching, error)
 	UpdateMatching(ctx context.Context, matchingID string, param models.UpdateMatchingParam) (*models.Matching, error)
 	UpdateMatchingQuota(ctx context.Context, userID string, param models.UpdateMatchingQuotaParam) (string, error)
-	UpdateMatchingDurationConstraint(ctx context.Context, id int, param models.UpdateMatchingDurationConstraintParam) (string, error)
+	UpdateMatchingDurationConstraint(ctx context.Context, userID string, param models.UpdateMatchingDurationConstraintParam) (string, error)
 	ConfirmMatchingResult(ctx context.Context, userID *string, matchingID string, reject bool) (*string, error)
 	ConfirmMatchingResultV2(ctx context.Context, userID *string, matchingID string, confirm bool) (*string, error)
 	CancelMatching(ctx context.Context, matchingID string) (*string, error)
@@ -724,15 +636,13 @@ type MutationResolver interface {
 	UpdateHotTopicsInArea(ctx context.Context, cityID string, param models.UpdateHotTopicParam) (*models.HotTopicsInArea, error)
 	UpdateUserJoinTopic(ctx context.Context, id int, param models.UpdateUserJoinTopicParam) (*models.UserJoinTopic, error)
 	CreateUserJoinTopic(ctx context.Context, param models.CreateUserJoinTopicParam) (*models.UserJoinTopic, error)
-	LikeMatching(ctx context.Context, userID *string, matchingID string) (string, error)
-	UnlikeMatching(ctx context.Context, userID *string, matchingID string) (string, error)
+	LikeMotion(ctx context.Context, userID *string, motionID string) (int, error)
+	UnlikeMotion(ctx context.Context, userID *string, motionID string) (int, error)
 }
 type QueryResolver interface {
 	ChatGroupByResultID(ctx context.Context, resultID int) (*models.ChatGroup, error)
-	DiscoverMatchingOfTopic(ctx context.Context, userID *string, topicID string, filter *models.DiscoverMatchingFilter, nextToken *string) (*models.DiscoverMatchingResult, error)
-	InMatchingOffer(ctx context.Context, matchingID string) ([]*models.MatchingOfferRecord, error)
-	OutMatchingOffer(ctx context.Context, matchingID string) ([]*models.MatchingOfferRecord, error)
 	YesterdayMatchingCount(ctx context.Context) (int, error)
+	MotionSummary(ctx context.Context) (map[string]interface{}, error)
 	MatchingInvitations(ctx context.Context, filter *models.MatchingInvitationFilter, paginator *graphqlutil.GraphQLPaginator) ([]*models.MatchingInvitation, error)
 	MatchingInvitationsCount(ctx context.Context, filter *models.MatchingInvitationFilter) (*models.Summary, error)
 	Invitations(ctx context.Context, userID *string, paginator *graphqlutil.GraphQLPaginator) ([]*models.MatchingInvitation, error)
@@ -778,8 +688,8 @@ type QueryResolver interface {
 	UserJoinTopics(ctx context.Context, filter *models.UserJoinTopicFilter, paginator *graphqlutil.GraphQLPaginator) ([]*models.UserJoinTopic, error)
 	UserJoinTopicsCount(ctx context.Context, filter *models.UserJoinTopicFilter) (*models.Summary, error)
 	UserJoinTopic(ctx context.Context, id int) (*models.UserJoinTopic, error)
-	LikedMatchings(ctx context.Context, userID *string, paginator *graphqlutil.GraphQLPaginator) ([]*models.UserLikeMatching, error)
-	LikedMatchingCount(ctx context.Context, userID *string) (*models.Summary, error)
+	LikedMotions(ctx context.Context, userID *string, paginator *graphqlutil.GraphQLPaginator) ([]*models.UserLikeMotion, error)
+	LikedMotionsCount(ctx context.Context, userID *string) (*models.Summary, error)
 }
 type RecentMatchingResolver interface {
 	Topic(ctx context.Context, obj *models.RecentMatching) (*models.Topic, error)
@@ -806,9 +716,8 @@ type UserJoinTopicResolver interface {
 	User(ctx context.Context, obj *models.UserJoinTopic) (*models.User, error)
 	Matching(ctx context.Context, obj *models.UserJoinTopic) (*models.Matching, error)
 }
-type UserLikeMatchingResolver interface {
-	User(ctx context.Context, obj *models.UserLikeMatching) (*models.User, error)
-	Matching(ctx context.Context, obj *models.UserLikeMatching) (*models.Matching, error)
+type UserLikeMotionResolver interface {
+	Motion(ctx context.Context, obj *models.UserLikeMotion) (*models.Motion, error)
 }
 
 type executableSchema struct {
@@ -938,132 +847,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.CityTopics.UpdatedAt(childComplexity), true
 
-	case "DiscoverMatching.areas":
-		if e.complexity.DiscoverMatching.Areas == nil {
-			break
-		}
-
-		return e.complexity.DiscoverMatching.Areas(childComplexity), true
-
-	case "DiscoverMatching.city":
-		if e.complexity.DiscoverMatching.City == nil {
-			break
-		}
-
-		return e.complexity.DiscoverMatching.City(childComplexity), true
-
-	case "DiscoverMatching.cityId":
-		if e.complexity.DiscoverMatching.CityID == nil {
-			break
-		}
-
-		return e.complexity.DiscoverMatching.CityID(childComplexity), true
-
-	case "DiscoverMatching.dayRange":
-		if e.complexity.DiscoverMatching.DayRange == nil {
-			break
-		}
-
-		return e.complexity.DiscoverMatching.DayRange(childComplexity), true
-
-	case "DiscoverMatching.gender":
-		if e.complexity.DiscoverMatching.Gender == nil {
-			break
-		}
-
-		return e.complexity.DiscoverMatching.Gender(childComplexity), true
-
-	case "DiscoverMatching.id":
-		if e.complexity.DiscoverMatching.ID == nil {
-			break
-		}
-
-		return e.complexity.DiscoverMatching.ID(childComplexity), true
-
-	case "DiscoverMatching.likeCount":
-		if e.complexity.DiscoverMatching.LikeCount == nil {
-			break
-		}
-
-		return e.complexity.DiscoverMatching.LikeCount(childComplexity), true
-
-	case "DiscoverMatching.liked":
-		if e.complexity.DiscoverMatching.Liked == nil {
-			break
-		}
-
-		return e.complexity.DiscoverMatching.Liked(childComplexity), true
-
-	case "DiscoverMatching.preferredPeriods":
-		if e.complexity.DiscoverMatching.PreferredPeriods == nil {
-			break
-		}
-
-		return e.complexity.DiscoverMatching.PreferredPeriods(childComplexity), true
-
-	case "DiscoverMatching.properties":
-		if e.complexity.DiscoverMatching.Properties == nil {
-			break
-		}
-
-		return e.complexity.DiscoverMatching.Properties(childComplexity), true
-
-	case "DiscoverMatching.remark":
-		if e.complexity.DiscoverMatching.Remark == nil {
-			break
-		}
-
-		return e.complexity.DiscoverMatching.Remark(childComplexity), true
-
-	case "DiscoverMatching.topic":
-		if e.complexity.DiscoverMatching.Topic == nil {
-			break
-		}
-
-		return e.complexity.DiscoverMatching.Topic(childComplexity), true
-
-	case "DiscoverMatching.topicOptionConfig":
-		if e.complexity.DiscoverMatching.TopicOptionConfig == nil {
-			break
-		}
-
-		return e.complexity.DiscoverMatching.TopicOptionConfig(childComplexity), true
-
-	case "DiscoverMatching.user":
-		if e.complexity.DiscoverMatching.User == nil {
-			break
-		}
-
-		return e.complexity.DiscoverMatching.User(childComplexity), true
-
-	case "DiscoverMatching.userId":
-		if e.complexity.DiscoverMatching.UserID == nil {
-			break
-		}
-
-		return e.complexity.DiscoverMatching.UserID(childComplexity), true
-
-	case "DiscoverMatching.viewCount":
-		if e.complexity.DiscoverMatching.ViewCount == nil {
-			break
-		}
-
-		return e.complexity.DiscoverMatching.ViewCount(childComplexity), true
-
-	case "DiscoverMatchingResult.matchings":
-		if e.complexity.DiscoverMatchingResult.Matchings == nil {
-			break
-		}
-
-		return e.complexity.DiscoverMatchingResult.Matchings(childComplexity), true
-
-	case "DiscoverMatchingResult.nextToken":
-		if e.complexity.DiscoverMatchingResult.NextToken == nil {
-			break
-		}
-
-		return e.complexity.DiscoverMatchingResult.NextToken(childComplexity), true
-
 	case "DiscoverMotion.areaIds":
 		if e.complexity.DiscoverMotion.AreaIDs == nil {
 			break
@@ -1113,12 +896,24 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.DiscoverMotion.ID(childComplexity), true
 
+	case "DiscoverMotion.likeCount":
+		if e.complexity.DiscoverMotion.LikeCount == nil {
+			break
+		}
+
+		return e.complexity.DiscoverMotion.LikeCount(childComplexity), true
+
 	case "DiscoverMotion.liked":
 		if e.complexity.DiscoverMotion.Liked == nil {
 			break
 		}
 
-		return e.complexity.DiscoverMotion.Liked(childComplexity), true
+		args, err := ec.field_DiscoverMotion_liked_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.DiscoverMotion.Liked(childComplexity, args["userId"].(*string)), true
 
 	case "DiscoverMotion.preferredPeriods":
 		if e.complexity.DiscoverMotion.PreferredPeriods == nil {
@@ -1146,7 +941,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		return e.complexity.DiscoverMotion.Submitted(childComplexity), true
+		args, err := ec.field_DiscoverMotion_submitted_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.DiscoverMotion.Submitted(childComplexity, args["userId"].(*string)), true
 
 	case "DiscoverMotion.topic":
 		if e.complexity.DiscoverMotion.Topic == nil {
@@ -1182,6 +982,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.DiscoverMotion.UserID(childComplexity), true
+
+	case "DiscoverMotion.viewCount":
+		if e.complexity.DiscoverMotion.ViewCount == nil {
+			break
+		}
+
+		return e.complexity.DiscoverMotion.ViewCount(childComplexity), true
 
 	case "DiscoverMotionResult.motions":
 		if e.complexity.DiscoverMotionResult.Motions == nil {
@@ -1410,13 +1217,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Matching.LikeCount(childComplexity), true
-
-	case "Matching.matchingOfferSummary":
-		if e.complexity.Matching.MatchingOfferSummary == nil {
-			break
-		}
-
-		return e.complexity.Matching.MatchingOfferSummary(childComplexity), true
 
 	case "Matching.matchingResult":
 		if e.complexity.Matching.MatchingResult == nil {
@@ -1740,139 +1540,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.MatchingOfTopic.UserID(childComplexity), true
 
-	case "MatchingOfferRecord.createdAt":
-		if e.complexity.MatchingOfferRecord.CreatedAt == nil {
-			break
-		}
-
-		return e.complexity.MatchingOfferRecord.CreatedAt(childComplexity), true
-
-	case "MatchingOfferRecord.matching":
-		if e.complexity.MatchingOfferRecord.Matching == nil {
-			break
-		}
-
-		return e.complexity.MatchingOfferRecord.Matching(childComplexity), true
-
-	case "MatchingOfferRecord.matchingId":
-		if e.complexity.MatchingOfferRecord.MatchingID == nil {
-			break
-		}
-
-		return e.complexity.MatchingOfferRecord.MatchingID(childComplexity), true
-
-	case "MatchingOfferRecord.reactedAt":
-		if e.complexity.MatchingOfferRecord.ReactedAt == nil {
-			break
-		}
-
-		return e.complexity.MatchingOfferRecord.ReactedAt(childComplexity), true
-
-	case "MatchingOfferRecord.remark":
-		if e.complexity.MatchingOfferRecord.Remark == nil {
-			break
-		}
-
-		return e.complexity.MatchingOfferRecord.Remark(childComplexity), true
-
-	case "MatchingOfferRecord.state":
-		if e.complexity.MatchingOfferRecord.State == nil {
-			break
-		}
-
-		return e.complexity.MatchingOfferRecord.State(childComplexity), true
-
-	case "MatchingOfferRecord.toMatching":
-		if e.complexity.MatchingOfferRecord.ToMatching == nil {
-			break
-		}
-
-		return e.complexity.MatchingOfferRecord.ToMatching(childComplexity), true
-
-	case "MatchingOfferRecord.toMatchingId":
-		if e.complexity.MatchingOfferRecord.ToMatchingID == nil {
-			break
-		}
-
-		return e.complexity.MatchingOfferRecord.ToMatchingID(childComplexity), true
-
-	case "MatchingOfferSummary.active":
-		if e.complexity.MatchingOfferSummary.Active == nil {
-			break
-		}
-
-		return e.complexity.MatchingOfferSummary.Active(childComplexity), true
-
-	case "MatchingOfferSummary.basicQuota":
-		if e.complexity.MatchingOfferSummary.BasicQuota == nil {
-			break
-		}
-
-		return e.complexity.MatchingOfferSummary.BasicQuota(childComplexity), true
-
-	case "MatchingOfferSummary.inMatchingOffers":
-		if e.complexity.MatchingOfferSummary.InMatchingOffers == nil {
-			break
-		}
-
-		return e.complexity.MatchingOfferSummary.InMatchingOffers(childComplexity), true
-
-	case "MatchingOfferSummary.inOfferNum":
-		if e.complexity.MatchingOfferSummary.InOfferNum == nil {
-			break
-		}
-
-		return e.complexity.MatchingOfferSummary.InOfferNum(childComplexity), true
-
-	case "MatchingOfferSummary.matchingId":
-		if e.complexity.MatchingOfferSummary.MatchingID == nil {
-			break
-		}
-
-		return e.complexity.MatchingOfferSummary.MatchingID(childComplexity), true
-
-	case "MatchingOfferSummary.outMatchingOffers":
-		if e.complexity.MatchingOfferSummary.OutMatchingOffers == nil {
-			break
-		}
-
-		return e.complexity.MatchingOfferSummary.OutMatchingOffers(childComplexity), true
-
-	case "MatchingOfferSummary.outOfferNum":
-		if e.complexity.MatchingOfferSummary.OutOfferNum == nil {
-			break
-		}
-
-		return e.complexity.MatchingOfferSummary.OutOfferNum(childComplexity), true
-
-	case "MatchingOfferSummary.unprocessedInOfferNum":
-		if e.complexity.MatchingOfferSummary.UnprocessedInOfferNum == nil {
-			break
-		}
-
-		return e.complexity.MatchingOfferSummary.UnprocessedInOfferNum(childComplexity), true
-
-	case "MatchingOfferSummary.unprocessedOutOfferNum":
-		if e.complexity.MatchingOfferSummary.UnprocessedOutOfferNum == nil {
-			break
-		}
-
-		return e.complexity.MatchingOfferSummary.UnprocessedOutOfferNum(childComplexity), true
-
-	case "MatchingOfferSummary.updatedAt":
-		if e.complexity.MatchingOfferSummary.UpdatedAt == nil {
-			break
-		}
-
-		return e.complexity.MatchingOfferSummary.UpdatedAt(childComplexity), true
-
-	case "MatchingOfferSummary.userId":
-		if e.complexity.MatchingOfferSummary.UserID == nil {
-			break
-		}
-
-		return e.complexity.MatchingOfferSummary.UserID(childComplexity), true
-
 	case "MatchingPreview.dayRange":
 		if e.complexity.MatchingPreview.DayRange == nil {
 			break
@@ -2167,13 +1834,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Motion.Areas(childComplexity), true
 
-	case "Motion.basicQuota":
-		if e.complexity.Motion.BasicQuota == nil {
-			break
-		}
-
-		return e.complexity.Motion.BasicQuota(childComplexity), true
-
 	case "Motion.city":
 		if e.complexity.Motion.City == nil {
 			break
@@ -2230,6 +1890,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Motion.LikeCount(childComplexity), true
 
+	case "Motion.liked":
+		if e.complexity.Motion.Liked == nil {
+			break
+		}
+
+		return e.complexity.Motion.Liked(childComplexity), true
+
 	case "Motion.outOfferNum":
 		if e.complexity.Motion.OutOfferNum == nil {
 			break
@@ -2264,13 +1931,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Motion.Properties(childComplexity), true
-
-	case "Motion.remainQuota":
-		if e.complexity.Motion.RemainQuota == nil {
-			break
-		}
-
-		return e.complexity.Motion.RemainQuota(childComplexity), true
 
 	case "Motion.remark":
 		if e.complexity.Motion.Remark == nil {
@@ -2384,18 +2044,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.MotionProperty.Values(childComplexity), true
 
-	case "Mutation.acceptMatchingOffer":
-		if e.complexity.Mutation.AcceptMatchingOffer == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_acceptMatchingOffer_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.AcceptMatchingOffer(childComplexity, args["myMatchingId"].(string), args["targetMatchingId"].(string)), true
-
 	case "Mutation.acceptMotionOffer":
 		if e.complexity.Mutation.AcceptMotionOffer == nil {
 			break
@@ -2443,18 +2091,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.CancelMatchingInvitation(childComplexity, args["invitationId"].(string)), true
-
-	case "Mutation.cancelMatchingOffer":
-		if e.complexity.Mutation.CancelMatchingOffer == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_cancelMatchingOffer_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.CancelMatchingOffer(childComplexity, args["myMatchingId"].(string), args["targetMatchingId"].(string)), true
 
 	case "Mutation.cancelMotionOffer":
 		if e.complexity.Mutation.CancelMotionOffer == nil {
@@ -2624,18 +2260,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.FinishMatching(childComplexity, args["matchingId"].(string)), true
 
-	case "Mutation.getAvailableMatchingOffer":
-		if e.complexity.Mutation.GetAvailableMatchingOffer == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_getAvailableMatchingOffer_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.GetAvailableMatchingOffer(childComplexity, args["userId"].(*string), args["targetMatchingId"].(string)), true
-
 	case "Mutation.getAvailableMotionOffer":
 		if e.complexity.Mutation.GetAvailableMotionOffer == nil {
 			break
@@ -2660,17 +2284,17 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.GetMatchingScore(childComplexity, args["id1"].(string), args["id2"].(string)), true
 
-	case "Mutation.likeMatching":
-		if e.complexity.Mutation.LikeMatching == nil {
+	case "Mutation.likeMotion":
+		if e.complexity.Mutation.LikeMotion == nil {
 			break
 		}
 
-		args, err := ec.field_Mutation_likeMatching_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_likeMotion_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Mutation.LikeMatching(childComplexity, args["userId"].(*string), args["matchingId"].(string)), true
+		return e.complexity.Mutation.LikeMotion(childComplexity, args["userId"].(*string), args["motionId"].(string)), true
 
 	case "Mutation.refreshTopicMetrics":
 		if e.complexity.Mutation.RefreshTopicMetrics == nil {
@@ -2678,18 +2302,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.RefreshTopicMetrics(childComplexity), true
-
-	case "Mutation.rejectMatchingOffer":
-		if e.complexity.Mutation.RejectMatchingOffer == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_rejectMatchingOffer_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.RejectMatchingOffer(childComplexity, args["myMatchingId"].(string), args["targetMatchingId"].(string)), true
 
 	case "Mutation.rejectMotionOffer":
 		if e.complexity.Mutation.RejectMotionOffer == nil {
@@ -2715,18 +2327,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.ReviewMatching(childComplexity, args["matchingId"].(string), args["param"].(models.ReviewMatchingParam)), true
 
-	case "Mutation.sendMatchingOffer":
-		if e.complexity.Mutation.SendMatchingOffer == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_sendMatchingOffer_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.SendMatchingOffer(childComplexity, args["myMatchingId"].(string), args["targetMatchingId"].(string)), true
-
 	case "Mutation.startMatching":
 		if e.complexity.Mutation.StartMatching == nil {
 			break
@@ -2734,17 +2334,17 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.StartMatching(childComplexity), true
 
-	case "Mutation.unlikeMatching":
-		if e.complexity.Mutation.UnlikeMatching == nil {
+	case "Mutation.unlikeMotion":
+		if e.complexity.Mutation.UnlikeMotion == nil {
 			break
 		}
 
-		args, err := ec.field_Mutation_unlikeMatching_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_unlikeMotion_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UnlikeMatching(childComplexity, args["userId"].(*string), args["matchingId"].(string)), true
+		return e.complexity.Mutation.UnlikeMotion(childComplexity, args["userId"].(*string), args["motionId"].(string)), true
 
 	case "Mutation.updateCityTopics":
 		if e.complexity.Mutation.UpdateCityTopics == nil {
@@ -2792,7 +2392,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UpdateMatchingDurationConstraint(childComplexity, args["id"].(int), args["param"].(models.UpdateMatchingDurationConstraintParam)), true
+		return e.complexity.Mutation.UpdateMatchingDurationConstraint(childComplexity, args["userId"].(string), args["param"].(models.UpdateMatchingDurationConstraintParam)), true
 
 	case "Mutation.updateMatchingInvitation":
 		if e.complexity.Mutation.UpdateMatchingInvitation == nil {
@@ -2933,18 +2533,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.DiscoverCategoryMotions(childComplexity, args["userId"].(*string), args["filter"].(*models.DiscoverTopicCategoryMotionFilter), args["topicCategoryId"].(string), args["nextToken"].(*string)), true
 
-	case "Query.discoverMatchingOfTopic":
-		if e.complexity.Query.DiscoverMatchingOfTopic == nil {
-			break
-		}
-
-		args, err := ec.field_Query_discoverMatchingOfTopic_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Query.DiscoverMatchingOfTopic(childComplexity, args["userId"].(*string), args["topicId"].(string), args["filter"].(*models.DiscoverMatchingFilter), args["nextToken"].(*string)), true
-
 	case "Query.hotTopics":
 		if e.complexity.Query.HotTopics == nil {
 			break
@@ -2980,18 +2568,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.HotTopicsInArea(childComplexity, args["cityId"].(*string)), true
-
-	case "Query.inMatchingOffer":
-		if e.complexity.Query.InMatchingOffer == nil {
-			break
-		}
-
-		args, err := ec.field_Query_inMatchingOffer_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Query.InMatchingOffer(childComplexity, args["matchingId"].(string)), true
 
 	case "Query.inMotionOffers":
 		if e.complexity.Query.InMotionOffers == nil {
@@ -3041,29 +2617,29 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.InvitationsCount(childComplexity, args["userId"].(*string)), true
 
-	case "Query.likedMatchingCount":
-		if e.complexity.Query.LikedMatchingCount == nil {
+	case "Query.likedMotions":
+		if e.complexity.Query.LikedMotions == nil {
 			break
 		}
 
-		args, err := ec.field_Query_likedMatchingCount_args(context.TODO(), rawArgs)
+		args, err := ec.field_Query_likedMotions_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Query.LikedMatchingCount(childComplexity, args["userId"].(*string)), true
+		return e.complexity.Query.LikedMotions(childComplexity, args["userId"].(*string), args["paginator"].(*graphqlutil.GraphQLPaginator)), true
 
-	case "Query.likedMatchings":
-		if e.complexity.Query.LikedMatchings == nil {
+	case "Query.likedMotionsCount":
+		if e.complexity.Query.LikedMotionsCount == nil {
 			break
 		}
 
-		args, err := ec.field_Query_likedMatchings_args(context.TODO(), rawArgs)
+		args, err := ec.field_Query_likedMotionsCount_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Query.LikedMatchings(childComplexity, args["userId"].(*string), args["paginator"].(*graphqlutil.GraphQLPaginator)), true
+		return e.complexity.Query.LikedMotionsCount(childComplexity, args["userId"].(*string)), true
 
 	case "Query.matching":
 		if e.complexity.Query.Matching == nil {
@@ -3197,6 +2773,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Motion(childComplexity, args["id"].(string)), true
 
+	case "Query.motionSummary":
+		if e.complexity.Query.MotionSummary == nil {
+			break
+		}
+
+		return e.complexity.Query.MotionSummary(childComplexity), true
+
 	case "Query.motions":
 		if e.complexity.Query.Motions == nil {
 			break
@@ -3220,18 +2803,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.MotionsCount(childComplexity, args["filter"].(*models.MotionFilter)), true
-
-	case "Query.outMatchingOffer":
-		if e.complexity.Query.OutMatchingOffer == nil {
-			break
-		}
-
-		args, err := ec.field_Query_outMatchingOffer_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Query.OutMatchingOffer(childComplexity, args["matchingId"].(string)), true
 
 	case "Query.outMotionOffers":
 		if e.complexity.Query.OutMotionOffers == nil {
@@ -3777,33 +3348,40 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.UserJoinTopic.UserID(childComplexity), true
 
-	case "UserLikeMatching.createdAt":
-		if e.complexity.UserLikeMatching.CreatedAt == nil {
+	case "UserLikeMotion.createdAt":
+		if e.complexity.UserLikeMotion.CreatedAt == nil {
 			break
 		}
 
-		return e.complexity.UserLikeMatching.CreatedAt(childComplexity), true
+		return e.complexity.UserLikeMotion.CreatedAt(childComplexity), true
 
-	case "UserLikeMatching.matching":
-		if e.complexity.UserLikeMatching.Matching == nil {
+	case "UserLikeMotion.motion":
+		if e.complexity.UserLikeMotion.Motion == nil {
 			break
 		}
 
-		return e.complexity.UserLikeMatching.Matching(childComplexity), true
+		return e.complexity.UserLikeMotion.Motion(childComplexity), true
 
-	case "UserLikeMatching.toMatchingId":
-		if e.complexity.UserLikeMatching.ToMatchingID == nil {
+	case "UserLikeMotion.toMotionId":
+		if e.complexity.UserLikeMotion.ToMotionID == nil {
 			break
 		}
 
-		return e.complexity.UserLikeMatching.ToMatchingID(childComplexity), true
+		return e.complexity.UserLikeMotion.ToMotionID(childComplexity), true
 
-	case "UserLikeMatching.user":
-		if e.complexity.UserLikeMatching.User == nil {
+	case "UserLikeMotion.toUserId":
+		if e.complexity.UserLikeMotion.ToUserID == nil {
 			break
 		}
 
-		return e.complexity.UserLikeMatching.User(childComplexity), true
+		return e.complexity.UserLikeMotion.ToUserID(childComplexity), true
+
+	case "UserLikeMotion.userId":
+		if e.complexity.UserLikeMotion.UserID == nil {
+			break
+		}
+
+		return e.complexity.UserLikeMotion.UserID(childComplexity), true
 
 	case "_Service.sdl":
 		if e.complexity._Service.SDL == nil {
@@ -3827,7 +3405,6 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputCreateMatchingParamV2,
 		ec.unmarshalInputCreateMotionParam,
 		ec.unmarshalInputCreateUserJoinTopicParam,
-		ec.unmarshalInputDiscoverMatchingFilter,
 		ec.unmarshalInputDiscoverTopicCategoryMotionFilter,
 		ec.unmarshalInputGraphQLPaginator,
 		ec.unmarshalInputHotTopicsFilter,
@@ -3949,7 +3526,7 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 	return introspection.WrapTypeFromDef(parsedSchema, parsedSchema.Types[name]), nil
 }
 
-//go:embed "schema.graphqls" "matching-discover.graphql" "matching-invitation.graphql" "matching.graphql" "motion-discover.graphql" "motion.graphql" "topic.graphql" "user-like-matching.graphql"
+//go:embed "schema.graphqls" "matching-discover.graphql" "matching-invitation.graphql" "matching.graphql" "motion-discover.graphql" "motion.graphql" "topic.graphql" "user-like-motion.graphql"
 var sourcesFS embed.FS
 
 func sourceData(filename string) string {
@@ -3968,7 +3545,7 @@ var sources = []*ast.Source{
 	{Name: "motion-discover.graphql", Input: sourceData("motion-discover.graphql"), BuiltIn: false},
 	{Name: "motion.graphql", Input: sourceData("motion.graphql"), BuiltIn: false},
 	{Name: "topic.graphql", Input: sourceData("topic.graphql"), BuiltIn: false},
-	{Name: "user-like-matching.graphql", Input: sourceData("user-like-matching.graphql"), BuiltIn: false},
+	{Name: "user-like-motion.graphql", Input: sourceData("user-like-motion.graphql"), BuiltIn: false},
 	{Name: "../federation/directives.graphql", Input: `
 	directive @composeDirective(name: String!) repeatable on SCHEMA
 	directive @extends on OBJECT | INTERFACE
@@ -4050,6 +3627,36 @@ func (ec *executionContext) dir_composeDirective_args(ctx context.Context, rawAr
 	return args, nil
 }
 
+func (ec *executionContext) field_DiscoverMotion_liked_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["userId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userId"))
+		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["userId"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_DiscoverMotion_submitted_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["userId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userId"))
+		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["userId"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Entity_findLevelRightsByLevel_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -4125,30 +3732,6 @@ func (ec *executionContext) field_Entity_findUserByID_args(ctx context.Context, 
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_acceptMatchingOffer_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["myMatchingId"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("myMatchingId"))
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["myMatchingId"] = arg0
-	var arg1 string
-	if tmp, ok := rawArgs["targetMatchingId"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("targetMatchingId"))
-		arg1, err = ec.unmarshalNString2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["targetMatchingId"] = arg1
-	return args, nil
-}
-
 func (ec *executionContext) field_Mutation_acceptMotionOffer_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -4200,30 +3783,6 @@ func (ec *executionContext) field_Mutation_cancelMatchingInvitation_args(ctx con
 		}
 	}
 	args["invitationId"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_Mutation_cancelMatchingOffer_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["myMatchingId"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("myMatchingId"))
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["myMatchingId"] = arg0
-	var arg1 string
-	if tmp, ok := rawArgs["targetMatchingId"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("targetMatchingId"))
-		arg1, err = ec.unmarshalNString2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["targetMatchingId"] = arg1
 	return args, nil
 }
 
@@ -4560,30 +4119,6 @@ func (ec *executionContext) field_Mutation_finishMatching_args(ctx context.Conte
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_getAvailableMatchingOffer_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 *string
-	if tmp, ok := rawArgs["userId"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userId"))
-		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["userId"] = arg0
-	var arg1 string
-	if tmp, ok := rawArgs["targetMatchingId"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("targetMatchingId"))
-		arg1, err = ec.unmarshalNString2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["targetMatchingId"] = arg1
-	return args, nil
-}
-
 func (ec *executionContext) field_Mutation_getAvailableMotionOffer_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -4632,7 +4167,7 @@ func (ec *executionContext) field_Mutation_getMatchingScore_args(ctx context.Con
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_likeMatching_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Mutation_likeMotion_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 *string
@@ -4645,38 +4180,14 @@ func (ec *executionContext) field_Mutation_likeMatching_args(ctx context.Context
 	}
 	args["userId"] = arg0
 	var arg1 string
-	if tmp, ok := rawArgs["matchingId"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("matchingId"))
+	if tmp, ok := rawArgs["motionId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("motionId"))
 		arg1, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["matchingId"] = arg1
-	return args, nil
-}
-
-func (ec *executionContext) field_Mutation_rejectMatchingOffer_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["myMatchingId"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("myMatchingId"))
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["myMatchingId"] = arg0
-	var arg1 string
-	if tmp, ok := rawArgs["targetMatchingId"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("targetMatchingId"))
-		arg1, err = ec.unmarshalNString2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["targetMatchingId"] = arg1
+	args["motionId"] = arg1
 	return args, nil
 }
 
@@ -4728,31 +4239,7 @@ func (ec *executionContext) field_Mutation_reviewMatching_args(ctx context.Conte
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_sendMatchingOffer_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["myMatchingId"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("myMatchingId"))
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["myMatchingId"] = arg0
-	var arg1 string
-	if tmp, ok := rawArgs["targetMatchingId"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("targetMatchingId"))
-		arg1, err = ec.unmarshalNString2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["targetMatchingId"] = arg1
-	return args, nil
-}
-
-func (ec *executionContext) field_Mutation_unlikeMatching_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Mutation_unlikeMotion_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 *string
@@ -4765,14 +4252,14 @@ func (ec *executionContext) field_Mutation_unlikeMatching_args(ctx context.Conte
 	}
 	args["userId"] = arg0
 	var arg1 string
-	if tmp, ok := rawArgs["matchingId"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("matchingId"))
+	if tmp, ok := rawArgs["motionId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("motionId"))
 		arg1, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["matchingId"] = arg1
+	args["motionId"] = arg1
 	return args, nil
 }
 
@@ -4827,15 +4314,15 @@ func (ec *executionContext) field_Mutation_updateHotTopicsInArea_args(ctx contex
 func (ec *executionContext) field_Mutation_updateMatchingDurationConstraint_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 int
-	if tmp, ok := rawArgs["id"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-		arg0, err = ec.unmarshalNInt2int(ctx, tmp)
+	var arg0 string
+	if tmp, ok := rawArgs["userId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userId"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["id"] = arg0
+	args["userId"] = arg0
 	var arg1 models.UpdateMatchingDurationConstraintParam
 	if tmp, ok := rawArgs["param"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("param"))
@@ -5148,48 +4635,6 @@ func (ec *executionContext) field_Query_discoverCategoryMotions_args(ctx context
 	return args, nil
 }
 
-func (ec *executionContext) field_Query_discoverMatchingOfTopic_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 *string
-	if tmp, ok := rawArgs["userId"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userId"))
-		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["userId"] = arg0
-	var arg1 string
-	if tmp, ok := rawArgs["topicId"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("topicId"))
-		arg1, err = ec.unmarshalNString2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["topicId"] = arg1
-	var arg2 *models.DiscoverMatchingFilter
-	if tmp, ok := rawArgs["filter"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
-		arg2, err = ec.unmarshalODiscoverMatchingFilter2ᚖwhaleᚋpkgᚋmodelsᚐDiscoverMatchingFilter(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["filter"] = arg2
-	var arg3 *string
-	if tmp, ok := rawArgs["nextToken"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nextToken"))
-		arg3, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["nextToken"] = arg3
-	return args, nil
-}
-
 func (ec *executionContext) field_Query_hotTopicsCount_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -5241,21 +4686,6 @@ func (ec *executionContext) field_Query_hotTopics_args(ctx context.Context, rawA
 		}
 	}
 	args["paginator"] = arg1
-	return args, nil
-}
-
-func (ec *executionContext) field_Query_inMatchingOffer_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["matchingId"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("matchingId"))
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["matchingId"] = arg0
 	return args, nil
 }
 
@@ -5337,7 +4767,7 @@ func (ec *executionContext) field_Query_invitations_args(ctx context.Context, ra
 	return args, nil
 }
 
-func (ec *executionContext) field_Query_likedMatchingCount_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Query_likedMotionsCount_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 *string
@@ -5352,7 +4782,7 @@ func (ec *executionContext) field_Query_likedMatchingCount_args(ctx context.Cont
 	return args, nil
 }
 
-func (ec *executionContext) field_Query_likedMatchings_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Query_likedMotions_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 *string
@@ -5613,21 +5043,6 @@ func (ec *executionContext) field_Query_motions_args(ctx context.Context, rawArg
 		}
 	}
 	args["paginator"] = arg1
-	return args, nil
-}
-
-func (ec *executionContext) field_Query_outMatchingOffer_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["matchingId"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("matchingId"))
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["matchingId"] = arg0
 	return args, nil
 }
 
@@ -6176,10 +5591,6 @@ func (ec *executionContext) fieldContext_AvailableMotionOffer_motion(ctx context
 				return ec.fieldContext_Motion_activeNum(ctx, field)
 			case "discoverable":
 				return ec.fieldContext_Motion_discoverable(ctx, field)
-			case "basicQuota":
-				return ec.fieldContext_Motion_basicQuota(ctx, field)
-			case "remainQuota":
-				return ec.fieldContext_Motion_remainQuota(ctx, field)
 			case "properties":
 				return ec.fieldContext_Motion_properties(ctx, field)
 			case "dayRange":
@@ -6188,6 +5599,8 @@ func (ec *executionContext) fieldContext_AvailableMotionOffer_motion(ctx context
 				return ec.fieldContext_Motion_preferredPeriods(ctx, field)
 			case "gender":
 				return ec.fieldContext_Motion_gender(ctx, field)
+			case "liked":
+				return ec.fieldContext_Motion_liked(ctx, field)
 			case "viewCount":
 				return ec.fieldContext_Motion_viewCount(ctx, field)
 			case "likeCount":
@@ -6845,863 +6258,6 @@ func (ec *executionContext) fieldContext_CityTopics_city(ctx context.Context, fi
 	return fc, nil
 }
 
-func (ec *executionContext) _DiscoverMatching_id(ctx context.Context, field graphql.CollectedField, obj *models.Matching) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_DiscoverMatching_id(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ID, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_DiscoverMatching_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "DiscoverMatching",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _DiscoverMatching_userId(ctx context.Context, field graphql.CollectedField, obj *models.Matching) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_DiscoverMatching_userId(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.UserID, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_DiscoverMatching_userId(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "DiscoverMatching",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _DiscoverMatching_cityId(ctx context.Context, field graphql.CollectedField, obj *models.Matching) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_DiscoverMatching_cityId(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.CityID, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_DiscoverMatching_cityId(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "DiscoverMatching",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _DiscoverMatching_remark(ctx context.Context, field graphql.CollectedField, obj *models.Matching) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_DiscoverMatching_remark(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Remark, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_DiscoverMatching_remark(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "DiscoverMatching",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _DiscoverMatching_properties(ctx context.Context, field graphql.CollectedField, obj *models.Matching) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_DiscoverMatching_properties(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Properties, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.([]models.MatchingProperty)
-	fc.Result = res
-	return ec.marshalNMatchingProperty2ᚕwhaleᚋpkgᚋmodelsᚐMatchingPropertyᚄ(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_DiscoverMatching_properties(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "DiscoverMatching",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_MatchingProperty_id(ctx, field)
-			case "values":
-				return ec.fieldContext_MatchingProperty_values(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type MatchingProperty", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _DiscoverMatching_dayRange(ctx context.Context, field graphql.CollectedField, obj *models.Matching) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_DiscoverMatching_dayRange(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.DayRange, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.([]string)
-	fc.Result = res
-	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_DiscoverMatching_dayRange(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "DiscoverMatching",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _DiscoverMatching_preferredPeriods(ctx context.Context, field graphql.CollectedField, obj *models.Matching) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_DiscoverMatching_preferredPeriods(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.DiscoverMatching().PreferredPeriods(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.([]models.DatePeriod)
-	fc.Result = res
-	return ec.marshalNDatePeriod2ᚕwhaleᚋpkgᚋmodelsᚐDatePeriodᚄ(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_DiscoverMatching_preferredPeriods(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "DiscoverMatching",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type DatePeriod does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _DiscoverMatching_gender(ctx context.Context, field graphql.CollectedField, obj *models.Matching) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_DiscoverMatching_gender(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.DiscoverMatching().Gender(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(models.Gender)
-	fc.Result = res
-	return ec.marshalNGender2whaleᚋpkgᚋmodelsᚐGender(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_DiscoverMatching_gender(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "DiscoverMatching",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Gender does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _DiscoverMatching_liked(ctx context.Context, field graphql.CollectedField, obj *models.Matching) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_DiscoverMatching_liked(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.DiscoverMatching().Liked(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(bool)
-	fc.Result = res
-	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_DiscoverMatching_liked(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "DiscoverMatching",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _DiscoverMatching_viewCount(ctx context.Context, field graphql.CollectedField, obj *models.Matching) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_DiscoverMatching_viewCount(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.DiscoverMatching().ViewCount(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_DiscoverMatching_viewCount(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "DiscoverMatching",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _DiscoverMatching_likeCount(ctx context.Context, field graphql.CollectedField, obj *models.Matching) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_DiscoverMatching_likeCount(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.DiscoverMatching().LikeCount(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_DiscoverMatching_likeCount(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "DiscoverMatching",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _DiscoverMatching_topic(ctx context.Context, field graphql.CollectedField, obj *models.Matching) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_DiscoverMatching_topic(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.DiscoverMatching().Topic(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*models.Topic)
-	fc.Result = res
-	return ec.marshalNTopic2ᚖwhaleᚋpkgᚋmodelsᚐTopic(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_DiscoverMatching_topic(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "DiscoverMatching",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_Topic_id(ctx, field)
-			case "recentUsers":
-				return ec.fieldContext_Topic_recentUsers(ctx, field)
-			case "matchingNum":
-				return ec.fieldContext_Topic_matchingNum(ctx, field)
-			case "fuzzyMatchingNum":
-				return ec.fieldContext_Topic_fuzzyMatchingNum(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type Topic", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _DiscoverMatching_topicOptionConfig(ctx context.Context, field graphql.CollectedField, obj *models.Matching) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_DiscoverMatching_topicOptionConfig(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.DiscoverMatching().TopicOptionConfig(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*models.TopicOptionConfig)
-	fc.Result = res
-	return ec.marshalOTopicOptionConfig2ᚖwhaleᚋpkgᚋmodelsᚐTopicOptionConfig(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_DiscoverMatching_topicOptionConfig(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "DiscoverMatching",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "topicId":
-				return ec.fieldContext_TopicOptionConfig_topicId(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type TopicOptionConfig", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _DiscoverMatching_user(ctx context.Context, field graphql.CollectedField, obj *models.Matching) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_DiscoverMatching_user(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.DiscoverMatching().User(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*models.User)
-	fc.Result = res
-	return ec.marshalNUser2ᚖwhaleᚋpkgᚋmodelsᚐUser(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_DiscoverMatching_user(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "DiscoverMatching",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_User_id(ctx, field)
-			case "matchingQuota":
-				return ec.fieldContext_User_matchingQuota(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _DiscoverMatching_city(ctx context.Context, field graphql.CollectedField, obj *models.Matching) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_DiscoverMatching_city(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.DiscoverMatching().City(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*models.Area)
-	fc.Result = res
-	return ec.marshalNArea2ᚖwhaleᚋpkgᚋmodelsᚐArea(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_DiscoverMatching_city(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "DiscoverMatching",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "code":
-				return ec.fieldContext_Area_code(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type Area", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _DiscoverMatching_areas(ctx context.Context, field graphql.CollectedField, obj *models.Matching) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_DiscoverMatching_areas(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.DiscoverMatching().Areas(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.([]*models.Area)
-	fc.Result = res
-	return ec.marshalNArea2ᚕᚖwhaleᚋpkgᚋmodelsᚐAreaᚄ(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_DiscoverMatching_areas(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "DiscoverMatching",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "code":
-				return ec.fieldContext_Area_code(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type Area", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _DiscoverMatchingResult_matchings(ctx context.Context, field graphql.CollectedField, obj *models.DiscoverMatchingResult) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_DiscoverMatchingResult_matchings(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Matchings, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.([]*models.Matching)
-	fc.Result = res
-	return ec.marshalNDiscoverMatching2ᚕᚖwhaleᚋpkgᚋmodelsᚐMatchingᚄ(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_DiscoverMatchingResult_matchings(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "DiscoverMatchingResult",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_DiscoverMatching_id(ctx, field)
-			case "userId":
-				return ec.fieldContext_DiscoverMatching_userId(ctx, field)
-			case "cityId":
-				return ec.fieldContext_DiscoverMatching_cityId(ctx, field)
-			case "remark":
-				return ec.fieldContext_DiscoverMatching_remark(ctx, field)
-			case "properties":
-				return ec.fieldContext_DiscoverMatching_properties(ctx, field)
-			case "dayRange":
-				return ec.fieldContext_DiscoverMatching_dayRange(ctx, field)
-			case "preferredPeriods":
-				return ec.fieldContext_DiscoverMatching_preferredPeriods(ctx, field)
-			case "gender":
-				return ec.fieldContext_DiscoverMatching_gender(ctx, field)
-			case "liked":
-				return ec.fieldContext_DiscoverMatching_liked(ctx, field)
-			case "viewCount":
-				return ec.fieldContext_DiscoverMatching_viewCount(ctx, field)
-			case "likeCount":
-				return ec.fieldContext_DiscoverMatching_likeCount(ctx, field)
-			case "topic":
-				return ec.fieldContext_DiscoverMatching_topic(ctx, field)
-			case "topicOptionConfig":
-				return ec.fieldContext_DiscoverMatching_topicOptionConfig(ctx, field)
-			case "user":
-				return ec.fieldContext_DiscoverMatching_user(ctx, field)
-			case "city":
-				return ec.fieldContext_DiscoverMatching_city(ctx, field)
-			case "areas":
-				return ec.fieldContext_DiscoverMatching_areas(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type DiscoverMatching", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _DiscoverMatchingResult_nextToken(ctx context.Context, field graphql.CollectedField, obj *models.DiscoverMatchingResult) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_DiscoverMatchingResult_nextToken(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.NextToken, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_DiscoverMatchingResult_nextToken(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "DiscoverMatchingResult",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _DiscoverMotion_id(ctx context.Context, field graphql.CollectedField, obj *models.Motion) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DiscoverMotion_id(ctx, field)
 	if err != nil {
@@ -8148,6 +6704,94 @@ func (ec *executionContext) fieldContext_DiscoverMotion_remark(ctx context.Conte
 	return fc, nil
 }
 
+func (ec *executionContext) _DiscoverMotion_likeCount(ctx context.Context, field graphql.CollectedField, obj *models.Motion) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DiscoverMotion_likeCount(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LikeCount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DiscoverMotion_likeCount(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DiscoverMotion",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DiscoverMotion_viewCount(ctx context.Context, field graphql.CollectedField, obj *models.Motion) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DiscoverMotion_viewCount(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ViewCount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DiscoverMotion_viewCount(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DiscoverMotion",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _DiscoverMotion_liked(ctx context.Context, field graphql.CollectedField, obj *models.Motion) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DiscoverMotion_liked(ctx, field)
 	if err != nil {
@@ -8162,7 +6806,7 @@ func (ec *executionContext) _DiscoverMotion_liked(ctx context.Context, field gra
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.DiscoverMotion().Liked(rctx, obj)
+		return ec.resolvers.DiscoverMotion().Liked(rctx, obj, fc.Args["userId"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -8189,6 +6833,17 @@ func (ec *executionContext) fieldContext_DiscoverMotion_liked(ctx context.Contex
 			return nil, errors.New("field of type Boolean does not have child fields")
 		},
 	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_DiscoverMotion_liked_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
 	return fc, nil
 }
 
@@ -8206,7 +6861,7 @@ func (ec *executionContext) _DiscoverMotion_submitted(ctx context.Context, field
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.DiscoverMotion().Submitted(rctx, obj)
+		return ec.resolvers.DiscoverMotion().Submitted(rctx, obj, fc.Args["userId"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -8232,6 +6887,17 @@ func (ec *executionContext) fieldContext_DiscoverMotion_submitted(ctx context.Co
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Boolean does not have child fields")
 		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_DiscoverMotion_submitted_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
 	}
 	return fc, nil
 }
@@ -8540,6 +7206,10 @@ func (ec *executionContext) fieldContext_DiscoverMotionResult_motions(ctx contex
 				return ec.fieldContext_DiscoverMotion_preferredPeriods(ctx, field)
 			case "remark":
 				return ec.fieldContext_DiscoverMotion_remark(ctx, field)
+			case "likeCount":
+				return ec.fieldContext_DiscoverMotion_likeCount(ctx, field)
+			case "viewCount":
+				return ec.fieldContext_DiscoverMotion_viewCount(ctx, field)
 			case "liked":
 				return ec.fieldContext_DiscoverMotion_liked(ctx, field)
 			case "submitted":
@@ -8739,8 +7409,6 @@ func (ec *executionContext) fieldContext_Entity_findMatchingByID(ctx context.Con
 				return ec.fieldContext_Matching_updatedAt(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Matching_createdAt(ctx, field)
-			case "matchingOfferSummary":
-				return ec.fieldContext_Matching_matchingOfferSummary(ctx, field)
 			case "matchingResult":
 				return ec.fieldContext_Matching_matchingResult(ctx, field)
 			case "reviewed":
@@ -10235,74 +8903,6 @@ func (ec *executionContext) fieldContext_Matching_createdAt(ctx context.Context,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Time does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Matching_matchingOfferSummary(ctx context.Context, field graphql.CollectedField, obj *models.Matching) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Matching_matchingOfferSummary(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Matching().MatchingOfferSummary(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*models.MatchingOfferSummary)
-	fc.Result = res
-	return ec.marshalNMatchingOfferSummary2ᚖwhaleᚋpkgᚋmodelsᚐMatchingOfferSummary(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Matching_matchingOfferSummary(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Matching",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "matchingId":
-				return ec.fieldContext_MatchingOfferSummary_matchingId(ctx, field)
-			case "userId":
-				return ec.fieldContext_MatchingOfferSummary_userId(ctx, field)
-			case "inOfferNum":
-				return ec.fieldContext_MatchingOfferSummary_inOfferNum(ctx, field)
-			case "unprocessedInOfferNum":
-				return ec.fieldContext_MatchingOfferSummary_unprocessedInOfferNum(ctx, field)
-			case "outOfferNum":
-				return ec.fieldContext_MatchingOfferSummary_outOfferNum(ctx, field)
-			case "unprocessedOutOfferNum":
-				return ec.fieldContext_MatchingOfferSummary_unprocessedOutOfferNum(ctx, field)
-			case "inMatchingOffers":
-				return ec.fieldContext_MatchingOfferSummary_inMatchingOffers(ctx, field)
-			case "outMatchingOffers":
-				return ec.fieldContext_MatchingOfferSummary_outMatchingOffers(ctx, field)
-			case "basicQuota":
-				return ec.fieldContext_MatchingOfferSummary_basicQuota(ctx, field)
-			case "active":
-				return ec.fieldContext_MatchingOfferSummary_active(ctx, field)
-			case "updatedAt":
-				return ec.fieldContext_MatchingOfferSummary_updatedAt(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type MatchingOfferSummary", field.Name)
 		},
 	}
 	return fc, nil
@@ -12306,1003 +10906,6 @@ func (ec *executionContext) fieldContext_MatchingOfTopic_areas(ctx context.Conte
 				return ec.fieldContext_Area_code(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Area", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _MatchingOfferRecord_toMatchingId(ctx context.Context, field graphql.CollectedField, obj *models.MatchingOfferRecord) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_MatchingOfferRecord_toMatchingId(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ToMatchingID, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_MatchingOfferRecord_toMatchingId(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "MatchingOfferRecord",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _MatchingOfferRecord_matchingId(ctx context.Context, field graphql.CollectedField, obj *models.MatchingOfferRecord) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_MatchingOfferRecord_matchingId(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.MatchingID, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_MatchingOfferRecord_matchingId(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "MatchingOfferRecord",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _MatchingOfferRecord_state(ctx context.Context, field graphql.CollectedField, obj *models.MatchingOfferRecord) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_MatchingOfferRecord_state(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.MatchingOfferRecord().State(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(models.MatchingOfferState)
-	fc.Result = res
-	return ec.marshalNMatchingOfferState2whaleᚋpkgᚋmodelsᚐMatchingOfferState(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_MatchingOfferRecord_state(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "MatchingOfferRecord",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type MatchingOfferState does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _MatchingOfferRecord_createdAt(ctx context.Context, field graphql.CollectedField, obj *models.MatchingOfferRecord) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_MatchingOfferRecord_createdAt(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		directive0 := func(rctx context.Context) (interface{}, error) {
-			ctx = rctx // use context from middleware stack in children
-			return obj.CreatedAt, nil
-		}
-		directive1 := func(ctx context.Context) (interface{}, error) {
-			if ec.directives.AdminOnly == nil {
-				return nil, errors.New("directive adminOnly is not implemented")
-			}
-			return ec.directives.AdminOnly(ctx, obj, directive0)
-		}
-
-		tmp, err := directive1(rctx)
-		if err != nil {
-			return nil, graphql.ErrorOnPath(ctx, err)
-		}
-		if tmp == nil {
-			return nil, nil
-		}
-		if data, ok := tmp.(time.Time); ok {
-			return data, nil
-		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be time.Time`, tmp)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(time.Time)
-	fc.Result = res
-	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_MatchingOfferRecord_createdAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "MatchingOfferRecord",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Time does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _MatchingOfferRecord_reactedAt(ctx context.Context, field graphql.CollectedField, obj *models.MatchingOfferRecord) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_MatchingOfferRecord_reactedAt(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ReactedAt, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*time.Time)
-	fc.Result = res
-	return ec.marshalOTime2ᚖtimeᚐTime(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_MatchingOfferRecord_reactedAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "MatchingOfferRecord",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Time does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _MatchingOfferRecord_remark(ctx context.Context, field graphql.CollectedField, obj *models.MatchingOfferRecord) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_MatchingOfferRecord_remark(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Remark, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_MatchingOfferRecord_remark(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "MatchingOfferRecord",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _MatchingOfferRecord_toMatching(ctx context.Context, field graphql.CollectedField, obj *models.MatchingOfferRecord) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_MatchingOfferRecord_toMatching(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.MatchingOfferRecord().ToMatching(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*models.Matching)
-	fc.Result = res
-	return ec.marshalNDiscoverMatching2ᚖwhaleᚋpkgᚋmodelsᚐMatching(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_MatchingOfferRecord_toMatching(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "MatchingOfferRecord",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_DiscoverMatching_id(ctx, field)
-			case "userId":
-				return ec.fieldContext_DiscoverMatching_userId(ctx, field)
-			case "cityId":
-				return ec.fieldContext_DiscoverMatching_cityId(ctx, field)
-			case "remark":
-				return ec.fieldContext_DiscoverMatching_remark(ctx, field)
-			case "properties":
-				return ec.fieldContext_DiscoverMatching_properties(ctx, field)
-			case "dayRange":
-				return ec.fieldContext_DiscoverMatching_dayRange(ctx, field)
-			case "preferredPeriods":
-				return ec.fieldContext_DiscoverMatching_preferredPeriods(ctx, field)
-			case "gender":
-				return ec.fieldContext_DiscoverMatching_gender(ctx, field)
-			case "liked":
-				return ec.fieldContext_DiscoverMatching_liked(ctx, field)
-			case "viewCount":
-				return ec.fieldContext_DiscoverMatching_viewCount(ctx, field)
-			case "likeCount":
-				return ec.fieldContext_DiscoverMatching_likeCount(ctx, field)
-			case "topic":
-				return ec.fieldContext_DiscoverMatching_topic(ctx, field)
-			case "topicOptionConfig":
-				return ec.fieldContext_DiscoverMatching_topicOptionConfig(ctx, field)
-			case "user":
-				return ec.fieldContext_DiscoverMatching_user(ctx, field)
-			case "city":
-				return ec.fieldContext_DiscoverMatching_city(ctx, field)
-			case "areas":
-				return ec.fieldContext_DiscoverMatching_areas(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type DiscoverMatching", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _MatchingOfferRecord_matching(ctx context.Context, field graphql.CollectedField, obj *models.MatchingOfferRecord) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_MatchingOfferRecord_matching(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.MatchingOfferRecord().Matching(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*models.Matching)
-	fc.Result = res
-	return ec.marshalNDiscoverMatching2ᚖwhaleᚋpkgᚋmodelsᚐMatching(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_MatchingOfferRecord_matching(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "MatchingOfferRecord",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_DiscoverMatching_id(ctx, field)
-			case "userId":
-				return ec.fieldContext_DiscoverMatching_userId(ctx, field)
-			case "cityId":
-				return ec.fieldContext_DiscoverMatching_cityId(ctx, field)
-			case "remark":
-				return ec.fieldContext_DiscoverMatching_remark(ctx, field)
-			case "properties":
-				return ec.fieldContext_DiscoverMatching_properties(ctx, field)
-			case "dayRange":
-				return ec.fieldContext_DiscoverMatching_dayRange(ctx, field)
-			case "preferredPeriods":
-				return ec.fieldContext_DiscoverMatching_preferredPeriods(ctx, field)
-			case "gender":
-				return ec.fieldContext_DiscoverMatching_gender(ctx, field)
-			case "liked":
-				return ec.fieldContext_DiscoverMatching_liked(ctx, field)
-			case "viewCount":
-				return ec.fieldContext_DiscoverMatching_viewCount(ctx, field)
-			case "likeCount":
-				return ec.fieldContext_DiscoverMatching_likeCount(ctx, field)
-			case "topic":
-				return ec.fieldContext_DiscoverMatching_topic(ctx, field)
-			case "topicOptionConfig":
-				return ec.fieldContext_DiscoverMatching_topicOptionConfig(ctx, field)
-			case "user":
-				return ec.fieldContext_DiscoverMatching_user(ctx, field)
-			case "city":
-				return ec.fieldContext_DiscoverMatching_city(ctx, field)
-			case "areas":
-				return ec.fieldContext_DiscoverMatching_areas(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type DiscoverMatching", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _MatchingOfferSummary_matchingId(ctx context.Context, field graphql.CollectedField, obj *models.MatchingOfferSummary) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_MatchingOfferSummary_matchingId(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.MatchingID, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_MatchingOfferSummary_matchingId(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "MatchingOfferSummary",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _MatchingOfferSummary_userId(ctx context.Context, field graphql.CollectedField, obj *models.MatchingOfferSummary) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_MatchingOfferSummary_userId(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.UserID, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_MatchingOfferSummary_userId(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "MatchingOfferSummary",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _MatchingOfferSummary_inOfferNum(ctx context.Context, field graphql.CollectedField, obj *models.MatchingOfferSummary) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_MatchingOfferSummary_inOfferNum(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.InOfferNum, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_MatchingOfferSummary_inOfferNum(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "MatchingOfferSummary",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _MatchingOfferSummary_unprocessedInOfferNum(ctx context.Context, field graphql.CollectedField, obj *models.MatchingOfferSummary) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_MatchingOfferSummary_unprocessedInOfferNum(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.MatchingOfferSummary().UnprocessedInOfferNum(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_MatchingOfferSummary_unprocessedInOfferNum(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "MatchingOfferSummary",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _MatchingOfferSummary_outOfferNum(ctx context.Context, field graphql.CollectedField, obj *models.MatchingOfferSummary) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_MatchingOfferSummary_outOfferNum(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.OutOfferNum, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_MatchingOfferSummary_outOfferNum(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "MatchingOfferSummary",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _MatchingOfferSummary_unprocessedOutOfferNum(ctx context.Context, field graphql.CollectedField, obj *models.MatchingOfferSummary) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_MatchingOfferSummary_unprocessedOutOfferNum(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.MatchingOfferSummary().UnprocessedOutOfferNum(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_MatchingOfferSummary_unprocessedOutOfferNum(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "MatchingOfferSummary",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _MatchingOfferSummary_inMatchingOffers(ctx context.Context, field graphql.CollectedField, obj *models.MatchingOfferSummary) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_MatchingOfferSummary_inMatchingOffers(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		directive0 := func(rctx context.Context) (interface{}, error) {
-			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.MatchingOfferSummary().InMatchingOffers(rctx, obj)
-		}
-		directive1 := func(ctx context.Context) (interface{}, error) {
-			if ec.directives.AdminOnly == nil {
-				return nil, errors.New("directive adminOnly is not implemented")
-			}
-			return ec.directives.AdminOnly(ctx, obj, directive0)
-		}
-
-		tmp, err := directive1(rctx)
-		if err != nil {
-			return nil, graphql.ErrorOnPath(ctx, err)
-		}
-		if tmp == nil {
-			return nil, nil
-		}
-		if data, ok := tmp.([]*models.MatchingOfferRecord); ok {
-			return data, nil
-		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be []*whale/pkg/models.MatchingOfferRecord`, tmp)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.([]*models.MatchingOfferRecord)
-	fc.Result = res
-	return ec.marshalNMatchingOfferRecord2ᚕᚖwhaleᚋpkgᚋmodelsᚐMatchingOfferRecordᚄ(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_MatchingOfferSummary_inMatchingOffers(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "MatchingOfferSummary",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "toMatchingId":
-				return ec.fieldContext_MatchingOfferRecord_toMatchingId(ctx, field)
-			case "matchingId":
-				return ec.fieldContext_MatchingOfferRecord_matchingId(ctx, field)
-			case "state":
-				return ec.fieldContext_MatchingOfferRecord_state(ctx, field)
-			case "createdAt":
-				return ec.fieldContext_MatchingOfferRecord_createdAt(ctx, field)
-			case "reactedAt":
-				return ec.fieldContext_MatchingOfferRecord_reactedAt(ctx, field)
-			case "remark":
-				return ec.fieldContext_MatchingOfferRecord_remark(ctx, field)
-			case "toMatching":
-				return ec.fieldContext_MatchingOfferRecord_toMatching(ctx, field)
-			case "matching":
-				return ec.fieldContext_MatchingOfferRecord_matching(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type MatchingOfferRecord", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _MatchingOfferSummary_outMatchingOffers(ctx context.Context, field graphql.CollectedField, obj *models.MatchingOfferSummary) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_MatchingOfferSummary_outMatchingOffers(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		directive0 := func(rctx context.Context) (interface{}, error) {
-			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.MatchingOfferSummary().OutMatchingOffers(rctx, obj)
-		}
-		directive1 := func(ctx context.Context) (interface{}, error) {
-			if ec.directives.AdminOnly == nil {
-				return nil, errors.New("directive adminOnly is not implemented")
-			}
-			return ec.directives.AdminOnly(ctx, obj, directive0)
-		}
-
-		tmp, err := directive1(rctx)
-		if err != nil {
-			return nil, graphql.ErrorOnPath(ctx, err)
-		}
-		if tmp == nil {
-			return nil, nil
-		}
-		if data, ok := tmp.([]*models.MatchingOfferRecord); ok {
-			return data, nil
-		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be []*whale/pkg/models.MatchingOfferRecord`, tmp)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.([]*models.MatchingOfferRecord)
-	fc.Result = res
-	return ec.marshalNMatchingOfferRecord2ᚕᚖwhaleᚋpkgᚋmodelsᚐMatchingOfferRecordᚄ(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_MatchingOfferSummary_outMatchingOffers(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "MatchingOfferSummary",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "toMatchingId":
-				return ec.fieldContext_MatchingOfferRecord_toMatchingId(ctx, field)
-			case "matchingId":
-				return ec.fieldContext_MatchingOfferRecord_matchingId(ctx, field)
-			case "state":
-				return ec.fieldContext_MatchingOfferRecord_state(ctx, field)
-			case "createdAt":
-				return ec.fieldContext_MatchingOfferRecord_createdAt(ctx, field)
-			case "reactedAt":
-				return ec.fieldContext_MatchingOfferRecord_reactedAt(ctx, field)
-			case "remark":
-				return ec.fieldContext_MatchingOfferRecord_remark(ctx, field)
-			case "toMatching":
-				return ec.fieldContext_MatchingOfferRecord_toMatching(ctx, field)
-			case "matching":
-				return ec.fieldContext_MatchingOfferRecord_matching(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type MatchingOfferRecord", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _MatchingOfferSummary_basicQuota(ctx context.Context, field graphql.CollectedField, obj *models.MatchingOfferSummary) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_MatchingOfferSummary_basicQuota(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.BasicQuota, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_MatchingOfferSummary_basicQuota(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "MatchingOfferSummary",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _MatchingOfferSummary_active(ctx context.Context, field graphql.CollectedField, obj *models.MatchingOfferSummary) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_MatchingOfferSummary_active(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Active, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(bool)
-	fc.Result = res
-	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_MatchingOfferSummary_active(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "MatchingOfferSummary",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _MatchingOfferSummary_updatedAt(ctx context.Context, field graphql.CollectedField, obj *models.MatchingOfferSummary) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_MatchingOfferSummary_updatedAt(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.UpdatedAt, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(time.Time)
-	fc.Result = res
-	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_MatchingOfferSummary_updatedAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "MatchingOfferSummary",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Time does not have child fields")
 		},
 	}
 	return fc, nil
@@ -15677,94 +13280,6 @@ func (ec *executionContext) fieldContext_Motion_discoverable(ctx context.Context
 	return fc, nil
 }
 
-func (ec *executionContext) _Motion_basicQuota(ctx context.Context, field graphql.CollectedField, obj *models.Motion) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Motion_basicQuota(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.BasicQuota, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Motion_basicQuota(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Motion",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Motion_remainQuota(ctx context.Context, field graphql.CollectedField, obj *models.Motion) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Motion_remainQuota(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.RemainQuota, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Motion_remainQuota(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Motion",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _Motion_properties(ctx context.Context, field graphql.CollectedField, obj *models.Motion) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Motion_properties(ctx, field)
 	if err != nil {
@@ -15942,6 +13457,50 @@ func (ec *executionContext) fieldContext_Motion_gender(ctx context.Context, fiel
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Gender does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Motion_liked(ctx context.Context, field graphql.CollectedField, obj *models.Motion) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Motion_liked(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Motion().Liked(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Motion_liked(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Motion",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
 		},
 	}
 	return fc, nil
@@ -16620,6 +14179,10 @@ func (ec *executionContext) fieldContext_MotionOfferRecord_toMotion(ctx context.
 				return ec.fieldContext_DiscoverMotion_preferredPeriods(ctx, field)
 			case "remark":
 				return ec.fieldContext_DiscoverMotion_remark(ctx, field)
+			case "likeCount":
+				return ec.fieldContext_DiscoverMotion_likeCount(ctx, field)
+			case "viewCount":
+				return ec.fieldContext_DiscoverMotion_viewCount(ctx, field)
 			case "liked":
 				return ec.fieldContext_DiscoverMotion_liked(ctx, field)
 			case "submitted":
@@ -16700,6 +14263,10 @@ func (ec *executionContext) fieldContext_MotionOfferRecord_motion(ctx context.Co
 				return ec.fieldContext_DiscoverMotion_preferredPeriods(ctx, field)
 			case "remark":
 				return ec.fieldContext_DiscoverMotion_remark(ctx, field)
+			case "likeCount":
+				return ec.fieldContext_DiscoverMotion_likeCount(ctx, field)
+			case "viewCount":
+				return ec.fieldContext_DiscoverMotion_viewCount(ctx, field)
 			case "liked":
 				return ec.fieldContext_DiscoverMotion_liked(ctx, field)
 			case "submitted":
@@ -16898,318 +14465,6 @@ func (ec *executionContext) fieldContext_Mutation_refreshTopicMetrics(ctx contex
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
 		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Mutation_getAvailableMatchingOffer(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Mutation_getAvailableMatchingOffer(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().GetAvailableMatchingOffer(rctx, fc.Args["userId"].(*string), fc.Args["targetMatchingId"].(string))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*models.Matching)
-	fc.Result = res
-	return ec.marshalOMatching2ᚖwhaleᚋpkgᚋmodelsᚐMatching(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Mutation_getAvailableMatchingOffer(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Mutation",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_Matching_id(ctx, field)
-			case "topicId":
-				return ec.fieldContext_Matching_topicId(ctx, field)
-			case "userId":
-				return ec.fieldContext_Matching_userId(ctx, field)
-			case "areaIds":
-				return ec.fieldContext_Matching_areaIds(ctx, field)
-			case "cityId":
-				return ec.fieldContext_Matching_cityId(ctx, field)
-			case "gender":
-				return ec.fieldContext_Matching_gender(ctx, field)
-			case "state":
-				return ec.fieldContext_Matching_state(ctx, field)
-			case "rejectedUserIds":
-				return ec.fieldContext_Matching_rejectedUserIds(ctx, field)
-			case "inChatGroup":
-				return ec.fieldContext_Matching_inChatGroup(ctx, field)
-			case "remark":
-				return ec.fieldContext_Matching_remark(ctx, field)
-			case "dayRange":
-				return ec.fieldContext_Matching_dayRange(ctx, field)
-			case "preferredPeriods":
-				return ec.fieldContext_Matching_preferredPeriods(ctx, field)
-			case "properties":
-				return ec.fieldContext_Matching_properties(ctx, field)
-			case "deadline":
-				return ec.fieldContext_Matching_deadline(ctx, field)
-			case "updatedAt":
-				return ec.fieldContext_Matching_updatedAt(ctx, field)
-			case "createdAt":
-				return ec.fieldContext_Matching_createdAt(ctx, field)
-			case "matchingOfferSummary":
-				return ec.fieldContext_Matching_matchingOfferSummary(ctx, field)
-			case "matchingResult":
-				return ec.fieldContext_Matching_matchingResult(ctx, field)
-			case "reviewed":
-				return ec.fieldContext_Matching_reviewed(ctx, field)
-			case "viewCount":
-				return ec.fieldContext_Matching_viewCount(ctx, field)
-			case "likeCount":
-				return ec.fieldContext_Matching_likeCount(ctx, field)
-			case "user":
-				return ec.fieldContext_Matching_user(ctx, field)
-			case "topic":
-				return ec.fieldContext_Matching_topic(ctx, field)
-			case "areas":
-				return ec.fieldContext_Matching_areas(ctx, field)
-			case "city":
-				return ec.fieldContext_Matching_city(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type Matching", field.Name)
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Mutation_getAvailableMatchingOffer_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return fc, err
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Mutation_sendMatchingOffer(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Mutation_sendMatchingOffer(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().SendMatchingOffer(rctx, fc.Args["myMatchingId"].(string), fc.Args["targetMatchingId"].(string))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Mutation_sendMatchingOffer(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Mutation",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Mutation_sendMatchingOffer_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return fc, err
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Mutation_cancelMatchingOffer(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Mutation_cancelMatchingOffer(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().CancelMatchingOffer(rctx, fc.Args["myMatchingId"].(string), fc.Args["targetMatchingId"].(string))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Mutation_cancelMatchingOffer(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Mutation",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Mutation_cancelMatchingOffer_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return fc, err
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Mutation_acceptMatchingOffer(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Mutation_acceptMatchingOffer(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().AcceptMatchingOffer(rctx, fc.Args["myMatchingId"].(string), fc.Args["targetMatchingId"].(string))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Mutation_acceptMatchingOffer(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Mutation",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Mutation_acceptMatchingOffer_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return fc, err
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Mutation_rejectMatchingOffer(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Mutation_rejectMatchingOffer(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().RejectMatchingOffer(rctx, fc.Args["myMatchingId"].(string), fc.Args["targetMatchingId"].(string))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Mutation_rejectMatchingOffer(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Mutation",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Mutation_rejectMatchingOffer_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return fc, err
 	}
 	return fc, nil
 }
@@ -17579,8 +14834,6 @@ func (ec *executionContext) fieldContext_Mutation_createMatching(ctx context.Con
 				return ec.fieldContext_Matching_updatedAt(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Matching_createdAt(ctx, field)
-			case "matchingOfferSummary":
-				return ec.fieldContext_Matching_matchingOfferSummary(ctx, field)
 			case "matchingResult":
 				return ec.fieldContext_Matching_matchingResult(ctx, field)
 			case "reviewed":
@@ -17686,8 +14939,6 @@ func (ec *executionContext) fieldContext_Mutation_createMatchingV2(ctx context.C
 				return ec.fieldContext_Matching_updatedAt(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Matching_createdAt(ctx, field)
-			case "matchingOfferSummary":
-				return ec.fieldContext_Matching_matchingOfferSummary(ctx, field)
 			case "matchingResult":
 				return ec.fieldContext_Matching_matchingResult(ctx, field)
 			case "reviewed":
@@ -17793,8 +15044,6 @@ func (ec *executionContext) fieldContext_Mutation_updateMatching(ctx context.Con
 				return ec.fieldContext_Matching_updatedAt(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Matching_createdAt(ctx, field)
-			case "matchingOfferSummary":
-				return ec.fieldContext_Matching_matchingOfferSummary(ctx, field)
 			case "matchingResult":
 				return ec.fieldContext_Matching_matchingResult(ctx, field)
 			case "reviewed":
@@ -17898,7 +15147,7 @@ func (ec *executionContext) _Mutation_updateMatchingDurationConstraint(ctx conte
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().UpdateMatchingDurationConstraint(rctx, fc.Args["id"].(int), fc.Args["param"].(models.UpdateMatchingDurationConstraintParam))
+		return ec.resolvers.Mutation().UpdateMatchingDurationConstraint(rctx, fc.Args["userId"].(string), fc.Args["param"].(models.UpdateMatchingDurationConstraintParam))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -18785,10 +16034,6 @@ func (ec *executionContext) fieldContext_Mutation_createMotion(ctx context.Conte
 				return ec.fieldContext_Motion_activeNum(ctx, field)
 			case "discoverable":
 				return ec.fieldContext_Motion_discoverable(ctx, field)
-			case "basicQuota":
-				return ec.fieldContext_Motion_basicQuota(ctx, field)
-			case "remainQuota":
-				return ec.fieldContext_Motion_remainQuota(ctx, field)
 			case "properties":
 				return ec.fieldContext_Motion_properties(ctx, field)
 			case "dayRange":
@@ -18797,6 +16042,8 @@ func (ec *executionContext) fieldContext_Mutation_createMotion(ctx context.Conte
 				return ec.fieldContext_Motion_preferredPeriods(ctx, field)
 			case "gender":
 				return ec.fieldContext_Motion_gender(ctx, field)
+			case "liked":
+				return ec.fieldContext_Motion_liked(ctx, field)
 			case "viewCount":
 				return ec.fieldContext_Motion_viewCount(ctx, field)
 			case "likeCount":
@@ -18890,10 +16137,6 @@ func (ec *executionContext) fieldContext_Mutation_updateMotion(ctx context.Conte
 				return ec.fieldContext_Motion_activeNum(ctx, field)
 			case "discoverable":
 				return ec.fieldContext_Motion_discoverable(ctx, field)
-			case "basicQuota":
-				return ec.fieldContext_Motion_basicQuota(ctx, field)
-			case "remainQuota":
-				return ec.fieldContext_Motion_remainQuota(ctx, field)
 			case "properties":
 				return ec.fieldContext_Motion_properties(ctx, field)
 			case "dayRange":
@@ -18902,6 +16145,8 @@ func (ec *executionContext) fieldContext_Mutation_updateMotion(ctx context.Conte
 				return ec.fieldContext_Motion_preferredPeriods(ctx, field)
 			case "gender":
 				return ec.fieldContext_Motion_gender(ctx, field)
+			case "liked":
+				return ec.fieldContext_Motion_liked(ctx, field)
 			case "viewCount":
 				return ec.fieldContext_Motion_viewCount(ctx, field)
 			case "likeCount":
@@ -19343,8 +16588,8 @@ func (ec *executionContext) fieldContext_Mutation_createUserJoinTopic(ctx contex
 	return fc, nil
 }
 
-func (ec *executionContext) _Mutation_likeMatching(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Mutation_likeMatching(ctx, field)
+func (ec *executionContext) _Mutation_likeMotion(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_likeMotion(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -19357,7 +16602,7 @@ func (ec *executionContext) _Mutation_likeMatching(ctx context.Context, field gr
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().LikeMatching(rctx, fc.Args["userId"].(*string), fc.Args["matchingId"].(string))
+		return ec.resolvers.Mutation().LikeMotion(rctx, fc.Args["userId"].(*string), fc.Args["motionId"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -19369,19 +16614,19 @@ func (ec *executionContext) _Mutation_likeMatching(ctx context.Context, field gr
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(int)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Mutation_likeMatching(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Mutation_likeMotion(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Mutation",
 		Field:      field,
 		IsMethod:   true,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Int does not have child fields")
 		},
 	}
 	defer func() {
@@ -19391,15 +16636,15 @@ func (ec *executionContext) fieldContext_Mutation_likeMatching(ctx context.Conte
 		}
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Mutation_likeMatching_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+	if fc.Args, err = ec.field_Mutation_likeMotion_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
 	return fc, nil
 }
 
-func (ec *executionContext) _Mutation_unlikeMatching(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Mutation_unlikeMatching(ctx, field)
+func (ec *executionContext) _Mutation_unlikeMotion(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_unlikeMotion(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -19412,7 +16657,7 @@ func (ec *executionContext) _Mutation_unlikeMatching(ctx context.Context, field 
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().UnlikeMatching(rctx, fc.Args["userId"].(*string), fc.Args["matchingId"].(string))
+		return ec.resolvers.Mutation().UnlikeMotion(rctx, fc.Args["userId"].(*string), fc.Args["motionId"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -19424,19 +16669,19 @@ func (ec *executionContext) _Mutation_unlikeMatching(ctx context.Context, field 
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(int)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Mutation_unlikeMatching(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Mutation_unlikeMotion(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Mutation",
 		Field:      field,
 		IsMethod:   true,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Int does not have child fields")
 		},
 	}
 	defer func() {
@@ -19446,7 +16691,7 @@ func (ec *executionContext) fieldContext_Mutation_unlikeMatching(ctx context.Con
 		}
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Mutation_unlikeMatching_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+	if fc.Args, err = ec.field_Mutation_unlikeMotion_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -19512,213 +16757,6 @@ func (ec *executionContext) fieldContext_Query_chatGroupByResultId(ctx context.C
 	return fc, nil
 }
 
-func (ec *executionContext) _Query_discoverMatchingOfTopic(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_discoverMatchingOfTopic(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().DiscoverMatchingOfTopic(rctx, fc.Args["userId"].(*string), fc.Args["topicId"].(string), fc.Args["filter"].(*models.DiscoverMatchingFilter), fc.Args["nextToken"].(*string))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*models.DiscoverMatchingResult)
-	fc.Result = res
-	return ec.marshalNDiscoverMatchingResult2ᚖwhaleᚋpkgᚋmodelsᚐDiscoverMatchingResult(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Query_discoverMatchingOfTopic(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Query",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "matchings":
-				return ec.fieldContext_DiscoverMatchingResult_matchings(ctx, field)
-			case "nextToken":
-				return ec.fieldContext_DiscoverMatchingResult_nextToken(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type DiscoverMatchingResult", field.Name)
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Query_discoverMatchingOfTopic_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return fc, err
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Query_inMatchingOffer(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_inMatchingOffer(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().InMatchingOffer(rctx, fc.Args["matchingId"].(string))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.([]*models.MatchingOfferRecord)
-	fc.Result = res
-	return ec.marshalNMatchingOfferRecord2ᚕᚖwhaleᚋpkgᚋmodelsᚐMatchingOfferRecordᚄ(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Query_inMatchingOffer(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Query",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "toMatchingId":
-				return ec.fieldContext_MatchingOfferRecord_toMatchingId(ctx, field)
-			case "matchingId":
-				return ec.fieldContext_MatchingOfferRecord_matchingId(ctx, field)
-			case "state":
-				return ec.fieldContext_MatchingOfferRecord_state(ctx, field)
-			case "createdAt":
-				return ec.fieldContext_MatchingOfferRecord_createdAt(ctx, field)
-			case "reactedAt":
-				return ec.fieldContext_MatchingOfferRecord_reactedAt(ctx, field)
-			case "remark":
-				return ec.fieldContext_MatchingOfferRecord_remark(ctx, field)
-			case "toMatching":
-				return ec.fieldContext_MatchingOfferRecord_toMatching(ctx, field)
-			case "matching":
-				return ec.fieldContext_MatchingOfferRecord_matching(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type MatchingOfferRecord", field.Name)
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Query_inMatchingOffer_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return fc, err
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Query_outMatchingOffer(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_outMatchingOffer(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().OutMatchingOffer(rctx, fc.Args["matchingId"].(string))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.([]*models.MatchingOfferRecord)
-	fc.Result = res
-	return ec.marshalNMatchingOfferRecord2ᚕᚖwhaleᚋpkgᚋmodelsᚐMatchingOfferRecordᚄ(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Query_outMatchingOffer(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Query",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "toMatchingId":
-				return ec.fieldContext_MatchingOfferRecord_toMatchingId(ctx, field)
-			case "matchingId":
-				return ec.fieldContext_MatchingOfferRecord_matchingId(ctx, field)
-			case "state":
-				return ec.fieldContext_MatchingOfferRecord_state(ctx, field)
-			case "createdAt":
-				return ec.fieldContext_MatchingOfferRecord_createdAt(ctx, field)
-			case "reactedAt":
-				return ec.fieldContext_MatchingOfferRecord_reactedAt(ctx, field)
-			case "remark":
-				return ec.fieldContext_MatchingOfferRecord_remark(ctx, field)
-			case "toMatching":
-				return ec.fieldContext_MatchingOfferRecord_toMatching(ctx, field)
-			case "matching":
-				return ec.fieldContext_MatchingOfferRecord_matching(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type MatchingOfferRecord", field.Name)
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Query_outMatchingOffer_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return fc, err
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _Query_yesterdayMatchingCount(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_yesterdayMatchingCount(ctx, field)
 	if err != nil {
@@ -19758,6 +16796,47 @@ func (ec *executionContext) fieldContext_Query_yesterdayMatchingCount(ctx contex
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_motionSummary(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_motionSummary(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().MotionSummary(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(map[string]interface{})
+	fc.Result = res
+	return ec.marshalOMap2map(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_motionSummary(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Map does not have child fields")
 		},
 	}
 	return fc, nil
@@ -20237,8 +17316,6 @@ func (ec *executionContext) fieldContext_Query_matching(ctx context.Context, fie
 				return ec.fieldContext_Matching_updatedAt(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Matching_createdAt(ctx, field)
-			case "matchingOfferSummary":
-				return ec.fieldContext_Matching_matchingOfferSummary(ctx, field)
 			case "matchingResult":
 				return ec.fieldContext_Matching_matchingResult(ctx, field)
 			case "reviewed":
@@ -20668,8 +17745,6 @@ func (ec *executionContext) fieldContext_Query_matchings(ctx context.Context, fi
 				return ec.fieldContext_Matching_updatedAt(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Matching_createdAt(ctx, field)
-			case "matchingOfferSummary":
-				return ec.fieldContext_Matching_matchingOfferSummary(ctx, field)
 			case "matchingResult":
 				return ec.fieldContext_Matching_matchingResult(ctx, field)
 			case "reviewed":
@@ -21083,8 +18158,6 @@ func (ec *executionContext) fieldContext_Query_userMatchings(ctx context.Context
 				return ec.fieldContext_Matching_updatedAt(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Matching_createdAt(ctx, field)
-			case "matchingOfferSummary":
-				return ec.fieldContext_Matching_matchingOfferSummary(ctx, field)
 			case "matchingResult":
 				return ec.fieldContext_Matching_matchingResult(ctx, field)
 			case "reviewed":
@@ -21190,8 +18263,6 @@ func (ec *executionContext) fieldContext_Query_unconfirmedUserMatchings(ctx cont
 				return ec.fieldContext_Matching_updatedAt(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Matching_createdAt(ctx, field)
-			case "matchingOfferSummary":
-				return ec.fieldContext_Matching_matchingOfferSummary(ctx, field)
 			case "matchingResult":
 				return ec.fieldContext_Matching_matchingResult(ctx, field)
 			case "reviewed":
@@ -22159,10 +19230,6 @@ func (ec *executionContext) fieldContext_Query_motion(ctx context.Context, field
 				return ec.fieldContext_Motion_activeNum(ctx, field)
 			case "discoverable":
 				return ec.fieldContext_Motion_discoverable(ctx, field)
-			case "basicQuota":
-				return ec.fieldContext_Motion_basicQuota(ctx, field)
-			case "remainQuota":
-				return ec.fieldContext_Motion_remainQuota(ctx, field)
 			case "properties":
 				return ec.fieldContext_Motion_properties(ctx, field)
 			case "dayRange":
@@ -22171,6 +19238,8 @@ func (ec *executionContext) fieldContext_Query_motion(ctx context.Context, field
 				return ec.fieldContext_Motion_preferredPeriods(ctx, field)
 			case "gender":
 				return ec.fieldContext_Motion_gender(ctx, field)
+			case "liked":
+				return ec.fieldContext_Motion_liked(ctx, field)
 			case "viewCount":
 				return ec.fieldContext_Motion_viewCount(ctx, field)
 			case "likeCount":
@@ -22264,10 +19333,6 @@ func (ec *executionContext) fieldContext_Query_userMotions(ctx context.Context, 
 				return ec.fieldContext_Motion_activeNum(ctx, field)
 			case "discoverable":
 				return ec.fieldContext_Motion_discoverable(ctx, field)
-			case "basicQuota":
-				return ec.fieldContext_Motion_basicQuota(ctx, field)
-			case "remainQuota":
-				return ec.fieldContext_Motion_remainQuota(ctx, field)
 			case "properties":
 				return ec.fieldContext_Motion_properties(ctx, field)
 			case "dayRange":
@@ -22276,6 +19341,8 @@ func (ec *executionContext) fieldContext_Query_userMotions(ctx context.Context, 
 				return ec.fieldContext_Motion_preferredPeriods(ctx, field)
 			case "gender":
 				return ec.fieldContext_Motion_gender(ctx, field)
+			case "liked":
+				return ec.fieldContext_Motion_liked(ctx, field)
 			case "viewCount":
 				return ec.fieldContext_Motion_viewCount(ctx, field)
 			case "likeCount":
@@ -22428,10 +19495,6 @@ func (ec *executionContext) fieldContext_Query_activeMotions(ctx context.Context
 				return ec.fieldContext_Motion_activeNum(ctx, field)
 			case "discoverable":
 				return ec.fieldContext_Motion_discoverable(ctx, field)
-			case "basicQuota":
-				return ec.fieldContext_Motion_basicQuota(ctx, field)
-			case "remainQuota":
-				return ec.fieldContext_Motion_remainQuota(ctx, field)
 			case "properties":
 				return ec.fieldContext_Motion_properties(ctx, field)
 			case "dayRange":
@@ -22440,6 +19503,8 @@ func (ec *executionContext) fieldContext_Query_activeMotions(ctx context.Context
 				return ec.fieldContext_Motion_preferredPeriods(ctx, field)
 			case "gender":
 				return ec.fieldContext_Motion_gender(ctx, field)
+			case "liked":
+				return ec.fieldContext_Motion_liked(ctx, field)
 			case "viewCount":
 				return ec.fieldContext_Motion_viewCount(ctx, field)
 			case "likeCount":
@@ -22533,10 +19598,6 @@ func (ec *executionContext) fieldContext_Query_motions(ctx context.Context, fiel
 				return ec.fieldContext_Motion_activeNum(ctx, field)
 			case "discoverable":
 				return ec.fieldContext_Motion_discoverable(ctx, field)
-			case "basicQuota":
-				return ec.fieldContext_Motion_basicQuota(ctx, field)
-			case "remainQuota":
-				return ec.fieldContext_Motion_remainQuota(ctx, field)
 			case "properties":
 				return ec.fieldContext_Motion_properties(ctx, field)
 			case "dayRange":
@@ -22545,6 +19606,8 @@ func (ec *executionContext) fieldContext_Query_motions(ctx context.Context, fiel
 				return ec.fieldContext_Motion_preferredPeriods(ctx, field)
 			case "gender":
 				return ec.fieldContext_Motion_gender(ctx, field)
+			case "liked":
+				return ec.fieldContext_Motion_liked(ctx, field)
 			case "viewCount":
 				return ec.fieldContext_Motion_viewCount(ctx, field)
 			case "likeCount":
@@ -23235,8 +20298,8 @@ func (ec *executionContext) fieldContext_Query_userJoinTopic(ctx context.Context
 	return fc, nil
 }
 
-func (ec *executionContext) _Query_likedMatchings(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_likedMatchings(ctx, field)
+func (ec *executionContext) _Query_likedMotions(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_likedMotions(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -23249,7 +20312,7 @@ func (ec *executionContext) _Query_likedMatchings(ctx context.Context, field gra
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().LikedMatchings(rctx, fc.Args["userId"].(*string), fc.Args["paginator"].(*graphqlutil.GraphQLPaginator))
+		return ec.resolvers.Query().LikedMotions(rctx, fc.Args["userId"].(*string), fc.Args["paginator"].(*graphqlutil.GraphQLPaginator))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -23261,12 +20324,12 @@ func (ec *executionContext) _Query_likedMatchings(ctx context.Context, field gra
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*models.UserLikeMatching)
+	res := resTmp.([]*models.UserLikeMotion)
 	fc.Result = res
-	return ec.marshalNUserLikeMatching2ᚕᚖwhaleᚋpkgᚋmodelsᚐUserLikeMatchingᚄ(ctx, field.Selections, res)
+	return ec.marshalNUserLikeMotion2ᚕᚖwhaleᚋpkgᚋmodelsᚐUserLikeMotionᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Query_likedMatchings(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Query_likedMotions(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Query",
 		Field:      field,
@@ -23274,16 +20337,18 @@ func (ec *executionContext) fieldContext_Query_likedMatchings(ctx context.Contex
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "toMatchingId":
-				return ec.fieldContext_UserLikeMatching_toMatchingId(ctx, field)
+			case "toMotionId":
+				return ec.fieldContext_UserLikeMotion_toMotionId(ctx, field)
+			case "toUserId":
+				return ec.fieldContext_UserLikeMotion_toUserId(ctx, field)
+			case "userId":
+				return ec.fieldContext_UserLikeMotion_userId(ctx, field)
 			case "createdAt":
-				return ec.fieldContext_UserLikeMatching_createdAt(ctx, field)
-			case "user":
-				return ec.fieldContext_UserLikeMatching_user(ctx, field)
-			case "matching":
-				return ec.fieldContext_UserLikeMatching_matching(ctx, field)
+				return ec.fieldContext_UserLikeMotion_createdAt(ctx, field)
+			case "motion":
+				return ec.fieldContext_UserLikeMotion_motion(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type UserLikeMatching", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type UserLikeMotion", field.Name)
 		},
 	}
 	defer func() {
@@ -23293,15 +20358,15 @@ func (ec *executionContext) fieldContext_Query_likedMatchings(ctx context.Contex
 		}
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Query_likedMatchings_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+	if fc.Args, err = ec.field_Query_likedMotions_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
 	return fc, nil
 }
 
-func (ec *executionContext) _Query_likedMatchingCount(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_likedMatchingCount(ctx, field)
+func (ec *executionContext) _Query_likedMotionsCount(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_likedMotionsCount(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -23314,7 +20379,7 @@ func (ec *executionContext) _Query_likedMatchingCount(ctx context.Context, field
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().LikedMatchingCount(rctx, fc.Args["userId"].(*string))
+		return ec.resolvers.Query().LikedMotionsCount(rctx, fc.Args["userId"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -23331,7 +20396,7 @@ func (ec *executionContext) _Query_likedMatchingCount(ctx context.Context, field
 	return ec.marshalNSummary2ᚖwhaleᚋpkgᚋmodelsᚐSummary(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Query_likedMatchingCount(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Query_likedMotionsCount(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Query",
 		Field:      field,
@@ -23352,7 +20417,7 @@ func (ec *executionContext) fieldContext_Query_likedMatchingCount(ctx context.Co
 		}
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Query_likedMatchingCount_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+	if fc.Args, err = ec.field_Query_likedMotionsCount_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -24028,8 +21093,6 @@ func (ec *executionContext) fieldContext_RecentMatching_matchings(ctx context.Co
 				return ec.fieldContext_Matching_updatedAt(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Matching_createdAt(ctx, field)
-			case "matchingOfferSummary":
-				return ec.fieldContext_Matching_matchingOfferSummary(ctx, field)
 			case "matchingResult":
 				return ec.fieldContext_Matching_matchingResult(ctx, field)
 			case "reviewed":
@@ -25537,8 +22600,6 @@ func (ec *executionContext) fieldContext_UserJoinTopic_matching(ctx context.Cont
 				return ec.fieldContext_Matching_updatedAt(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Matching_createdAt(ctx, field)
-			case "matchingOfferSummary":
-				return ec.fieldContext_Matching_matchingOfferSummary(ctx, field)
 			case "matchingResult":
 				return ec.fieldContext_Matching_matchingResult(ctx, field)
 			case "reviewed":
@@ -25562,8 +22623,8 @@ func (ec *executionContext) fieldContext_UserJoinTopic_matching(ctx context.Cont
 	return fc, nil
 }
 
-func (ec *executionContext) _UserLikeMatching_toMatchingId(ctx context.Context, field graphql.CollectedField, obj *models.UserLikeMatching) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_UserLikeMatching_toMatchingId(ctx, field)
+func (ec *executionContext) _UserLikeMotion_toMotionId(ctx context.Context, field graphql.CollectedField, obj *models.UserLikeMotion) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UserLikeMotion_toMotionId(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -25576,7 +22637,7 @@ func (ec *executionContext) _UserLikeMatching_toMatchingId(ctx context.Context, 
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.ToMatchingID, nil
+		return obj.ToMotionID, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -25593,9 +22654,9 @@ func (ec *executionContext) _UserLikeMatching_toMatchingId(ctx context.Context, 
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_UserLikeMatching_toMatchingId(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_UserLikeMotion_toMotionId(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "UserLikeMatching",
+		Object:     "UserLikeMotion",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -25606,8 +22667,96 @@ func (ec *executionContext) fieldContext_UserLikeMatching_toMatchingId(ctx conte
 	return fc, nil
 }
 
-func (ec *executionContext) _UserLikeMatching_createdAt(ctx context.Context, field graphql.CollectedField, obj *models.UserLikeMatching) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_UserLikeMatching_createdAt(ctx, field)
+func (ec *executionContext) _UserLikeMotion_toUserId(ctx context.Context, field graphql.CollectedField, obj *models.UserLikeMotion) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UserLikeMotion_toUserId(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ToUserID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UserLikeMotion_toUserId(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UserLikeMotion",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UserLikeMotion_userId(ctx context.Context, field graphql.CollectedField, obj *models.UserLikeMotion) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UserLikeMotion_userId(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UserID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UserLikeMotion_userId(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UserLikeMotion",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UserLikeMotion_createdAt(ctx context.Context, field graphql.CollectedField, obj *models.UserLikeMotion) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UserLikeMotion_createdAt(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -25637,9 +22786,9 @@ func (ec *executionContext) _UserLikeMatching_createdAt(ctx context.Context, fie
 	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_UserLikeMatching_createdAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_UserLikeMotion_createdAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "UserLikeMatching",
+		Object:     "UserLikeMotion",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -25650,78 +22799,8 @@ func (ec *executionContext) fieldContext_UserLikeMatching_createdAt(ctx context.
 	return fc, nil
 }
 
-func (ec *executionContext) _UserLikeMatching_user(ctx context.Context, field graphql.CollectedField, obj *models.UserLikeMatching) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_UserLikeMatching_user(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		directive0 := func(rctx context.Context) (interface{}, error) {
-			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.UserLikeMatching().User(rctx, obj)
-		}
-		directive1 := func(ctx context.Context) (interface{}, error) {
-			if ec.directives.AdminOnly == nil {
-				return nil, errors.New("directive adminOnly is not implemented")
-			}
-			return ec.directives.AdminOnly(ctx, obj, directive0)
-		}
-
-		tmp, err := directive1(rctx)
-		if err != nil {
-			return nil, graphql.ErrorOnPath(ctx, err)
-		}
-		if tmp == nil {
-			return nil, nil
-		}
-		if data, ok := tmp.(*models.User); ok {
-			return data, nil
-		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *whale/pkg/models.User`, tmp)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*models.User)
-	fc.Result = res
-	return ec.marshalNUser2ᚖwhaleᚋpkgᚋmodelsᚐUser(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_UserLikeMatching_user(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "UserLikeMatching",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_User_id(ctx, field)
-			case "matchingQuota":
-				return ec.fieldContext_User_matchingQuota(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _UserLikeMatching_matching(ctx context.Context, field graphql.CollectedField, obj *models.UserLikeMatching) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_UserLikeMatching_matching(ctx, field)
+func (ec *executionContext) _UserLikeMotion_motion(ctx context.Context, field graphql.CollectedField, obj *models.UserLikeMotion) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UserLikeMotion_motion(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -25734,7 +22813,7 @@ func (ec *executionContext) _UserLikeMatching_matching(ctx context.Context, fiel
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.UserLikeMatching().Matching(rctx, obj)
+		return ec.resolvers.UserLikeMotion().Motion(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -25746,53 +22825,59 @@ func (ec *executionContext) _UserLikeMatching_matching(ctx context.Context, fiel
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*models.Matching)
+	res := resTmp.(*models.Motion)
 	fc.Result = res
-	return ec.marshalNDiscoverMatching2ᚖwhaleᚋpkgᚋmodelsᚐMatching(ctx, field.Selections, res)
+	return ec.marshalNDiscoverMotion2ᚖwhaleᚋpkgᚋmodelsᚐMotion(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_UserLikeMatching_matching(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_UserLikeMotion_motion(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "UserLikeMatching",
+		Object:     "UserLikeMotion",
 		Field:      field,
 		IsMethod:   true,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "id":
-				return ec.fieldContext_DiscoverMatching_id(ctx, field)
+				return ec.fieldContext_DiscoverMotion_id(ctx, field)
 			case "userId":
-				return ec.fieldContext_DiscoverMatching_userId(ctx, field)
-			case "cityId":
-				return ec.fieldContext_DiscoverMatching_cityId(ctx, field)
-			case "remark":
-				return ec.fieldContext_DiscoverMatching_remark(ctx, field)
+				return ec.fieldContext_DiscoverMotion_userId(ctx, field)
+			case "topicId":
+				return ec.fieldContext_DiscoverMotion_topicId(ctx, field)
 			case "properties":
-				return ec.fieldContext_DiscoverMatching_properties(ctx, field)
-			case "dayRange":
-				return ec.fieldContext_DiscoverMatching_dayRange(ctx, field)
-			case "preferredPeriods":
-				return ec.fieldContext_DiscoverMatching_preferredPeriods(ctx, field)
+				return ec.fieldContext_DiscoverMotion_properties(ctx, field)
+			case "cityId":
+				return ec.fieldContext_DiscoverMotion_cityId(ctx, field)
+			case "areaIds":
+				return ec.fieldContext_DiscoverMotion_areaIds(ctx, field)
 			case "gender":
-				return ec.fieldContext_DiscoverMatching_gender(ctx, field)
-			case "liked":
-				return ec.fieldContext_DiscoverMatching_liked(ctx, field)
-			case "viewCount":
-				return ec.fieldContext_DiscoverMatching_viewCount(ctx, field)
+				return ec.fieldContext_DiscoverMotion_gender(ctx, field)
+			case "dayRange":
+				return ec.fieldContext_DiscoverMotion_dayRange(ctx, field)
+			case "preferredPeriods":
+				return ec.fieldContext_DiscoverMotion_preferredPeriods(ctx, field)
+			case "remark":
+				return ec.fieldContext_DiscoverMotion_remark(ctx, field)
 			case "likeCount":
-				return ec.fieldContext_DiscoverMatching_likeCount(ctx, field)
+				return ec.fieldContext_DiscoverMotion_likeCount(ctx, field)
+			case "viewCount":
+				return ec.fieldContext_DiscoverMotion_viewCount(ctx, field)
+			case "liked":
+				return ec.fieldContext_DiscoverMotion_liked(ctx, field)
+			case "submitted":
+				return ec.fieldContext_DiscoverMotion_submitted(ctx, field)
 			case "topic":
-				return ec.fieldContext_DiscoverMatching_topic(ctx, field)
+				return ec.fieldContext_DiscoverMotion_topic(ctx, field)
 			case "topicOptionConfig":
-				return ec.fieldContext_DiscoverMatching_topicOptionConfig(ctx, field)
+				return ec.fieldContext_DiscoverMotion_topicOptionConfig(ctx, field)
 			case "user":
-				return ec.fieldContext_DiscoverMatching_user(ctx, field)
+				return ec.fieldContext_DiscoverMotion_user(ctx, field)
 			case "city":
-				return ec.fieldContext_DiscoverMatching_city(ctx, field)
+				return ec.fieldContext_DiscoverMotion_city(ctx, field)
 			case "areas":
-				return ec.fieldContext_DiscoverMatching_areas(ctx, field)
+				return ec.fieldContext_DiscoverMotion_areas(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type DiscoverMatching", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type DiscoverMotion", field.Name)
 		},
 	}
 	return fc, nil
@@ -28049,44 +25134,6 @@ func (ec *executionContext) unmarshalInputCreateUserJoinTopicParam(ctx context.C
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputDiscoverMatchingFilter(ctx context.Context, obj interface{}) (models.DiscoverMatchingFilter, error) {
-	var it models.DiscoverMatchingFilter
-	asMap := map[string]interface{}{}
-	for k, v := range obj.(map[string]interface{}) {
-		asMap[k] = v
-	}
-
-	fieldsInOrder := [...]string{"cityId", "gender"}
-	for _, k := range fieldsInOrder {
-		v, ok := asMap[k]
-		if !ok {
-			continue
-		}
-		switch k {
-		case "cityId":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("cityId"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.CityID = data
-		case "gender":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("gender"))
-			data, err := ec.unmarshalOGender2ᚖwhaleᚋpkgᚋmodelsᚐGender(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Gender = data
-		}
-	}
-
-	return it, nil
-}
-
 func (ec *executionContext) unmarshalInputDiscoverTopicCategoryMotionFilter(ctx context.Context, obj interface{}) (models.DiscoverTopicCategoryMotionFilter, error) {
 	var it models.DiscoverTopicCategoryMotionFilter
 	asMap := map[string]interface{}{}
@@ -28716,13 +25763,31 @@ func (ec *executionContext) unmarshalInputUpdateMatchingDurationConstraintParam(
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"startDate", "stopDate", "total"}
+	fieldsInOrder := [...]string{"total", "remain", "startDate", "stopDate"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
 			continue
 		}
 		switch k {
+		case "total":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("total"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Total = data
+		case "remain":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("remain"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Remain = data
 		case "startDate":
 			var err error
 
@@ -28741,15 +25806,6 @@ func (ec *executionContext) unmarshalInputUpdateMatchingDurationConstraintParam(
 				return it, err
 			}
 			it.StopDate = data
-		case "total":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("total"))
-			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Total = data
 		}
 	}
 
@@ -28828,7 +25884,7 @@ func (ec *executionContext) unmarshalInputUpdateMatchingParam(ctx context.Contex
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"topicId", "areaIds", "cityId", "gender", "remark", "discoverable", "startMatchingAt", "createdAt", "deadline"}
+	fieldsInOrder := [...]string{"topicId", "areaIds", "cityId", "gender", "remark", "startMatchingAt", "createdAt", "deadline"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -28880,15 +25936,6 @@ func (ec *executionContext) unmarshalInputUpdateMatchingParam(ctx context.Contex
 				return it, err
 			}
 			it.Remark = data
-		case "discoverable":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("discoverable"))
-			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Discoverable = data
 		case "startMatchingAt":
 			var err error
 
@@ -29721,471 +26768,6 @@ func (ec *executionContext) _CityTopics(ctx context.Context, sel ast.SelectionSe
 	return out
 }
 
-var discoverMatchingImplementors = []string{"DiscoverMatching"}
-
-func (ec *executionContext) _DiscoverMatching(ctx context.Context, sel ast.SelectionSet, obj *models.Matching) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, discoverMatchingImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	deferred := make(map[string]*graphql.FieldSet)
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("DiscoverMatching")
-		case "id":
-			out.Values[i] = ec._DiscoverMatching_id(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&out.Invalids, 1)
-			}
-		case "userId":
-			out.Values[i] = ec._DiscoverMatching_userId(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&out.Invalids, 1)
-			}
-		case "cityId":
-			out.Values[i] = ec._DiscoverMatching_cityId(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&out.Invalids, 1)
-			}
-		case "remark":
-			out.Values[i] = ec._DiscoverMatching_remark(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&out.Invalids, 1)
-			}
-		case "properties":
-			out.Values[i] = ec._DiscoverMatching_properties(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&out.Invalids, 1)
-			}
-		case "dayRange":
-			out.Values[i] = ec._DiscoverMatching_dayRange(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&out.Invalids, 1)
-			}
-		case "preferredPeriods":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._DiscoverMatching_preferredPeriods(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
-				return res
-			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-		case "gender":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._DiscoverMatching_gender(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
-				return res
-			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-		case "liked":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._DiscoverMatching_liked(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
-				return res
-			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-		case "viewCount":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._DiscoverMatching_viewCount(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
-				return res
-			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-		case "likeCount":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._DiscoverMatching_likeCount(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
-				return res
-			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-		case "topic":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._DiscoverMatching_topic(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
-				return res
-			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-		case "topicOptionConfig":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._DiscoverMatching_topicOptionConfig(ctx, field, obj)
-				return res
-			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-		case "user":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._DiscoverMatching_user(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
-				return res
-			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-		case "city":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._DiscoverMatching_city(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
-				return res
-			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-		case "areas":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._DiscoverMatching_areas(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
-				return res
-			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch(ctx)
-	if out.Invalids > 0 {
-		return graphql.Null
-	}
-
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
-
-	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
-			Label:    label,
-			Path:     graphql.GetPath(ctx),
-			FieldSet: dfs,
-			Context:  ctx,
-		})
-	}
-
-	return out
-}
-
-var discoverMatchingResultImplementors = []string{"DiscoverMatchingResult"}
-
-func (ec *executionContext) _DiscoverMatchingResult(ctx context.Context, sel ast.SelectionSet, obj *models.DiscoverMatchingResult) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, discoverMatchingResultImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	deferred := make(map[string]*graphql.FieldSet)
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("DiscoverMatchingResult")
-		case "matchings":
-			out.Values[i] = ec._DiscoverMatchingResult_matchings(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "nextToken":
-			out.Values[i] = ec._DiscoverMatchingResult_nextToken(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch(ctx)
-	if out.Invalids > 0 {
-		return graphql.Null
-	}
-
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
-
-	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
-			Label:    label,
-			Path:     graphql.GetPath(ctx),
-			FieldSet: dfs,
-			Context:  ctx,
-		})
-	}
-
-	return out
-}
-
 var discoverMotionImplementors = []string{"DiscoverMotion"}
 
 func (ec *executionContext) _DiscoverMotion(ctx context.Context, sel ast.SelectionSet, obj *models.Motion) graphql.Marshaler {
@@ -30306,6 +26888,16 @@ func (ec *executionContext) _DiscoverMotion(ctx context.Context, sel ast.Selecti
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "remark":
 			out.Values[i] = ec._DiscoverMotion_remark(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "likeCount":
+			out.Values[i] = ec._DiscoverMotion_likeCount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "viewCount":
+			out.Values[i] = ec._DiscoverMotion_viewCount(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
 			}
@@ -31180,42 +27772,6 @@ func (ec *executionContext) _Matching(ctx context.Context, sel ast.SelectionSet,
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
 			}
-		case "matchingOfferSummary":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Matching_matchingOfferSummary(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
-				return res
-			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "matchingResult":
 			field := field
 
@@ -32126,383 +28682,6 @@ func (ec *executionContext) _MatchingOfTopic(ctx context.Context, sel ast.Select
 	return out
 }
 
-var matchingOfferRecordImplementors = []string{"MatchingOfferRecord"}
-
-func (ec *executionContext) _MatchingOfferRecord(ctx context.Context, sel ast.SelectionSet, obj *models.MatchingOfferRecord) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, matchingOfferRecordImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	deferred := make(map[string]*graphql.FieldSet)
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("MatchingOfferRecord")
-		case "toMatchingId":
-			out.Values[i] = ec._MatchingOfferRecord_toMatchingId(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&out.Invalids, 1)
-			}
-		case "matchingId":
-			out.Values[i] = ec._MatchingOfferRecord_matchingId(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&out.Invalids, 1)
-			}
-		case "state":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._MatchingOfferRecord_state(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
-				return res
-			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-		case "createdAt":
-			out.Values[i] = ec._MatchingOfferRecord_createdAt(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&out.Invalids, 1)
-			}
-		case "reactedAt":
-			out.Values[i] = ec._MatchingOfferRecord_reactedAt(ctx, field, obj)
-		case "remark":
-			out.Values[i] = ec._MatchingOfferRecord_remark(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&out.Invalids, 1)
-			}
-		case "toMatching":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._MatchingOfferRecord_toMatching(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
-				return res
-			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-		case "matching":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._MatchingOfferRecord_matching(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
-				return res
-			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch(ctx)
-	if out.Invalids > 0 {
-		return graphql.Null
-	}
-
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
-
-	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
-			Label:    label,
-			Path:     graphql.GetPath(ctx),
-			FieldSet: dfs,
-			Context:  ctx,
-		})
-	}
-
-	return out
-}
-
-var matchingOfferSummaryImplementors = []string{"MatchingOfferSummary"}
-
-func (ec *executionContext) _MatchingOfferSummary(ctx context.Context, sel ast.SelectionSet, obj *models.MatchingOfferSummary) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, matchingOfferSummaryImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	deferred := make(map[string]*graphql.FieldSet)
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("MatchingOfferSummary")
-		case "matchingId":
-			out.Values[i] = ec._MatchingOfferSummary_matchingId(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&out.Invalids, 1)
-			}
-		case "userId":
-			out.Values[i] = ec._MatchingOfferSummary_userId(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&out.Invalids, 1)
-			}
-		case "inOfferNum":
-			out.Values[i] = ec._MatchingOfferSummary_inOfferNum(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&out.Invalids, 1)
-			}
-		case "unprocessedInOfferNum":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._MatchingOfferSummary_unprocessedInOfferNum(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
-				return res
-			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-		case "outOfferNum":
-			out.Values[i] = ec._MatchingOfferSummary_outOfferNum(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&out.Invalids, 1)
-			}
-		case "unprocessedOutOfferNum":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._MatchingOfferSummary_unprocessedOutOfferNum(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
-				return res
-			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-		case "inMatchingOffers":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._MatchingOfferSummary_inMatchingOffers(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
-				return res
-			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-		case "outMatchingOffers":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._MatchingOfferSummary_outMatchingOffers(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
-				return res
-			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-		case "basicQuota":
-			out.Values[i] = ec._MatchingOfferSummary_basicQuota(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&out.Invalids, 1)
-			}
-		case "active":
-			out.Values[i] = ec._MatchingOfferSummary_active(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&out.Invalids, 1)
-			}
-		case "updatedAt":
-			out.Values[i] = ec._MatchingOfferSummary_updatedAt(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&out.Invalids, 1)
-			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch(ctx)
-	if out.Invalids > 0 {
-		return graphql.Null
-	}
-
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
-
-	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
-			Label:    label,
-			Path:     graphql.GetPath(ctx),
-			FieldSet: dfs,
-			Context:  ctx,
-		})
-	}
-
-	return out
-}
-
 var matchingPreviewImplementors = []string{"MatchingPreview"}
 
 func (ec *executionContext) _MatchingPreview(ctx context.Context, sel ast.SelectionSet, obj *models.Matching) graphql.Marshaler {
@@ -33297,16 +29476,6 @@ func (ec *executionContext) _Motion(ctx context.Context, sel ast.SelectionSet, o
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
 			}
-		case "basicQuota":
-			out.Values[i] = ec._Motion_basicQuota(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&out.Invalids, 1)
-			}
-		case "remainQuota":
-			out.Values[i] = ec._Motion_remainQuota(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&out.Invalids, 1)
-			}
 		case "properties":
 			out.Values[i] = ec._Motion_properties(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -33363,6 +29532,42 @@ func (ec *executionContext) _Motion(ctx context.Context, sel ast.SelectionSet, o
 					}
 				}()
 				res = ec._Motion_gender(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "liked":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Motion_liked(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -33834,26 +30039,6 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_refreshTopicMetrics(ctx, field)
 			})
-		case "getAvailableMatchingOffer":
-			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Mutation_getAvailableMatchingOffer(ctx, field)
-			})
-		case "sendMatchingOffer":
-			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Mutation_sendMatchingOffer(ctx, field)
-			})
-		case "cancelMatchingOffer":
-			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Mutation_cancelMatchingOffer(ctx, field)
-			})
-		case "acceptMatchingOffer":
-			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Mutation_acceptMatchingOffer(ctx, field)
-			})
-		case "rejectMatchingOffer":
-			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Mutation_rejectMatchingOffer(ctx, field)
-			})
 		case "createMatchingInvitation":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_createMatchingInvitation(ctx, field)
@@ -34032,16 +30217,16 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "likeMatching":
+		case "likeMotion":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Mutation_likeMatching(ctx, field)
+				return ec._Mutation_likeMotion(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "unlikeMatching":
+		case "unlikeMotion":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Mutation_unlikeMatching(ctx, field)
+				return ec._Mutation_unlikeMotion(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
@@ -34110,72 +30295,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
-		case "discoverMatchingOfTopic":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_discoverMatchingOfTopic(ctx, field)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
-				return res
-			}
-
-			rrm := func(ctx context.Context) graphql.Marshaler {
-				return ec.OperationContext.RootResolverMiddleware(ctx,
-					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
-		case "inMatchingOffer":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_inMatchingOffer(ctx, field)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
-				return res
-			}
-
-			rrm := func(ctx context.Context) graphql.Marshaler {
-				return ec.OperationContext.RootResolverMiddleware(ctx,
-					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
-		case "outMatchingOffer":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_outMatchingOffer(ctx, field)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
-				return res
-			}
-
-			rrm := func(ctx context.Context) graphql.Marshaler {
-				return ec.OperationContext.RootResolverMiddleware(ctx,
-					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "yesterdayMatchingCount":
 			field := field
 
@@ -34189,6 +30308,25 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "motionSummary":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_motionSummary(ctx, field)
 				return res
 			}
 
@@ -35185,7 +31323,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
-		case "likedMatchings":
+		case "likedMotions":
 			field := field
 
 			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
@@ -35194,7 +31332,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_likedMatchings(ctx, field)
+				res = ec._Query_likedMotions(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -35207,7 +31345,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
-		case "likedMatchingCount":
+		case "likedMotionsCount":
 			field := field
 
 			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
@@ -35216,7 +31354,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_likedMatchingCount(ctx, field)
+				res = ec._Query_likedMotionsCount(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -36247,28 +32385,38 @@ func (ec *executionContext) _UserJoinTopic(ctx context.Context, sel ast.Selectio
 	return out
 }
 
-var userLikeMatchingImplementors = []string{"UserLikeMatching"}
+var userLikeMotionImplementors = []string{"UserLikeMotion"}
 
-func (ec *executionContext) _UserLikeMatching(ctx context.Context, sel ast.SelectionSet, obj *models.UserLikeMatching) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, userLikeMatchingImplementors)
+func (ec *executionContext) _UserLikeMotion(ctx context.Context, sel ast.SelectionSet, obj *models.UserLikeMotion) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, userLikeMotionImplementors)
 
 	out := graphql.NewFieldSet(fields)
 	deferred := make(map[string]*graphql.FieldSet)
 	for i, field := range fields {
 		switch field.Name {
 		case "__typename":
-			out.Values[i] = graphql.MarshalString("UserLikeMatching")
-		case "toMatchingId":
-			out.Values[i] = ec._UserLikeMatching_toMatchingId(ctx, field, obj)
+			out.Values[i] = graphql.MarshalString("UserLikeMotion")
+		case "toMotionId":
+			out.Values[i] = ec._UserLikeMotion_toMotionId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "toUserId":
+			out.Values[i] = ec._UserLikeMotion_toUserId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "userId":
+			out.Values[i] = ec._UserLikeMotion_userId(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "createdAt":
-			out.Values[i] = ec._UserLikeMatching_createdAt(ctx, field, obj)
+			out.Values[i] = ec._UserLikeMotion_createdAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
 			}
-		case "user":
+		case "motion":
 			field := field
 
 			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
@@ -36277,43 +32425,7 @@ func (ec *executionContext) _UserLikeMatching(ctx context.Context, sel ast.Selec
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._UserLikeMatching_user(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
-				return res
-			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-		case "matching":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._UserLikeMatching_matching(ctx, field, obj)
+				res = ec._UserLikeMotion_motion(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -37118,78 +33230,6 @@ func (ec *executionContext) marshalNDatePeriod2ᚕwhaleᚋpkgᚋmodelsᚐDatePer
 	return ret
 }
 
-func (ec *executionContext) marshalNDiscoverMatching2whaleᚋpkgᚋmodelsᚐMatching(ctx context.Context, sel ast.SelectionSet, v models.Matching) graphql.Marshaler {
-	return ec._DiscoverMatching(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNDiscoverMatching2ᚕᚖwhaleᚋpkgᚋmodelsᚐMatchingᚄ(ctx context.Context, sel ast.SelectionSet, v []*models.Matching) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNDiscoverMatching2ᚖwhaleᚋpkgᚋmodelsᚐMatching(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-
-	for _, e := range ret {
-		if e == graphql.Null {
-			return graphql.Null
-		}
-	}
-
-	return ret
-}
-
-func (ec *executionContext) marshalNDiscoverMatching2ᚖwhaleᚋpkgᚋmodelsᚐMatching(ctx context.Context, sel ast.SelectionSet, v *models.Matching) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
-		}
-		return graphql.Null
-	}
-	return ec._DiscoverMatching(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalNDiscoverMatchingResult2whaleᚋpkgᚋmodelsᚐDiscoverMatchingResult(ctx context.Context, sel ast.SelectionSet, v models.DiscoverMatchingResult) graphql.Marshaler {
-	return ec._DiscoverMatchingResult(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNDiscoverMatchingResult2ᚖwhaleᚋpkgᚋmodelsᚐDiscoverMatchingResult(ctx context.Context, sel ast.SelectionSet, v *models.DiscoverMatchingResult) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
-		}
-		return graphql.Null
-	}
-	return ec._DiscoverMatchingResult(ctx, sel, v)
-}
-
 func (ec *executionContext) marshalNDiscoverMotion2whaleᚋpkgᚋmodelsᚐMotion(ctx context.Context, sel ast.SelectionSet, v models.Motion) graphql.Marshaler {
 	return ec._DiscoverMotion(ctx, sel, &v)
 }
@@ -37612,84 +33652,6 @@ func (ec *executionContext) marshalNMatchingOfTopic2ᚖwhaleᚋpkgᚋmodelsᚐMa
 		return graphql.Null
 	}
 	return ec._MatchingOfTopic(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalNMatchingOfferRecord2ᚕᚖwhaleᚋpkgᚋmodelsᚐMatchingOfferRecordᚄ(ctx context.Context, sel ast.SelectionSet, v []*models.MatchingOfferRecord) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNMatchingOfferRecord2ᚖwhaleᚋpkgᚋmodelsᚐMatchingOfferRecord(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-
-	for _, e := range ret {
-		if e == graphql.Null {
-			return graphql.Null
-		}
-	}
-
-	return ret
-}
-
-func (ec *executionContext) marshalNMatchingOfferRecord2ᚖwhaleᚋpkgᚋmodelsᚐMatchingOfferRecord(ctx context.Context, sel ast.SelectionSet, v *models.MatchingOfferRecord) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
-		}
-		return graphql.Null
-	}
-	return ec._MatchingOfferRecord(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalNMatchingOfferState2whaleᚋpkgᚋmodelsᚐMatchingOfferState(ctx context.Context, v interface{}) (models.MatchingOfferState, error) {
-	var res models.MatchingOfferState
-	err := res.UnmarshalGQL(v)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalNMatchingOfferState2whaleᚋpkgᚋmodelsᚐMatchingOfferState(ctx context.Context, sel ast.SelectionSet, v models.MatchingOfferState) graphql.Marshaler {
-	return v
-}
-
-func (ec *executionContext) marshalNMatchingOfferSummary2whaleᚋpkgᚋmodelsᚐMatchingOfferSummary(ctx context.Context, sel ast.SelectionSet, v models.MatchingOfferSummary) graphql.Marshaler {
-	return ec._MatchingOfferSummary(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNMatchingOfferSummary2ᚖwhaleᚋpkgᚋmodelsᚐMatchingOfferSummary(ctx context.Context, sel ast.SelectionSet, v *models.MatchingOfferSummary) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
-		}
-		return graphql.Null
-	}
-	return ec._MatchingOfferSummary(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNMatchingPreview2ᚕᚖwhaleᚋpkgᚋmodelsᚐMatchingᚄ(ctx context.Context, sel ast.SelectionSet, v []*models.Matching) graphql.Marshaler {
@@ -38761,7 +34723,7 @@ func (ec *executionContext) marshalNUserJoinTopic2ᚖwhaleᚋpkgᚋmodelsᚐUser
 	return ec._UserJoinTopic(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNUserLikeMatching2ᚕᚖwhaleᚋpkgᚋmodelsᚐUserLikeMatchingᚄ(ctx context.Context, sel ast.SelectionSet, v []*models.UserLikeMatching) graphql.Marshaler {
+func (ec *executionContext) marshalNUserLikeMotion2ᚕᚖwhaleᚋpkgᚋmodelsᚐUserLikeMotionᚄ(ctx context.Context, sel ast.SelectionSet, v []*models.UserLikeMotion) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -38785,7 +34747,7 @@ func (ec *executionContext) marshalNUserLikeMatching2ᚕᚖwhaleᚋpkgᚋmodels�
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNUserLikeMatching2ᚖwhaleᚋpkgᚋmodelsᚐUserLikeMatching(ctx, sel, v[i])
+			ret[i] = ec.marshalNUserLikeMotion2ᚖwhaleᚋpkgᚋmodelsᚐUserLikeMotion(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -38805,14 +34767,14 @@ func (ec *executionContext) marshalNUserLikeMatching2ᚕᚖwhaleᚋpkgᚋmodels�
 	return ret
 }
 
-func (ec *executionContext) marshalNUserLikeMatching2ᚖwhaleᚋpkgᚋmodelsᚐUserLikeMatching(ctx context.Context, sel ast.SelectionSet, v *models.UserLikeMatching) graphql.Marshaler {
+func (ec *executionContext) marshalNUserLikeMotion2ᚖwhaleᚋpkgᚋmodelsᚐUserLikeMotion(ctx context.Context, sel ast.SelectionSet, v *models.UserLikeMotion) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
 		}
 		return graphql.Null
 	}
-	return ec._UserLikeMatching(ctx, sel, v)
+	return ec._UserLikeMotion(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNUserMatchingCalenderParam2whaleᚋpkgᚋmodelsᚐUserMatchingCalenderParam(ctx context.Context, v interface{}) (models.UserMatchingCalenderParam, error) {
@@ -39281,14 +35243,6 @@ func (ec *executionContext) marshalODatePeriod2ᚕwhaleᚋpkgᚋmodelsᚐDatePer
 	return ret
 }
 
-func (ec *executionContext) unmarshalODiscoverMatchingFilter2ᚖwhaleᚋpkgᚋmodelsᚐDiscoverMatchingFilter(ctx context.Context, v interface{}) (*models.DiscoverMatchingFilter, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalInputDiscoverMatchingFilter(ctx, v)
-	return &res, graphql.ErrorOnPath(ctx, err)
-}
-
 func (ec *executionContext) unmarshalODiscoverTopicCategoryMotionFilter2ᚖwhaleᚋpkgᚋmodelsᚐDiscoverTopicCategoryMotionFilter(ctx context.Context, v interface{}) (*models.DiscoverTopicCategoryMotionFilter, error) {
 	if v == nil {
 		return nil, nil
@@ -39345,11 +35299,20 @@ func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.Sele
 	return res
 }
 
-func (ec *executionContext) marshalOMatching2ᚖwhaleᚋpkgᚋmodelsᚐMatching(ctx context.Context, sel ast.SelectionSet, v *models.Matching) graphql.Marshaler {
+func (ec *executionContext) unmarshalOMap2map(ctx context.Context, v interface{}) (map[string]interface{}, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := graphql.UnmarshalMap(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOMap2map(ctx context.Context, sel ast.SelectionSet, v map[string]interface{}) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
-	return ec._Matching(ctx, sel, v)
+	res := graphql.MarshalMap(v)
+	return res
 }
 
 func (ec *executionContext) unmarshalOMatchingFilter2ᚖwhaleᚋpkgᚋmodelsᚐMatchingFilter(ctx context.Context, v interface{}) (*models.MatchingFilter, error) {

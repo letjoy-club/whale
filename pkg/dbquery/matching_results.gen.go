@@ -28,6 +28,7 @@ func newMatchingResult(db *gorm.DB, opts ...gen.DOOption) matchingResult {
 	_matchingResult.ALL = field.NewAsterisk(tableName)
 	_matchingResult.ID = field.NewInt(tableName, "id")
 	_matchingResult.MatchingIDs = field.NewField(tableName, "matching_ids")
+	_matchingResult.MotionIDs = field.NewField(tableName, "motion_ids")
 	_matchingResult.TopicID = field.NewString(tableName, "topic_id")
 	_matchingResult.UserIDs = field.NewField(tableName, "user_ids")
 	_matchingResult.ConfirmStates = field.NewField(tableName, "confirm_states")
@@ -52,6 +53,7 @@ type matchingResult struct {
 	ALL                field.Asterisk
 	ID                 field.Int
 	MatchingIDs        field.Field
+	MotionIDs          field.Field
 	TopicID            field.String
 	UserIDs            field.Field
 	ConfirmStates      field.Field
@@ -82,6 +84,7 @@ func (m *matchingResult) updateTableName(table string) *matchingResult {
 	m.ALL = field.NewAsterisk(table)
 	m.ID = field.NewInt(table, "id")
 	m.MatchingIDs = field.NewField(table, "matching_ids")
+	m.MotionIDs = field.NewField(table, "motion_ids")
 	m.TopicID = field.NewString(table, "topic_id")
 	m.UserIDs = field.NewField(table, "user_ids")
 	m.ConfirmStates = field.NewField(table, "confirm_states")
@@ -118,9 +121,10 @@ func (m *matchingResult) GetFieldByName(fieldName string) (field.OrderExpr, bool
 }
 
 func (m *matchingResult) fillFieldMap() {
-	m.fieldMap = make(map[string]field.Expr, 14)
+	m.fieldMap = make(map[string]field.Expr, 15)
 	m.fieldMap["id"] = m.ID
 	m.fieldMap["matching_ids"] = m.MatchingIDs
+	m.fieldMap["motion_ids"] = m.MotionIDs
 	m.fieldMap["topic_id"] = m.TopicID
 	m.fieldMap["user_ids"] = m.UserIDs
 	m.fieldMap["confirm_states"] = m.ConfirmStates

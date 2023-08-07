@@ -386,6 +386,14 @@ type imageUploadUrl {
   name: String!
 }
 
+enum InviteChannel {
+  """小程序转发"""
+  miniApp
+
+  """二维码"""
+  QRCode
+}
+
 type Inviter {
   """邀请人ID"""
   id: String!
@@ -814,12 +822,6 @@ type Mutation {
 
     """城市编码"""
     cityId: String
-
-    """邀请人，非必填"""
-    inviterId: String
-
-    """邀请渠道：miniapp——小程序转发；QR——二维码"""
-    channel: String
   ): LoginResult!
 
   """【用户】勾选协议"""
@@ -832,6 +834,9 @@ type Mutation {
 
     """邀请人，非必填"""
     inviterId: String
+
+    """邀请渠道，非必填"""
+    channel: InviteChannel
   ): String
 
   """【用户】发送修改手机号短信验证码"""
@@ -872,51 +877,6 @@ type Mutation {
     """待修改参数"""
     param: UserProfileUpdateParam!
   ): String
-
-  """【用户】修改用户信息"""
-  userSetProfile(
-    """用户ID，管理端请求时必填"""
-    userId: String
-
-    """手机号"""
-    phone: String
-
-    """性别，M-男性/F-女性"""
-    gender: String
-
-    """生日，格式yyyyMMdd"""
-    birthday: String
-
-    """备注"""
-    remark: String
-  ): String @deprecated(reason: "use updateUserInfo instead")
-
-  """【用户】修改用户昵称"""
-  userSetNickname(
-    """用户ID，管理端请求时必填"""
-    userId: String
-
-    """昵称，最长20个字符"""
-    nickname: String!
-  ): String @deprecated(reason: "use updateUserInfo instead")
-
-  """【用户】修改用户头像"""
-  userSetAvatar(
-    """用户ID，管理端请求时必填"""
-    userId: String
-
-    """头像url"""
-    avatarUrl: String!
-  ): String @deprecated(reason: "use updateUserInfo instead")
-
-  """【用户】修改用户封面背景"""
-  userSetBackground(
-    """用户ID，管理端请求时必填"""
-    userId: String
-
-    """封面背景url"""
-    backgroundUrl: String!
-  ): String @deprecated(reason: "use updateUserInfo instead")
 
   """【用户】昵称修改审核，管理端使用"""
   userNicknameAudit(
@@ -1254,6 +1214,9 @@ type Query {
     """分页"""
     paginator: GraphQLPaginator
   ): [Topic!]!
+
+  """【话题】根据类别查询话题ID，内部使用"""
+  getTopicIdsByCategory(category: String!): [String!]!
 
   """【话题】话题查询"""
   topic(
@@ -1858,9 +1821,6 @@ type User {
 
   """他关注的人数"""
   followingNum: Int!
-
-  """是否封禁"""
-  blocked: Boolean! @deprecated(reason: "not enough, use field blockInfo instead")
 
   """用户封禁信息"""
   blockInfo: UserBlockInfo!

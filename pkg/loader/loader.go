@@ -25,10 +25,6 @@ type Loader struct {
 	MatchingReceiveLike        *dataloader.Loader[string, *models.MatchingReceiveLike]
 	MatchingView               *dataloader.Loader[string, *models.MatchingView]
 	MatchingOfferSummary       *dataloader.Loader[string, *models.MatchingOfferSummary]
-	// 按照发起 matching id 分组的 matching offer
-	OutMatchingOfferRecord *dataloader.Loader[string, *MatchingOffers]
-	// 按照接受 matching id 分组的 matching offer
-	InMatchingOfferRecord *dataloader.Loader[string, *MatchingOffers]
 
 	UserJoinTopic  *dataloader.Loader[int, *models.UserJoinTopic]
 	RecentMatching *dataloader.Loader[string, *models.RecentMatching]
@@ -77,10 +73,6 @@ func NewLoader(db *gorm.DB) *Loader {
 		MatchingDurationConstraint: NewMatchingDurationConstraintLoader(db),
 		MatchingView:               NewMatchingViewLoader(db),
 		MatchingReceiveLike:        NewMatchingReceiveLikeLoader(db),
-		MatchingOfferSummary:       NewMatchingOfferSummaryLoader(db),
-
-		InMatchingOfferRecord:  NewInMatchingOfferLoader(db),
-		OutMatchingOfferRecord: NewOutMatchingOfferLoader(db),
 
 		InMotionOfferRecord:  NewInMotionOfferLoader(db),
 		OutMotionOfferRecord: NewOutMotionOfferLoader(db),
@@ -96,6 +88,7 @@ func NewLoader(db *gorm.DB) *Loader {
 		RecentMatching: NewRecentMatchingLoader(db),
 
 		TopicOptionConfig: NewTopicOptionConfigLoader(),
+		TopicCategory:     NewTopicCategoryLoader(),
 
 		WhaleConfig: NewWhaleConfigLoader(db),
 	}

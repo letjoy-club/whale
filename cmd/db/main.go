@@ -40,7 +40,7 @@ func main() {
 		&models.Motion{},
 		&models.MotionOfferRecord{},
 		&models.MotionViewHistory{},
-		&models.LikeMotion{},
+		&models.UserLikeMotion{},
 
 		// 用户点赞匹配
 		&models.UserLikeMatching{},

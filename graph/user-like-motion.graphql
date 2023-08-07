@@ -1,0 +1,24 @@
+type UserLikeMotion {
+  toMotionId: String!
+  toUserId: String!
+
+  userId: String!
+  createdAt: Time!
+
+  # query
+  motion: DiscoverMotion!
+}
+
+extend type Query {
+  "【广场】我喜欢的动议"
+  likedMotions(userId: String, paginator: GraphQLPaginator): [UserLikeMotion!]!
+  "【广场】我喜欢的动议数量"
+  likedMotionsCount(userId: String): Summary!
+}
+
+extend type Mutation {
+  "【广场】喜欢匹配"
+  likeMotion(userId: String, motionId: String!): Int!
+  "【广场】取消喜欢匹配"
+  unlikeMotion(userId: String, motionId: String!): Int!
+}

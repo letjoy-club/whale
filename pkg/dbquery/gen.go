@@ -20,7 +20,6 @@ func Use(db *gorm.DB, opts ...gen.DOOption) *Query {
 		db:                          db,
 		CityTopics:                  newCityTopics(db, opts...),
 		HotTopicsInArea:             newHotTopicsInArea(db, opts...),
-		LikeMotion:                  newLikeMotion(db, opts...),
 		Matching:                    newMatching(db, opts...),
 		MatchingDurationConstraint:  newMatchingDurationConstraint(db, opts...),
 		MatchingInvitation:          newMatchingInvitation(db, opts...),
@@ -39,6 +38,7 @@ func Use(db *gorm.DB, opts ...gen.DOOption) *Query {
 		RecentMatching:              newRecentMatching(db, opts...),
 		UserJoinTopic:               newUserJoinTopic(db, opts...),
 		UserLikeMatching:            newUserLikeMatching(db, opts...),
+		UserLikeMotion:              newUserLikeMotion(db, opts...),
 		UserViewMatching:            newUserViewMatching(db, opts...),
 		WhaleConfig:                 newWhaleConfig(db, opts...),
 	}
@@ -49,7 +49,6 @@ type Query struct {
 
 	CityTopics                  cityTopics
 	HotTopicsInArea             hotTopicsInArea
-	LikeMotion                  likeMotion
 	Matching                    matching
 	MatchingDurationConstraint  matchingDurationConstraint
 	MatchingInvitation          matchingInvitation
@@ -68,6 +67,7 @@ type Query struct {
 	RecentMatching              recentMatching
 	UserJoinTopic               userJoinTopic
 	UserLikeMatching            userLikeMatching
+	UserLikeMotion              userLikeMotion
 	UserViewMatching            userViewMatching
 	WhaleConfig                 whaleConfig
 }
@@ -79,7 +79,6 @@ func (q *Query) clone(db *gorm.DB) *Query {
 		db:                          db,
 		CityTopics:                  q.CityTopics.clone(db),
 		HotTopicsInArea:             q.HotTopicsInArea.clone(db),
-		LikeMotion:                  q.LikeMotion.clone(db),
 		Matching:                    q.Matching.clone(db),
 		MatchingDurationConstraint:  q.MatchingDurationConstraint.clone(db),
 		MatchingInvitation:          q.MatchingInvitation.clone(db),
@@ -98,6 +97,7 @@ func (q *Query) clone(db *gorm.DB) *Query {
 		RecentMatching:              q.RecentMatching.clone(db),
 		UserJoinTopic:               q.UserJoinTopic.clone(db),
 		UserLikeMatching:            q.UserLikeMatching.clone(db),
+		UserLikeMotion:              q.UserLikeMotion.clone(db),
 		UserViewMatching:            q.UserViewMatching.clone(db),
 		WhaleConfig:                 q.WhaleConfig.clone(db),
 	}
@@ -116,7 +116,6 @@ func (q *Query) ReplaceDB(db *gorm.DB) *Query {
 		db:                          db,
 		CityTopics:                  q.CityTopics.replaceDB(db),
 		HotTopicsInArea:             q.HotTopicsInArea.replaceDB(db),
-		LikeMotion:                  q.LikeMotion.replaceDB(db),
 		Matching:                    q.Matching.replaceDB(db),
 		MatchingDurationConstraint:  q.MatchingDurationConstraint.replaceDB(db),
 		MatchingInvitation:          q.MatchingInvitation.replaceDB(db),
@@ -135,6 +134,7 @@ func (q *Query) ReplaceDB(db *gorm.DB) *Query {
 		RecentMatching:              q.RecentMatching.replaceDB(db),
 		UserJoinTopic:               q.UserJoinTopic.replaceDB(db),
 		UserLikeMatching:            q.UserLikeMatching.replaceDB(db),
+		UserLikeMotion:              q.UserLikeMotion.replaceDB(db),
 		UserViewMatching:            q.UserViewMatching.replaceDB(db),
 		WhaleConfig:                 q.WhaleConfig.replaceDB(db),
 	}
@@ -143,7 +143,6 @@ func (q *Query) ReplaceDB(db *gorm.DB) *Query {
 type queryCtx struct {
 	CityTopics                  ICityTopicsDo
 	HotTopicsInArea             IHotTopicsInAreaDo
-	LikeMotion                  ILikeMotionDo
 	Matching                    IMatchingDo
 	MatchingDurationConstraint  IMatchingDurationConstraintDo
 	MatchingInvitation          IMatchingInvitationDo
@@ -162,6 +161,7 @@ type queryCtx struct {
 	RecentMatching              IRecentMatchingDo
 	UserJoinTopic               IUserJoinTopicDo
 	UserLikeMatching            IUserLikeMatchingDo
+	UserLikeMotion              IUserLikeMotionDo
 	UserViewMatching            IUserViewMatchingDo
 	WhaleConfig                 IWhaleConfigDo
 }
@@ -170,7 +170,6 @@ func (q *Query) WithContext(ctx context.Context) *queryCtx {
 	return &queryCtx{
 		CityTopics:                  q.CityTopics.WithContext(ctx),
 		HotTopicsInArea:             q.HotTopicsInArea.WithContext(ctx),
-		LikeMotion:                  q.LikeMotion.WithContext(ctx),
 		Matching:                    q.Matching.WithContext(ctx),
 		MatchingDurationConstraint:  q.MatchingDurationConstraint.WithContext(ctx),
 		MatchingInvitation:          q.MatchingInvitation.WithContext(ctx),
@@ -189,6 +188,7 @@ func (q *Query) WithContext(ctx context.Context) *queryCtx {
 		RecentMatching:              q.RecentMatching.WithContext(ctx),
 		UserJoinTopic:               q.UserJoinTopic.WithContext(ctx),
 		UserLikeMatching:            q.UserLikeMatching.WithContext(ctx),
+		UserLikeMotion:              q.UserLikeMotion.WithContext(ctx),
 		UserViewMatching:            q.UserViewMatching.WithContext(ctx),
 		WhaleConfig:                 q.WhaleConfig.WithContext(ctx),
 	}

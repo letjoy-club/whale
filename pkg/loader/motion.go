@@ -133,25 +133,25 @@ func (u UserLikeMotion) IsLike(motionID string) bool {
 }
 
 func NewUserLikeMotionLoader(db *gorm.DB) *dataloader.Loader[string, *UserLikeMotion] {
-	LikedMotion := dbquery.Use(db).LikeMotion
-	return loaderutil.NewAggregatorLoader(db, func(ctx context.Context, keys []string) (items []*models.LikeMotion, err error) {
-		motions, err := LikedMotion.WithContext(ctx).Where(LikedMotion.UserID.In(keys...)).Find()
+	UserLikedMotion := dbquery.Use(db).UserLikeMotion
+	return loaderutil.NewAggregatorLoader(db, func(ctx context.Context, keys []string) (items []*models.UserLikeMotion, err error) {
+		motions, err := UserLikedMotion.WithContext(ctx).Where(UserLikedMotion.UserID.In(keys...)).Find()
 		if err != nil {
 			return nil, err
 		}
 		// 按 motion id 排序，后面会用二分查找
 		sort.Slice(motions, func(i, j int) bool {
-			return motions[i].MotionID < motions[j].MotionID
+			return motions[i].ToMotionID < motions[j].ToMotionID
 		})
 		return motions, nil
-	}, func(m map[string]*UserLikeMotion, v *models.LikeMotion) {
+	}, func(m map[string]*UserLikeMotion, v *models.UserLikeMotion) {
 		if _, ok := m[v.UserID]; !ok {
 			m[v.UserID] = &UserLikeMotion{
 				UserID:    v.UserID,
-				MotionIDs: []string{v.MotionID},
+				MotionIDs: []string{v.ToMotionID},
 			}
 		} else {
-			m[v.UserID].MotionIDs = append(m[v.UserID].MotionIDs, v.MotionID)
+			m[v.UserID].MotionIDs = append(m[v.UserID].MotionIDs, v.ToMotionID)
 		}
 	}, time.Minute*5, loaderutil.Placeholder(func(ctx context.Context, keys string) (item *UserLikeMotion, err error) {
 		return &UserLikeMotion{MotionIDs: []string{}}, nil

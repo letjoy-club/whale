@@ -101,18 +101,6 @@ type CreateUserJoinTopicParam struct {
 	MatchingID string `json:"matchingId"`
 }
 
-type DiscoverMatchingFilter struct {
-	// 城市 ID，可以不填，不填则为全国
-	CityID *string `json:"cityId,omitempty"`
-	// 发起人性别，可以不填，不填则为不限
-	Gender *Gender `json:"gender,omitempty"`
-}
-
-type DiscoverMatchingResult struct {
-	Matchings []*Matching `json:"matchings"`
-	NextToken string      `json:"nextToken"`
-}
-
 type DiscoverMotionResult struct {
 	Motions   []*Motion `json:"motions"`
 	NextToken string    `json:"nextToken"`
@@ -231,9 +219,10 @@ type UpdateHotTopicParam struct {
 }
 
 type UpdateMatchingDurationConstraintParam struct {
+	Total     *int       `json:"total,omitempty"`
+	Remain    *int       `json:"remain,omitempty"`
 	StartDate *time.Time `json:"startDate,omitempty"`
 	StopDate  *time.Time `json:"stopDate,omitempty"`
-	Total     *int       `json:"total,omitempty"`
 }
 
 type UpdateMatchingInvitationParam struct {
@@ -250,7 +239,6 @@ type UpdateMatchingParam struct {
 	CityID          *string    `json:"cityId,omitempty"`
 	Gender          *Gender    `json:"gender,omitempty"`
 	Remark          *string    `json:"remark,omitempty"`
-	Discoverable    *bool      `json:"discoverable,omitempty"`
 	StartMatchingAt *time.Time `json:"startMatchingAt,omitempty"`
 	CreatedAt       *time.Time `json:"createdAt,omitempty"`
 	Deadline        *time.Time `json:"deadline,omitempty"`
@@ -517,55 +505,6 @@ func (e *InvitationConfirmState) UnmarshalGQL(v interface{}) error {
 }
 
 func (e InvitationConfirmState) MarshalGQL(w io.Writer) {
-	fmt.Fprint(w, strconv.Quote(e.String()))
-}
-
-type MatchingOfferState string
-
-const (
-	// 未处理
-	MatchingOfferStateUnprocessed MatchingOfferState = "Unprocessed"
-	// 被接受
-	MatchingOfferStateAccepted MatchingOfferState = "Accepted"
-	// 被拒绝
-	MatchingOfferStateRejected MatchingOfferState = "Rejected"
-	// 意向已取消
-	MatchingOfferStateCanceled MatchingOfferState = "Canceled"
-)
-
-var AllMatchingOfferState = []MatchingOfferState{
-	MatchingOfferStateUnprocessed,
-	MatchingOfferStateAccepted,
-	MatchingOfferStateRejected,
-	MatchingOfferStateCanceled,
-}
-
-func (e MatchingOfferState) IsValid() bool {
-	switch e {
-	case MatchingOfferStateUnprocessed, MatchingOfferStateAccepted, MatchingOfferStateRejected, MatchingOfferStateCanceled:
-		return true
-	}
-	return false
-}
-
-func (e MatchingOfferState) String() string {
-	return string(e)
-}
-
-func (e *MatchingOfferState) UnmarshalGQL(v interface{}) error {
-	str, ok := v.(string)
-	if !ok {
-		return fmt.Errorf("enums must be strings")
-	}
-
-	*e = MatchingOfferState(str)
-	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid MatchingOfferState", str)
-	}
-	return nil
-}
-
-func (e MatchingOfferState) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

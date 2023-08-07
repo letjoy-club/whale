@@ -51,7 +51,6 @@ input UpdateMatchingParam {
   cityId: String
   gender: Gender
   remark: String
-  discoverable: Boolean
 
   startMatchingAt: Time
   createdAt: Time
@@ -178,9 +177,10 @@ type TopicToMatching {
 }
 
 input UpdateMatchingDurationConstraintParam {
+  total: Int
+  remain: Int
   startDate: Time
   stopDate: Time
-  total: Int
 }
 
 extend type Mutation {
@@ -202,7 +202,7 @@ extend type Mutation {
 
   "【匹配系统】更新一个时间段中的匹配配额，管理端使用"
   updateMatchingDurationConstraint(
-    id: Int!
+    userId: String!
     param: UpdateMatchingDurationConstraintParam!
   ): String!
 

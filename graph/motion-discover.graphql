@@ -30,8 +30,6 @@ type Motion {
   activeNum: Int!
 
   discoverable: Boolean!
-  basicQuota: Int!
-  remainQuota: Int!
 
   properties: [MotionProperty!]!
   dayRange: [String!]!
@@ -39,6 +37,7 @@ type Motion {
   gender: Gender!
 
   # query
+  liked: Boolean!
   viewCount: Int!
   likeCount: Int!
 
@@ -83,12 +82,14 @@ type DiscoverMotion {
   dayRange: [String!]!
   preferredPeriods: [DatePeriod!]!
   remark: String!
+  likeCount: Int!
+  viewCount: Int!
 
   # query
   "是否标记为喜欢"
-  liked: Boolean!
+  liked("管理员填写 userId" userId: String): Boolean!
   "是否向其提交过意向"
-  submitted: Boolean!
+  submitted("管理员填写 userId" userId: String): Boolean!
 
   topic: Topic!
   topicOptionConfig: TopicOptionConfig
@@ -137,22 +138,18 @@ extend type Query {
 }
 
 extend type Mutation {
-  "【广场】获取可以发起响应的意向 id V2"
-  getAvailableMotionOffer(
-    "用户 ID，不填"
-    userId: String
-    targetMotionId: String!
-  ): AvailableMotionOffer!
+  "【广场】获取可以发起响应的意向 id"
+  getAvailableMotionOffer("用户 ID，不填" userId: String, targetMotionId: String!): AvailableMotionOffer!
 
-  "【广场】发起活动意向 V2"
+  "【广场】发起活动意向"
   createMotionOffer(myMotionId: String!, targetMotionId: String!): String
 
-  "【广场】取消活动意向 V2"
+  "【广场】取消活动意向"
   cancelMotionOffer(myMotionId: String!, targetMotionId: String!): String
 
-  "【广场】接受活动意向 V2"
+  "【广场】接受活动意向"
   acceptMotionOffer(myMotionId: String!, targetMotionId: String!): String
 
-  "【广场】拒绝活动意向 V2"
+  "【广场】拒绝活动意向"
   rejectMotionOffer(myMotionId: String!, targetMotionId: String!): String
 }

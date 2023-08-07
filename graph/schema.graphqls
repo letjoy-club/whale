@@ -1,5 +1,6 @@
 scalar Time
 scalar AreaCode
+scalar Map
 
 directive @adminOnly on FIELD_DEFINITION
 
@@ -128,8 +129,6 @@ type Matching @key(fields: "id") {
   createdAt: Time!
 
   # query
-  "匹配意向"
-  matchingOfferSummary: MatchingOfferSummary!
   matchingResult: MatchingResult
   reviewed: Boolean!
 
@@ -206,6 +205,7 @@ type MatchingResult {
   id: Int! @adminOnly
 
   matchingIds: [String!]!
+  motionIds: [String!]!
   topicId: String!
   userIds: [String!]!
   confirmStates: [MatchingResultConfirmState!]!
@@ -226,6 +226,7 @@ type MatchingResult {
 
   # query
   users: [User!]!
+  discoverMotion: [DiscoverMotion!]!
   matchingPreviews: [MatchingPreview!]!
   topic: Topic!
   chatGroup: ChatGroup
@@ -371,6 +372,7 @@ input MatchingResultFilter {
   before: Time
   after: Time
 }
+
 
 type Query {
   "【匹配系统】内部专有"

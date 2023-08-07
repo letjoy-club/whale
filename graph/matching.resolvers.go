@@ -146,20 +146,40 @@ func (r *mutationResolver) UpdateMatchingQuota(ctx context.Context, userID strin
 }
 
 // UpdateMatchingDurationConstraint is the resolver for the updateMatchingDurationConstraint field.
-func (r *mutationResolver) UpdateMatchingDurationConstraint(ctx context.Context, id int, param models.UpdateMatchingDurationConstraintParam) (string, error) {
+func (r *mutationResolver) UpdateMatchingDurationConstraint(ctx context.Context, userID string, param models.UpdateMatchingDurationConstraintParam) (string, error) {
 	token := midacontext.GetClientToken(ctx)
 	if !token.IsAdmin() {
 		return "", midacode.ErrNotPermitted
 	}
-	db := dbutil.GetDB(ctx)
-	MatchingDurationConstraint := dbquery.Use(db).MatchingDurationConstraint
-	fields := []field.AssignExpr{}
-
-	_, err := MatchingDurationConstraint.WithContext(ctx).Where(MatchingDurationConstraint.ID.Eq(id)).UpdateSimple(fields...)
+	thunk := midacontext.GetLoader[loader.Loader](ctx).MatchingDurationConstraint.Load(ctx, userID)
+	constraint, err := thunk()
 	if err != nil {
 		return "", err
 	}
-	constraint, err := MatchingDurationConstraint.WithContext(ctx).Where(MatchingDurationConstraint.ID.Eq(id)).Take()
+	db := dbutil.GetDB(ctx)
+	MatchingDurationConstraint := dbquery.Use(db).MatchingDurationConstraint
+
+	fields := []field.AssignExpr{}
+	if param.StartDate != nil {
+		if !param.StartDate.Before(time.Now()) {
+			return "", whalecode.ErrStartDateShouldLessThanNow
+		}
+		fields = append(fields, MatchingDurationConstraint.StartDate.Value(*param.StartDate))
+	}
+	if param.StopDate != nil {
+		if !param.StopDate.After(time.Now()) {
+			return "", whalecode.ErrStopDateShoulGreateThanNow
+		}
+		fields = append(fields, MatchingDurationConstraint.StopDate.Value(*param.StopDate))
+	}
+	if param.Total != nil {
+		fields = append(fields, MatchingDurationConstraint.Total.Value(*param.Total))
+	}
+	if param.Remain != nil {
+		fields = append(fields, MatchingDurationConstraint.Remain.Value(*param.Remain))
+	}
+
+	_, err = MatchingDurationConstraint.WithContext(ctx).Where(MatchingDurationConstraint.ID.Eq(constraint.ID)).UpdateSimple(fields...)
 	if err != nil {
 		return "", err
 	}

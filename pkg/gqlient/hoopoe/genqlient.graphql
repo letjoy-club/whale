@@ -20,9 +20,18 @@ query GetTopic($id: String!) {
   }
 }
 
-query GetTopicCategories($paginator: GraphQLPaginator!) {
+query GetAllTopicAndCategoryAndTopicName($paginator: GraphQLPaginator!) {
   topicCategories(paginator: $paginator) {
+    name
+    desc
+  }
+  topics(paginator: $paginator) {
     id
+    name
+  }
+  areas(filter: { depth: 1 }) {
+    code
+    name
   }
 }
 
@@ -109,7 +118,7 @@ query CreateMatchingCheck($topicId: String!, $cityId: AreaCode!, $userId: String
   userInfoCompletenessCheck(userId: $userId) {
     filled
   }
-  levelDetail(userId: $userId){
+  levelDetail(userId: $userId) {
     rights {
       genderSelection(userId: $userId)
     }

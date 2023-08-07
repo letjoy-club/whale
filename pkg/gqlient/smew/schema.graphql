@@ -1,3 +1,5 @@
+directive @adminOnly on FIELD_DEFINITION
+
 directive @extends on OBJECT | INTERFACE
 
 directive @external on FIELD_DEFINITION
@@ -48,11 +50,25 @@ type ChatGroup {
   """话题"""
   topic: Topic
 
+  """
+  群组来源类型
+  Matching-匹配
+  Invitation-邀请
+  Motion-广场
+  """
+  sourceType: String
+
+  """TIM群组是否已创建"""
+  timCreated: Boolean!
+
   """成员ID列表"""
   memberIds: IDList!
 
   """群组成员"""
   members: [User!]!
+
+  """创建时间"""
+  createdAt: Time!
 
   """最新一条消息"""
   latestMessage: Message
@@ -63,8 +79,45 @@ type ChatGroup {
   """群组是否关闭"""
   closed: Boolean!
 
+  """群组关闭时间"""
+  closeAt: Time
+
   """成员状态"""
   memberStatus: [GroupMember!]!
+
+  """聊天消息条数"""
+  messageCount: Int!
+}
+
+input ChatGroupFilter {
+  """成员ID"""
+  userId: String
+
+  """话题ID"""
+  topicId: String
+
+  """状态"""
+  state: String
+}
+
+input CreateMotionGroupParam {
+  """匹配结果ID"""
+  resultId: Int!
+
+  """话题ID"""
+  topicId: String!
+
+  """连接发起方ID"""
+  fromUserId: String!
+
+  """连接发起方Motion ID"""
+  fromMotionId: String!
+
+  """连接发起方ID"""
+  toUserId: String!
+
+  """连接发起方Motion ID"""
+  toMotionId: String!
 }
 
 type Entity {
@@ -87,6 +140,12 @@ type GroupMember {
 
   """退出时间"""
   leavedAt: Time
+
+  """角色"""
+  role: String
+
+  """来源ID"""
+  sourceId: String
 }
 
 scalar IDList
@@ -128,6 +187,69 @@ type Message {
   recalledAt: Time
 }
 
+enum MessageType {
+  """
+  文字消息
+  msgContent样例：
+  {"Text":"text content"}
+  """
+  Text
+
+  """
+  图片消息
+  msgContent样例：
+  {
+  "UUID": "1853095_D61040894AC3DE44CDFFFB3EC7EB720F",
+  "ImageFormat": 1,
+  "ImageInfoArray": [
+  {
+  "Type": 1,           //原图
+  "Size": 1853095,
+  "Width": 2448,
+  "Height": 3264,
+  "URL": "http://xxx/3200490432214177468_144115198371610486_D61040894AC3DE44CDFFFB3EC7EB720F/0"
+  },
+  {
+  "Type": 2,      //大图
+  "Size": 2565240,
+  "Width": 0,
+  "Height": 0,
+  "URL": "http://xxx/3200490432214177468_144115198371610486_D61040894AC3DE44CDFFFB3EC7EB720F/720"
+  },
+  {
+  "Type": 3,   //缩略图
+  "Size": 12535,
+  "Width": 0,
+  "Height": 0,
+  "URL": "http://xxx/3200490432214177468_144115198371610486_D61040894AC3DE44CDFFFB3EC7EB720F/198"
+  }
+  ]
+  }
+  """
+  Image
+
+  """
+  位置消息
+  msgContent样例：
+  {"Desc": "someinfo","Latitude": 29.340656774469956,"Longitude": 116.77497920478824}
+  """
+  Location
+
+  """
+  motion卡片
+  msgContent样例：
+  {"MotionId":"id"}
+  """
+  MotionCard
+
+  """
+  微信号卡片
+  msgContent样例：
+  {"WechatNo":"no"}
+  """
+  WhchatCard
+}
+
 type MsgBody {
   """
   消息元素类别
@@ -143,7 +265,7 @@ type MsgBody {
 }
 
 type Mutation {
-  """【群组】创建群组"""
+  """【群组】创建匹配群组"""
   createGroup(
     """匹配结果ID"""
     resultId: Int!
@@ -154,6 +276,14 @@ type Mutation {
     """成员ID"""
     memberIds: [String!]!
   ): String!
+
+  """【群组】创建Motion群组"""
+  createMotionGroup(param: CreateMotionGroupParam!): String!
+
+  """【群组】TIM群组创建——对内部群组适用"""
+  createTimGroup(chatGroupId: String!): String
+
+  """【群组】群组成员离开"""
   groupMemberLeave(
     """群组ID"""
     groupId: String!
@@ -166,6 +296,18 @@ type Mutation {
   destroyGroup(
     """群组ID"""
     groupId: String!
+  ): String
+
+  """【消息】发送文字消息"""
+  sendTextMessage(
+    """群组ID"""
+    chatGroupId: String!
+
+    """发送者"""
+    sender: String!
+
+    """消息类型"""
+    text: String!
   ): String
 }
 
@@ -182,14 +324,26 @@ type Query {
     groupId: String!
   ): ChatGroup!
 
+  """【群组】根据匹配结果查询群组详情，仅管理端和内部使用"""
+  chatGroupByResultId(
+    """匹配结果ID"""
+    resultId: Int!
+  ): ChatGroup
+
   """【群组】群组列表查询，管理端使用"""
   chatGroups(
-    """用户ID，管理端使用"""
-    userId: String
+    """过滤条件"""
+    filter: ChatGroupFilter
 
     """翻页器"""
     paginator: GraphQLPaginator
-  ): [ChatGroup!]
+  ): [ChatGroup!]!
+
+  """【群组】群组列表总数查询，管理端使用"""
+  chatGroupsCount(
+    """过滤条件"""
+    filter: ChatGroupFilter
+  ): Summary!
 
   """【群组】用户群组查询，客户端使用"""
   userChatGroups(
@@ -206,37 +360,52 @@ type Query {
     closed: Boolean!
   ): Summary!
 
-  """【消息】群组消息查询"""
-  groupMessage(
+  """【消息】群组消息查询-向前翻页"""
+  groupMessagesPre(
     """群组ID"""
     groupId: String!
 
     """上次返回最小Seq，不上送则返回最新的消息"""
     lastSeq: Int
+  ): [Message!]!
 
-    """返回消息数量，默认20条，最大50条"""
-    size: Int
+  """【消息】群组消息查询-向后翻页"""
+  groupMessagesNext(
+    """群组ID"""
+    groupId: String!
+
+    """上次返回最大Seq，不上送则返回最早的消息"""
+    lastSeq: Int
   ): [Message!]!
 
   """【消息】消息搜索-群组"""
-  searchGroup(
+  searchMessageGroups(
     """关键词"""
     keyword: String!
+
+    """用户ID，管理端必填"""
+    userId: String
   ): [SearchGroupResult!]
 
   """【消息】消息搜索-消息"""
-  searchMessage(
+  searchMessages(
     """群组ID"""
     groupId: String!
 
     """关键词"""
     keyword: String!
+
+    """用户ID，管理端必填"""
+    userId: String
   ): [Message!]
   _entities(representations: [_Any!]!): [_Entity]!
   _service: _Service!
 }
 
 type SearchGroupResult {
+  """群组ID"""
+  groupId: String!
+
   """群组信息"""
   group: ChatGroup!
 
@@ -263,6 +432,6 @@ type User {
   online: Boolean!
 
   """IM登录密码"""
-  userSig: String!
+  userSig: String
 }
 

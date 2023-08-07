@@ -19,3 +19,12 @@ type MatchingReceiveLike struct {
 	CreatedAt time.Time `gorm:"autoCreateTime"`
 	UpdatedAt time.Time `gorm:"autoUpdateTime"`
 }
+
+type UserLikeMotion struct {
+	ID         int    `gorm:"primaryKey"`
+	ToMotionID string `gorm:"index:user_like_motion,unique,priority:2"`
+	ToUserID   string `gorm:"type:varchar(32)"`
+
+	UserID    string    `gorm:"type:varchar(32);index:user_like_motion,unique,priority:1"`
+	CreatedAt time.Time `gorm:"autoCreateTime"`
+}

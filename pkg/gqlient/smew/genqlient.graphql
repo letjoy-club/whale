@@ -1,7 +1,31 @@
-mutation CreateChatGroup($resultId: Int!, $topicId: String!, $memberIds: [String!]!) {
+mutation CreateChatGroup(
+  $resultId: Int!
+  $topicId: String!
+  $memberIds: [String!]!
+) {
   createGroup(resultId: $resultId, topicId: $topicId, memberIds: $memberIds)
 }
 
 mutation GroupMemberLeave($groupId: String!, $userId: String!) {
   groupMemberLeave(groupId: $groupId, userId: $userId)
+}
+
+mutation CreateMotionGroup($param: CreateMotionGroupParam!) {
+  createMotionGroup(param: $param)
+}
+
+mutation CreateTimGroup($chatGroupId: String!) {
+  createTimGroup(chatGroupId: $chatGroupId)
+}
+
+mutation SendTextMessage(
+  $chatGroupId: String!
+  $sender: String!
+  $text: String!
+) {
+  sendTextMessage(chatGroupId: $chatGroupId, sender: $sender, text: $text)
+}
+
+mutation DestroyGroup($groupId: String!) {
+  destroyGroup(groupId: $groupId)
 }

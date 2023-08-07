@@ -21,12 +21,17 @@ type UserDiscoverMotion struct {
 
 	viewedMotionIDs map[string]struct{}
 
-	db            *gorm.DB
 	mu            sync.Mutex
 	motionMap     GroupedMotions
 	cityMotionMap map[CityID]CityMotions
 
-	nextToken map[string]int
+	priorityMotion *PriorityMotion
+	nextToken      map[string]int
+}
+
+type PriorityMotion struct {
+	motion     *models.Motion
+	categoryID string
 }
 
 type UserDiscoverMotionOpt struct {
@@ -57,9 +62,9 @@ func (u *UserDiscoverMotion) LoadMotionIDs(
 	nextIndex := 0
 
 	if opt.CityID == "" {
-		motions, ok := u.motionMap[categoryID]
+		_, ok := u.motionMap[categoryID]
 		if !ok {
-			motions = motionLoader(categoryID, opt.CityID)
+			motions := motionLoader(categoryID, opt.CityID)
 			u.motionMap[categoryID] = motions
 		}
 		motionIDs, nextIndex = u.motionMap.Load(categoryID, opt.TopicIDs, opt.Gender.String(), startIndex, opt.N)
@@ -87,6 +92,24 @@ func (u *UserDiscoverMotion) LoadMotionIDs(
 	return motionIDs, next
 }
 
+func (u *UserDiscoverMotion) SetPriorityMotion(category string, motion *models.Motion) {
+	cityMotion := u.cityMotionMap[motion.CityID]
+	if cityMotion == nil {
+		return
+	}
+	categoryMotions := cityMotion[category]
+	if categoryMotions == nil {
+		return
+	}
+	if len(categoryMotions) > 0 {
+		// 直接覆盖第一个数据
+		categoryMotions[0] = motion
+	} else {
+		categoryMotions = []*models.Motion{motion}
+		cityMotion[category] = categoryMotions
+	}
+}
+
 type CategoryID = string
 type GroupedMotions map[CategoryID][]*models.Motion
 type CityMotions = GroupedMotions
@@ -102,6 +125,7 @@ func (g GroupedMotions) Load(categoryID string, topicIDs []string, gender string
 	cateLen := len(group)
 	var topicMap map[string]struct{}
 	if len(topicIDs) > 0 {
+		topicMap = map[string]struct{}{}
 		for _, topicID := range topicIDs {
 			topicMap[topicID] = struct{}{}
 		}
@@ -138,8 +162,7 @@ type AllMotionLoader struct {
 
 	cache *cache.Cache
 
-	userMotionMap map[UserID]*UserDiscoverMotion
-	userMu        sync.Mutex
+	userMu sync.Mutex
 }
 
 func (l *AllMotionLoader) GetCategoryToMotions() GroupedMotions {
@@ -149,8 +172,6 @@ func (l *AllMotionLoader) GetCategoryToMotions() GroupedMotions {
 func (l *AllMotionLoader) GetCityToMotions() map[string]CityMotions {
 	return l.cityMotionMap
 }
-
-var motionReloadInterval = time.Minute * 5
 
 func (l *AllMotionLoader) LoadForAnoumynous(ctx context.Context, categoryID string, opt UserDiscoverMotionOpt) (retIDs []string) {
 	if opt.CityID == "" {
@@ -191,15 +212,18 @@ func (l *AllMotionLoader) LoadForUser(ctx context.Context, userID string, catego
 func (l *AllMotionLoader) GenUserDiscoverMotion(ctx context.Context, userID string) *UserDiscoverMotion {
 	l.userMu.Lock()
 	defer l.userMu.Unlock()
-	if _, ok := l.userMotionMap[userID]; !ok {
-		l.userMotionMap[userID] = &UserDiscoverMotion{
+	userDiscoverMotion, ok := l.cache.Get(userID)
+	if !ok {
+		userDiscoverMotion = &UserDiscoverMotion{
 			userID:          userID,
 			viewedMotionIDs: map[string]struct{}{},
 			cityMotionMap:   map[CityID]CityMotions{},
 			motionMap:       map[CategoryID][]*models.Motion{},
+			nextToken:       map[string]int{},
 		}
+		l.cache.SetDefault(userID, userDiscoverMotion)
 	}
-	return l.userMotionMap[userID]
+	return userDiscoverMotion.(*UserDiscoverMotion)
 }
 
 func NewAllMotionLoader(db *gorm.DB) *AllMotionLoader {
@@ -208,7 +232,6 @@ func NewAllMotionLoader(db *gorm.DB) *AllMotionLoader {
 		categoryMap:   map[CategoryID][]*models.Motion{},
 		cityMotionMap: map[CityID]CityMotions{},
 		cache:         cache.New(time.Minute, time.Minute),
-		userMotionMap: map[string]*UserDiscoverMotion{},
 	}
 	MotionViewHistory := dbquery.Use(db).MotionViewHistory
 	Motion := dbquery.Use(db).Motion
@@ -241,6 +264,21 @@ func NewAllMotionLoader(db *gorm.DB) *AllMotionLoader {
 	return loader
 }
 
+func (l *AllMotionLoader) SetLatestData(ctx context.Context, userID string, motion *models.Motion) {
+	discoverMotionInterface, ok := l.cache.Get(userID)
+	if !ok {
+		return
+	}
+	discoverMotion := discoverMotionInterface.(*UserDiscoverMotion)
+	topicCategory := midacontext.GetLoader[Loader](ctx).TopicCategory
+	topicCategory.Load(ctx)
+	categoryID, ok := topicCategory.topic2category[motion.TopicID]
+	if !ok {
+		return
+	}
+	discoverMotion.SetPriorityMotion(categoryID, motion)
+}
+
 func (l *AllMotionLoader) Load(ctx context.Context) error {
 	if time.Since(l.lastLoad) < matchingReloadInterval {
 		return nil
@@ -251,7 +289,7 @@ func (l *AllMotionLoader) Load(ctx context.Context) error {
 		l.lastLoad = time.Now()
 		Motion := dbquery.Use(l.db).Motion
 		motions, err := Motion.WithContext(ctx).Select(
-			Motion.ID, Motion.UserID, Motion.CityID, Motion.Gender, Motion.MyGender,
+			Motion.ID, Motion.UserID, Motion.CityID, Motion.Gender, Motion.MyGender, Motion.TopicID,
 		).Where(Motion.Active.Is(true)).Find()
 		if err != nil {
 			logger.L.Error("load motions failed", zap.Error(err))
@@ -279,4 +317,7 @@ func (l *AllMotionLoader) Load(ctx context.Context) error {
 		l.cityMotionMap = citiesMotionMap
 	}
 	return nil
+}
+
+func insertIfNotExist() {
 }
