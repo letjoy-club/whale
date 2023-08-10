@@ -32,6 +32,8 @@ var (
 	ErrMotionOfferQuotaNotEnough                    = midacode.NewError("MOTION_OFFER_QUOTA_NOT_ENOUGH", "邀约次数不足", midacode.LogLevelWarn)
 	MotionOfferIsNotPending                         = midacode.NewError("MOTION_OFFER_IS_NOT_PENDING", "邀约不是待处理状态", midacode.LogLevelWarn)
 	ErrMatchingOfferIsClosed                        = midacode.NewError("MATCHING_OFFER_IS_CLOSED", "邀约已经关闭", midacode.LogLevelWarn)
+	ErrChatChanceNotEnough                          = midacode.NewError("CHAT_CHANCE_NOT_ENOUGH", "当前邀请聊天机会不足", midacode.LogLevelWarn)
+	ErrOnlyChatWhenNotAccepted                      = midacode.NewError("ONLY_CHAT_WHEN_NOT_ACCEPTED", "只有在未接受状态下才能发送该消息", midacode.LogLevelWarn)
 	ErrCannotSendMatchingOfferToSelf                = midacode.NewError("CANNOT_SEND_MATCHING_OFFER_TO_SELF", "不能给自己发邀约", midacode.LogLevelWarn)
 	ErrCannotSendMatchingOfferToDifferentTopic      = midacode.NewError("CANNOT_SEND_MATCHING_OFFER_TO_DIFFERENT_TOPIC", "邀约话题不一致", midacode.LogLevelWarn)
 	ErrYourMatchingNotInMatchingState               = midacode.NewError("YOUR_MATCHING_NOT_IN_MATCHING_STATE", "你的匹配不在匹配中", midacode.LogLevelWarn)

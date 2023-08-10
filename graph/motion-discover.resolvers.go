@@ -6,6 +6,7 @@ package graph
 
 import (
 	"context"
+	"fmt"
 	"time"
 	"whale/pkg/dbquery"
 	"whale/pkg/loader"
@@ -30,6 +31,11 @@ func (r *discoverMotionResolver) PreferredPeriods(ctx context.Context, obj *mode
 	return lo.Map(obj.PreferredPeriods, func(v string, i int) models.DatePeriod {
 		return models.DatePeriod(v)
 	}), nil
+}
+
+// ThumbupCount is the resolver for the thumbupCount field.
+func (r *discoverMotionResolver) ThumbupCount(ctx context.Context, obj *models.Motion) (int, error) {
+	panic(fmt.Errorf("not implemented: ThumbupCount - thumbupCount"))
 }
 
 // Liked is the resolver for the liked field.
@@ -66,6 +72,11 @@ func (r *discoverMotionResolver) Submitted(ctx context.Context, obj *models.Moti
 		return false, err
 	}
 	return u.IsSubmitted(obj.ID), nil
+}
+
+// ThumbsUpped is the resolver for the thumbsUpped field.
+func (r *discoverMotionResolver) ThumbsUpped(ctx context.Context, obj *models.Motion, userID *string) (bool, error) {
+	return false, nil
 }
 
 // Topic is the resolver for the topic field.
@@ -225,6 +236,15 @@ func (r *mutationResolver) RejectMotionOffer(ctx context.Context, myMotionID str
 		return nil, midacode.ErrNotPermitted
 	}
 	return nil, modelutil.RejectMotionOffer(ctx, token.UserID(), myMotionID, targetMotionID)
+}
+
+// SendChatInOffer is the resolver for the sendChatInOffer field.
+func (r *mutationResolver) SendChatInOffer(ctx context.Context, myMotionID string, targetMotionID string, sentence string) (*string, error) {
+	token := midacontext.GetClientToken(ctx)
+	if !token.IsUser() && !token.IsAdmin() {
+		return nil, midacode.ErrNotPermitted
+	}
+	return nil, modelutil.SendChatInOffer(ctx, token.UserID(), myMotionID, targetMotionID, sentence)
 }
 
 // DiscoverCategoryMotions is the resolver for the discoverCategoryMotions field.

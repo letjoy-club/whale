@@ -94,20 +94,6 @@ func (r *matchingResolver) Reviewed(ctx context.Context, obj *models.Matching) (
 	return reviewd.Reviewed, nil
 }
 
-// ViewCount is the resolver for the viewCount field.
-func (r *matchingResolver) ViewCount(ctx context.Context, obj *models.Matching) (int, error) {
-	thunk := midacontext.GetLoader[loader.Loader](ctx).MatchingView.Load(ctx, obj.ID)
-	view, err := thunk()
-	return view.ViewCount, err
-}
-
-// LikeCount is the resolver for the likeCount field.
-func (r *matchingResolver) LikeCount(ctx context.Context, obj *models.Matching) (int, error) {
-	thunk := midacontext.GetLoader[loader.Loader](ctx).MatchingReceiveLike.Load(ctx, obj.ID)
-	like, err := thunk()
-	return like.LikeNum, err
-}
-
 // User is the resolver for the user field.
 func (r *matchingResolver) User(ctx context.Context, obj *models.Matching) (*models.User, error) {
 	return &models.User{ID: obj.UserID}, nil
@@ -245,6 +231,11 @@ func (r *matchingResultResolver) Users(ctx context.Context, obj *models.Matching
 	return lo.Map(obj.UserIDs, func(id string, i int) *models.User {
 		return &models.User{ID: id}
 	}), nil
+}
+
+// DiscoverMotion is the resolver for the discoverMotion field.
+func (r *matchingResultResolver) DiscoverMotion(ctx context.Context, obj *models.MatchingResult) ([]*models.Motion, error) {
+	panic(fmt.Errorf("not implemented: DiscoverMotion - discoverMotion"))
 }
 
 // MatchingPreviews is the resolver for the matchingPreviews field.

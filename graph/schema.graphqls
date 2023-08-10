@@ -132,9 +132,6 @@ type Matching @key(fields: "id") {
   matchingResult: MatchingResult
   reviewed: Boolean!
 
-  viewCount: Int!
-  likeCount: Int!
-
   user: User!
   topic: Topic!
   areas: [Area!]!

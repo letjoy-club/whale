@@ -42,10 +42,6 @@ func main() {
 		&models.MotionViewHistory{},
 		&models.UserLikeMotion{},
 
-		// 用户点赞匹配
-		&models.UserLikeMatching{},
-		&models.MatchingReceiveLike{},
-
 		// 用户查看匹配
 		&models.UserViewMatching{},
 		&models.MatchingViewHistory{},

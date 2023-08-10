@@ -6,6 +6,7 @@ package graph
 
 import (
 	"context"
+	"fmt"
 	"whale/pkg/dbquery"
 	"whale/pkg/loader"
 	"whale/pkg/models"
@@ -65,6 +66,11 @@ func (r *mutationResolver) UpdateMotion(ctx context.Context, id string, param mo
 	midacontext.GetLoader[loader.Loader](ctx).Motion.Clear(ctx, id)
 	thunk := midacontext.GetLoader[loader.Loader](ctx).Motion.Load(ctx, id)
 	return thunk()
+}
+
+// UserUpdateMotion is the resolver for the userUpdateMotion field.
+func (r *mutationResolver) UserUpdateMotion(ctx context.Context, myMotionID string, param models.UserUpdateMotionParam) (*models.Motion, error) {
+	panic(fmt.Errorf("not implemented: UserUpdateMotion - userUpdateMotion"))
 }
 
 // CloseMotion is the resolver for the closeMotion field.

@@ -35,6 +35,7 @@ func newMotionOfferRecord(db *gorm.DB, opts ...gen.DOOption) motionOfferRecord {
 	_motionOfferRecord.ChatGroupID = field.NewString(tableName, "chat_group_id")
 	_motionOfferRecord.ReactAt = field.NewTime(tableName, "react_at")
 	_motionOfferRecord.Remark = field.NewString(tableName, "remark")
+	_motionOfferRecord.ChatChance = field.NewInt(tableName, "chat_chance")
 	_motionOfferRecord.ExpiredAt = field.NewTime(tableName, "expired_at")
 	_motionOfferRecord.CreatedAt = field.NewTime(tableName, "created_at")
 
@@ -56,6 +57,7 @@ type motionOfferRecord struct {
 	ChatGroupID field.String
 	ReactAt     field.Time
 	Remark      field.String
+	ChatChance  field.Int
 	ExpiredAt   field.Time
 	CreatedAt   field.Time
 
@@ -83,6 +85,7 @@ func (m *motionOfferRecord) updateTableName(table string) *motionOfferRecord {
 	m.ChatGroupID = field.NewString(table, "chat_group_id")
 	m.ReactAt = field.NewTime(table, "react_at")
 	m.Remark = field.NewString(table, "remark")
+	m.ChatChance = field.NewInt(table, "chat_chance")
 	m.ExpiredAt = field.NewTime(table, "expired_at")
 	m.CreatedAt = field.NewTime(table, "created_at")
 
@@ -109,7 +112,7 @@ func (m *motionOfferRecord) GetFieldByName(fieldName string) (field.OrderExpr, b
 }
 
 func (m *motionOfferRecord) fillFieldMap() {
-	m.fieldMap = make(map[string]field.Expr, 11)
+	m.fieldMap = make(map[string]field.Expr, 12)
 	m.fieldMap["id"] = m.ID
 	m.fieldMap["motion_id"] = m.MotionID
 	m.fieldMap["to_motion_id"] = m.ToMotionID
@@ -119,6 +122,7 @@ func (m *motionOfferRecord) fillFieldMap() {
 	m.fieldMap["chat_group_id"] = m.ChatGroupID
 	m.fieldMap["react_at"] = m.ReactAt
 	m.fieldMap["remark"] = m.Remark
+	m.fieldMap["chat_chance"] = m.ChatChance
 	m.fieldMap["expired_at"] = m.ExpiredAt
 	m.fieldMap["created_at"] = m.CreatedAt
 }

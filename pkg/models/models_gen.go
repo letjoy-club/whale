@@ -179,6 +179,12 @@ type Summary struct {
 	Count int `json:"count"`
 }
 
+type ThumbUpMotion struct {
+	UserID    string    `json:"userId"`
+	MotionID  string    `json:"motionId"`
+	CreatedAt time.Time `json:"createdAt"`
+}
+
 type Topic struct {
 	ID string `json:"id"`
 	// 匹配中用户
@@ -304,6 +310,15 @@ type UserMatchingInTheDayParam struct {
 	// 日期格式 20060102
 	DayStr      string  `json:"dayStr"`
 	OtherUserID *string `json:"otherUserId,omitempty"`
+}
+
+type UserUpdateMotionParam struct {
+	AreaIds          []string               `json:"areaIds,omitempty"`
+	Gender           *string                `json:"gender,omitempty"`
+	DayRange         []string               `json:"dayRange,omitempty"`
+	PreferredPeriods []DatePeriod           `json:"preferredPeriods,omitempty"`
+	Properties       []*MotionPropertyParam `json:"properties,omitempty"`
+	Remark           *string                `json:"remark,omitempty"`
 }
 
 type ChatGroupState string

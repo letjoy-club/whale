@@ -40,6 +40,7 @@ func newMotion(db *gorm.DB, opts ...gen.DOOption) motion {
 	_motion.PreferredPeriods = field.NewField(tableName, "preferred_periods")
 	_motion.ViewCount = field.NewInt(tableName, "view_count")
 	_motion.LikeCount = field.NewInt(tableName, "like_count")
+	_motion.ThumbsUpCount = field.NewInt(tableName, "thumbs_up_count")
 	_motion.InOfferNum = field.NewInt(tableName, "in_offer_num")
 	_motion.OutOfferNum = field.NewInt(tableName, "out_offer_num")
 	_motion.PendingInNum = field.NewInt(tableName, "pending_in_num")
@@ -73,6 +74,7 @@ type motion struct {
 	PreferredPeriods field.Field
 	ViewCount        field.Int
 	LikeCount        field.Int
+	ThumbsUpCount    field.Int
 	InOfferNum       field.Int
 	OutOfferNum      field.Int
 	PendingInNum     field.Int
@@ -112,6 +114,7 @@ func (m *motion) updateTableName(table string) *motion {
 	m.PreferredPeriods = field.NewField(table, "preferred_periods")
 	m.ViewCount = field.NewInt(table, "view_count")
 	m.LikeCount = field.NewInt(table, "like_count")
+	m.ThumbsUpCount = field.NewInt(table, "thumbs_up_count")
 	m.InOfferNum = field.NewInt(table, "in_offer_num")
 	m.OutOfferNum = field.NewInt(table, "out_offer_num")
 	m.PendingInNum = field.NewInt(table, "pending_in_num")
@@ -143,7 +146,7 @@ func (m *motion) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 }
 
 func (m *motion) fillFieldMap() {
-	m.fieldMap = make(map[string]field.Expr, 23)
+	m.fieldMap = make(map[string]field.Expr, 24)
 	m.fieldMap["id"] = m.ID
 	m.fieldMap["user_id"] = m.UserID
 	m.fieldMap["topic_id"] = m.TopicID
@@ -158,6 +161,7 @@ func (m *motion) fillFieldMap() {
 	m.fieldMap["preferred_periods"] = m.PreferredPeriods
 	m.fieldMap["view_count"] = m.ViewCount
 	m.fieldMap["like_count"] = m.LikeCount
+	m.fieldMap["thumbs_up_count"] = m.ThumbsUpCount
 	m.fieldMap["in_offer_num"] = m.InOfferNum
 	m.fieldMap["out_offer_num"] = m.OutOfferNum
 	m.fieldMap["pending_in_num"] = m.PendingInNum

@@ -76,6 +76,7 @@ func CreateMotionOffer(ctx context.Context, myUserID, myMotionID, targetMotionID
 			ToUserID:   targetMotion.UserID,
 			ToMotionID: targetMotion.ID,
 			ExpiredAt:  time.Now().Add(time.Hour * 24),
+			ChatChance: 1,
 			State:      string(models.MotionOfferStatePending),
 		}
 		err := MotionOfferRecord.WithContext(ctx).Create(record)
@@ -552,5 +553,32 @@ func ClearOutdateMotionOffer(ctx context.Context) error {
 		Motion.PendingOutNum.Eq(0),
 		Motion.PendingInNum.Eq(0),
 	).UpdateSimple(Motion.Active.Value(false))
+	return err
+}
+
+func SendChatInOffer(ctx context.Context, myUserID, myMotionID, targetMotionID, sentence string) error {
+	db := dbutil.GetDB(ctx)
+	MotionOfferRecord := dbquery.Use(db).MotionOfferRecord
+	record, err := MotionOfferRecord.WithContext(ctx).Where(MotionOfferRecord.MotionID.Eq(myMotionID)).Where(MotionOfferRecord.ToMotionID.Eq(targetMotionID)).Take()
+	if err != nil {
+		return midacode.ItemMayNotFound(err)
+	}
+	if record.ChatChance <= 0 {
+		return whalecode.ErrChatChanceNotEnough
+	}
+	if record.State != string(models.MotionOfferStatePending) {
+		return whalecode.ErrOnlyChatWhenNotAccepted
+	}
+	if myUserID != "" {
+		if record.UserID != myUserID {
+			return midacode.ErrNotPermitted
+		}
+	}
+
+	_, err = smew.SendTextMessage(ctx, midacontext.GetServices(ctx).Smew, record.ChatGroupID, record.UserID, sentence)
+	if err != nil {
+		return err
+	}
+	_, err = MotionOfferRecord.WithContext(ctx).Where(MotionOfferRecord.ID.Eq(record.ID)).UpdateSimple(MotionOfferRecord.ChatChance.Add(-1))
 	return err
 }

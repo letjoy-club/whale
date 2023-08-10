@@ -22,8 +22,6 @@ type Loader struct {
 	MatchingResult             *dataloader.Loader[int, *models.MatchingResult]
 	MatchingReviewed           *dataloader.Loader[string, MatchingReviewed]
 	MatchingDurationConstraint *dataloader.Loader[string, *models.MatchingDurationConstraint]
-	MatchingReceiveLike        *dataloader.Loader[string, *models.MatchingReceiveLike]
-	MatchingView               *dataloader.Loader[string, *models.MatchingView]
 	MatchingOfferSummary       *dataloader.Loader[string, *models.MatchingOfferSummary]
 
 	UserJoinTopic  *dataloader.Loader[int, *models.UserJoinTopic]
@@ -44,7 +42,6 @@ type Loader struct {
 
 	UserProfile        *dataloader.Loader[string, UserProfile]
 	UserAvatarNickname *dataloader.Loader[string, UserAvatarNickname]
-	UserLikeMatching   *dataloader.Loader[string, *UserLikeMatchingSummary]
 
 	// 查询城市的热门话题
 	HotTopics *dataloader.Loader[string, *models.HotTopicsInArea]
@@ -71,8 +68,6 @@ func NewLoader(db *gorm.DB) *Loader {
 		MatchingResult:             NewMatchingResultLoader(db),
 		MatchingReviewed:           NewMatchingReviewedLoader(db),
 		MatchingDurationConstraint: NewMatchingDurationConstraintLoader(db),
-		MatchingView:               NewMatchingViewLoader(db),
-		MatchingReceiveLike:        NewMatchingReceiveLikeLoader(db),
 
 		InMotionOfferRecord:  NewInMotionOfferLoader(db),
 		OutMotionOfferRecord: NewOutMotionOfferLoader(db),
@@ -83,7 +78,6 @@ func NewLoader(db *gorm.DB) *Loader {
 		UserProfile:        NewUserProfileLoader(db),
 		UserAvatarNickname: NewUserAvatarNicknameLoader(db),
 		UserJoinTopic:      NewUserJoinTopicLoader(db),
-		UserLikeMatching:   NewUserLikeMatchingLoader(db),
 
 		RecentMatching: NewRecentMatchingLoader(db),
 

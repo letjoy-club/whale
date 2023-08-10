@@ -26,7 +26,6 @@ func Use(db *gorm.DB, opts ...gen.DOOption) *Query {
 		MatchingOfferRecord:         newMatchingOfferRecord(db, opts...),
 		MatchingOfferSummary:        newMatchingOfferSummary(db, opts...),
 		MatchingQuota:               newMatchingQuota(db, opts...),
-		MatchingReceiveLike:         newMatchingReceiveLike(db, opts...),
 		MatchingResult:              newMatchingResult(db, opts...),
 		MatchingResultConfirmAction: newMatchingResultConfirmAction(db, opts...),
 		MatchingReview:              newMatchingReview(db, opts...),
@@ -37,7 +36,6 @@ func Use(db *gorm.DB, opts ...gen.DOOption) *Query {
 		MotionViewHistory:           newMotionViewHistory(db, opts...),
 		RecentMatching:              newRecentMatching(db, opts...),
 		UserJoinTopic:               newUserJoinTopic(db, opts...),
-		UserLikeMatching:            newUserLikeMatching(db, opts...),
 		UserLikeMotion:              newUserLikeMotion(db, opts...),
 		UserViewMatching:            newUserViewMatching(db, opts...),
 		WhaleConfig:                 newWhaleConfig(db, opts...),
@@ -55,7 +53,6 @@ type Query struct {
 	MatchingOfferRecord         matchingOfferRecord
 	MatchingOfferSummary        matchingOfferSummary
 	MatchingQuota               matchingQuota
-	MatchingReceiveLike         matchingReceiveLike
 	MatchingResult              matchingResult
 	MatchingResultConfirmAction matchingResultConfirmAction
 	MatchingReview              matchingReview
@@ -66,7 +63,6 @@ type Query struct {
 	MotionViewHistory           motionViewHistory
 	RecentMatching              recentMatching
 	UserJoinTopic               userJoinTopic
-	UserLikeMatching            userLikeMatching
 	UserLikeMotion              userLikeMotion
 	UserViewMatching            userViewMatching
 	WhaleConfig                 whaleConfig
@@ -85,7 +81,6 @@ func (q *Query) clone(db *gorm.DB) *Query {
 		MatchingOfferRecord:         q.MatchingOfferRecord.clone(db),
 		MatchingOfferSummary:        q.MatchingOfferSummary.clone(db),
 		MatchingQuota:               q.MatchingQuota.clone(db),
-		MatchingReceiveLike:         q.MatchingReceiveLike.clone(db),
 		MatchingResult:              q.MatchingResult.clone(db),
 		MatchingResultConfirmAction: q.MatchingResultConfirmAction.clone(db),
 		MatchingReview:              q.MatchingReview.clone(db),
@@ -96,7 +91,6 @@ func (q *Query) clone(db *gorm.DB) *Query {
 		MotionViewHistory:           q.MotionViewHistory.clone(db),
 		RecentMatching:              q.RecentMatching.clone(db),
 		UserJoinTopic:               q.UserJoinTopic.clone(db),
-		UserLikeMatching:            q.UserLikeMatching.clone(db),
 		UserLikeMotion:              q.UserLikeMotion.clone(db),
 		UserViewMatching:            q.UserViewMatching.clone(db),
 		WhaleConfig:                 q.WhaleConfig.clone(db),
@@ -122,7 +116,6 @@ func (q *Query) ReplaceDB(db *gorm.DB) *Query {
 		MatchingOfferRecord:         q.MatchingOfferRecord.replaceDB(db),
 		MatchingOfferSummary:        q.MatchingOfferSummary.replaceDB(db),
 		MatchingQuota:               q.MatchingQuota.replaceDB(db),
-		MatchingReceiveLike:         q.MatchingReceiveLike.replaceDB(db),
 		MatchingResult:              q.MatchingResult.replaceDB(db),
 		MatchingResultConfirmAction: q.MatchingResultConfirmAction.replaceDB(db),
 		MatchingReview:              q.MatchingReview.replaceDB(db),
@@ -133,7 +126,6 @@ func (q *Query) ReplaceDB(db *gorm.DB) *Query {
 		MotionViewHistory:           q.MotionViewHistory.replaceDB(db),
 		RecentMatching:              q.RecentMatching.replaceDB(db),
 		UserJoinTopic:               q.UserJoinTopic.replaceDB(db),
-		UserLikeMatching:            q.UserLikeMatching.replaceDB(db),
 		UserLikeMotion:              q.UserLikeMotion.replaceDB(db),
 		UserViewMatching:            q.UserViewMatching.replaceDB(db),
 		WhaleConfig:                 q.WhaleConfig.replaceDB(db),
@@ -149,7 +141,6 @@ type queryCtx struct {
 	MatchingOfferRecord         IMatchingOfferRecordDo
 	MatchingOfferSummary        IMatchingOfferSummaryDo
 	MatchingQuota               IMatchingQuotaDo
-	MatchingReceiveLike         IMatchingReceiveLikeDo
 	MatchingResult              IMatchingResultDo
 	MatchingResultConfirmAction IMatchingResultConfirmActionDo
 	MatchingReview              IMatchingReviewDo
@@ -160,7 +151,6 @@ type queryCtx struct {
 	MotionViewHistory           IMotionViewHistoryDo
 	RecentMatching              IRecentMatchingDo
 	UserJoinTopic               IUserJoinTopicDo
-	UserLikeMatching            IUserLikeMatchingDo
 	UserLikeMotion              IUserLikeMotionDo
 	UserViewMatching            IUserViewMatchingDo
 	WhaleConfig                 IWhaleConfigDo
@@ -176,7 +166,6 @@ func (q *Query) WithContext(ctx context.Context) *queryCtx {
 		MatchingOfferRecord:         q.MatchingOfferRecord.WithContext(ctx),
 		MatchingOfferSummary:        q.MatchingOfferSummary.WithContext(ctx),
 		MatchingQuota:               q.MatchingQuota.WithContext(ctx),
-		MatchingReceiveLike:         q.MatchingReceiveLike.WithContext(ctx),
 		MatchingResult:              q.MatchingResult.WithContext(ctx),
 		MatchingResultConfirmAction: q.MatchingResultConfirmAction.WithContext(ctx),
 		MatchingReview:              q.MatchingReview.WithContext(ctx),
@@ -187,7 +176,6 @@ func (q *Query) WithContext(ctx context.Context) *queryCtx {
 		MotionViewHistory:           q.MotionViewHistory.WithContext(ctx),
 		RecentMatching:              q.RecentMatching.WithContext(ctx),
 		UserJoinTopic:               q.UserJoinTopic.WithContext(ctx),
-		UserLikeMatching:            q.UserLikeMatching.WithContext(ctx),
 		UserLikeMotion:              q.UserLikeMotion.WithContext(ctx),
 		UserViewMatching:            q.UserViewMatching.WithContext(ctx),
 		WhaleConfig:                 q.WhaleConfig.WithContext(ctx),

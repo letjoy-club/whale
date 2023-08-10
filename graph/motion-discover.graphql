@@ -40,6 +40,7 @@ type Motion {
   liked: Boolean!
   viewCount: Int!
   likeCount: Int!
+  thumbsUpCount: Int!
 
   topic: Topic!
   topicOptionConfig: TopicOptionConfig
@@ -60,6 +61,7 @@ type MotionOfferRecord {
   reactAt: Time
 
   remark: String!
+  chatChance: Int!
 
   # query
   toMotion: DiscoverMotion!
@@ -84,12 +86,14 @@ type DiscoverMotion {
   remark: String!
   likeCount: Int!
   viewCount: Int!
+  thumbupCount: Int!
 
   # query
   "是否标记为喜欢"
   liked("管理员填写 userId" userId: String): Boolean!
   "是否向其提交过意向"
   submitted("管理员填写 userId" userId: String): Boolean!
+  thumbsUpped("管理员填写 userId" userId: String): Boolean!
 
   topic: Topic!
   topicOptionConfig: TopicOptionConfig
@@ -152,4 +156,7 @@ extend type Mutation {
 
   "【广场】拒绝活动意向"
   rejectMotionOffer(myMotionId: String!, targetMotionId: String!): String
+
+  "【广场】发送聊天消息"
+  sendChatInOffer(myMotionId: String!, targetMotionId: String!, sentence: String!): String
 }

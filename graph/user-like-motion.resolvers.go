@@ -6,6 +6,7 @@ package graph
 
 import (
 	"context"
+	"fmt"
 	"whale/pkg/dbquery"
 	"whale/pkg/loader"
 	"whale/pkg/models"
@@ -122,6 +123,26 @@ func (r *queryResolver) LikedMotionsCount(ctx context.Context, userID *string) (
 		return nil, err
 	}
 	return &models.Summary{Count: len(likes.MotionIDs)}, nil
+}
+
+// ThumbupMotion is the resolver for the thumbupMotion field.
+func (r *queryResolver) ThumbupMotion(ctx context.Context, userID *string, motionID string) (*string, error) {
+	panic(fmt.Errorf("not implemented: ThumbupMotion - thumbupMotion"))
+}
+
+// CancelThumbupMotion is the resolver for the cancelThumbupMotion field.
+func (r *queryResolver) CancelThumbupMotion(ctx context.Context, userID *string, motionID string) (*string, error) {
+	panic(fmt.Errorf("not implemented: CancelThumbupMotion - cancelThumbupMotion"))
+}
+
+// ThumbUpMotions is the resolver for the thumbUpMotions field.
+func (r *queryResolver) ThumbUpMotions(ctx context.Context, userID *string, paginator *graphqlutil.GraphQLPaginator) ([]*models.ThumbUpMotion, error) {
+	panic(fmt.Errorf("not implemented: ThumbUpMotions - thumbUpMotions"))
+}
+
+// ThumbUpMotionsCount is the resolver for the thumbUpMotionsCount field.
+func (r *queryResolver) ThumbUpMotionsCount(ctx context.Context, userID *string) (*models.Summary, error) {
+	panic(fmt.Errorf("not implemented: ThumbUpMotionsCount - thumbUpMotionsCount"))
 }
 
 // Motion is the resolver for the motion field.

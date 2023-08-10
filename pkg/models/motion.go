@@ -21,8 +21,9 @@ type Motion struct {
 	// 优先时间段
 	PreferredPeriods []string `gorm:"serializer:json;type:json"`
 
-	ViewCount int `gorm:"default:0"`
-	LikeCount int `gorm:"default:0"`
+	ViewCount     int `gorm:"default:0"`
+	LikeCount     int `gorm:"default:0"`
+	ThumbsUpCount int `gorm:"default:0"`
 
 	InOfferNum  int `gorm:"default:0"`
 	OutOfferNum int `gorm:"default:0"`
@@ -61,15 +62,17 @@ type MotionOfferRecord struct {
 	ChatGroupID string `gorm:"type:varchar(32)"`
 
 	ReactAt *time.Time
-	Remark  string
+	Remark  string `gorm:"type:varchar(255)"`
+
+	ChatChance int `gorm:"default:0"`
 
 	ExpiredAt time.Time
 	CreatedAt time.Time `gorm:"autoCreateTime"`
 }
 
 type MotionViewHistory struct {
-	ID        int      `gorm:"primaryKey"`
-	UserID    string   `gorm:"index;type:varchar(32)"`
-	MotionIDs []string `gorm:"type:json;serializer:json"`
-	CreatedAt time.Time
+	ID        int       `gorm:"primaryKey"`
+	UserID    string    `gorm:"index;type:varchar(32)"`
+	MotionIDs []string  `gorm:"type:json;serializer:json"`
+	CreatedAt time.Time `gorm:"autoCreateTime"`
 }

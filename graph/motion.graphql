@@ -57,7 +57,6 @@ input MotionFilter {
   gender: Gender
 }
 
-
 extend type Query {
   motion(id: String!): Motion!
   userMotions(userId: String, paginator: GraphQLPaginator): [Motion!]!
