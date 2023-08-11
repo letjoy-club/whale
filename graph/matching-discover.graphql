@@ -1,0 +1,7 @@
+extend type Query {
+  "【广场】昨日匹配数量"
+  yesterdayMatchingCount: Int!
+
+  motionSummary: Map
+}
+

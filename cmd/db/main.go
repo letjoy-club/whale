@@ -36,6 +36,20 @@ func main() {
 		&models.MatchingResultConfirmAction{},
 		&models.MatchingResult{},
 		&models.Matching{},
+
+		&models.Motion{},
+		&models.MotionOfferRecord{},
+		&models.MotionViewHistory{},
+		&models.UserLikeMotion{},
+
+		// 用户查看匹配
+		&models.UserViewMatching{},
+		&models.MatchingViewHistory{},
+		&models.MatchingView{},
+
+		// 用户匹配意向
+		&models.MatchingOfferRecord{},
+		&models.MatchingOfferSummary{},
 	}
 
 	g.ApplyBasic(m...)

@@ -249,6 +249,77 @@ const (
 	ExtraOptionKeyCity    ExtraOptionKey = "City"
 )
 
+// GetAllTopicAndCategoryAndTopicNameAreasArea includes the requested fields of the GraphQL type Area.
+type GetAllTopicAndCategoryAndTopicNameAreasArea struct {
+	// 地区代码
+	Code string `json:"code"`
+	// 名称
+	Name string `json:"name"`
+}
+
+// GetCode returns GetAllTopicAndCategoryAndTopicNameAreasArea.Code, and is useful for accessing the field via an interface.
+func (v *GetAllTopicAndCategoryAndTopicNameAreasArea) GetCode() string { return v.Code }
+
+// GetName returns GetAllTopicAndCategoryAndTopicNameAreasArea.Name, and is useful for accessing the field via an interface.
+func (v *GetAllTopicAndCategoryAndTopicNameAreasArea) GetName() string { return v.Name }
+
+// GetAllTopicAndCategoryAndTopicNameResponse is returned by GetAllTopicAndCategoryAndTopicName on success.
+type GetAllTopicAndCategoryAndTopicNameResponse struct {
+	// 【话题】类别列表查询
+	TopicCategories []*GetAllTopicAndCategoryAndTopicNameTopicCategoriesTopicCategory `json:"topicCategories"`
+	// 【话题】列表查询
+	Topics []*GetAllTopicAndCategoryAndTopicNameTopicsTopic `json:"topics"`
+	// 【地区】地区列表查询
+	Areas []*GetAllTopicAndCategoryAndTopicNameAreasArea `json:"areas"`
+}
+
+// GetTopicCategories returns GetAllTopicAndCategoryAndTopicNameResponse.TopicCategories, and is useful for accessing the field via an interface.
+func (v *GetAllTopicAndCategoryAndTopicNameResponse) GetTopicCategories() []*GetAllTopicAndCategoryAndTopicNameTopicCategoriesTopicCategory {
+	return v.TopicCategories
+}
+
+// GetTopics returns GetAllTopicAndCategoryAndTopicNameResponse.Topics, and is useful for accessing the field via an interface.
+func (v *GetAllTopicAndCategoryAndTopicNameResponse) GetTopics() []*GetAllTopicAndCategoryAndTopicNameTopicsTopic {
+	return v.Topics
+}
+
+// GetAreas returns GetAllTopicAndCategoryAndTopicNameResponse.Areas, and is useful for accessing the field via an interface.
+func (v *GetAllTopicAndCategoryAndTopicNameResponse) GetAreas() []*GetAllTopicAndCategoryAndTopicNameAreasArea {
+	return v.Areas
+}
+
+// GetAllTopicAndCategoryAndTopicNameTopicCategoriesTopicCategory includes the requested fields of the GraphQL type TopicCategory.
+type GetAllTopicAndCategoryAndTopicNameTopicCategoriesTopicCategory struct {
+	// 分类名称
+	Name string `json:"name"`
+	// 类别描述
+	Desc string `json:"desc"`
+}
+
+// GetName returns GetAllTopicAndCategoryAndTopicNameTopicCategoriesTopicCategory.Name, and is useful for accessing the field via an interface.
+func (v *GetAllTopicAndCategoryAndTopicNameTopicCategoriesTopicCategory) GetName() string {
+	return v.Name
+}
+
+// GetDesc returns GetAllTopicAndCategoryAndTopicNameTopicCategoriesTopicCategory.Desc, and is useful for accessing the field via an interface.
+func (v *GetAllTopicAndCategoryAndTopicNameTopicCategoriesTopicCategory) GetDesc() string {
+	return v.Desc
+}
+
+// GetAllTopicAndCategoryAndTopicNameTopicsTopic includes the requested fields of the GraphQL type Topic.
+type GetAllTopicAndCategoryAndTopicNameTopicsTopic struct {
+	// 话题ID
+	Id string `json:"id"`
+	// 名称
+	Name string `json:"name"`
+}
+
+// GetId returns GetAllTopicAndCategoryAndTopicNameTopicsTopic.Id, and is useful for accessing the field via an interface.
+func (v *GetAllTopicAndCategoryAndTopicNameTopicsTopic) GetId() string { return v.Id }
+
+// GetName returns GetAllTopicAndCategoryAndTopicNameTopicsTopic.Name, and is useful for accessing the field via an interface.
+func (v *GetAllTopicAndCategoryAndTopicNameTopicsTopic) GetName() string { return v.Name }
+
 // GetAreaArea includes the requested fields of the GraphQL type Area.
 type GetAreaArea struct {
 	// 地区代码
@@ -608,15 +679,15 @@ func (v *GetTopicsResponse) GetTopics() []*GetTopicsTopicsTopic { return v.Topic
 type GetTopicsTopicsTopic struct {
 	// 话题ID
 	Id string `json:"id"`
-	// 名称
-	Name string `json:"name"`
+	// 类别
+	Category string `json:"category"`
 }
 
 // GetId returns GetTopicsTopicsTopic.Id, and is useful for accessing the field via an interface.
 func (v *GetTopicsTopicsTopic) GetId() string { return v.Id }
 
-// GetName returns GetTopicsTopicsTopic.Name, and is useful for accessing the field via an interface.
-func (v *GetTopicsTopicsTopic) GetName() string { return v.Name }
+// GetCategory returns GetTopicsTopicsTopic.Category, and is useful for accessing the field via an interface.
+func (v *GetTopicsTopicsTopic) GetCategory() string { return v.Category }
 
 // GetUserByIDsGetUserByIdsUser includes the requested fields of the GraphQL type User.
 type GetUserByIDsGetUserByIdsUser struct {
@@ -800,6 +871,16 @@ func (v *__CreateMatchingInvitationCheckInput) GetCityId() string { return v.Cit
 // GetIds returns __CreateMatchingInvitationCheckInput.Ids, and is useful for accessing the field via an interface.
 func (v *__CreateMatchingInvitationCheckInput) GetIds() []string { return v.Ids }
 
+// __GetAllTopicAndCategoryAndTopicNameInput is used internally by genqlient
+type __GetAllTopicAndCategoryAndTopicNameInput struct {
+	Paginator *GraphQLPaginator `json:"paginator,omitempty"`
+}
+
+// GetPaginator returns __GetAllTopicAndCategoryAndTopicNameInput.Paginator, and is useful for accessing the field via an interface.
+func (v *__GetAllTopicAndCategoryAndTopicNameInput) GetPaginator() *GraphQLPaginator {
+	return v.Paginator
+}
+
 // __GetAreaInput is used internally by genqlient
 type __GetAreaInput struct {
 	Id string `json:"id"`
@@ -855,6 +936,14 @@ type __GetTopicNameInput struct {
 
 // GetId returns __GetTopicNameInput.Id, and is useful for accessing the field via an interface.
 func (v *__GetTopicNameInput) GetId() string { return v.Id }
+
+// __GetTopicsInput is used internally by genqlient
+type __GetTopicsInput struct {
+	Paginator *GraphQLPaginator `json:"paginator,omitempty"`
+}
+
+// GetPaginator returns __GetTopicsInput.Paginator, and is useful for accessing the field via an interface.
+func (v *__GetTopicsInput) GetPaginator() *GraphQLPaginator { return v.Paginator }
 
 // __GetUserByIDsInput is used internally by genqlient
 type __GetUserByIDsInput struct {
@@ -967,6 +1056,50 @@ func CreateMatchingInvitationCheck(
 	var err error
 
 	var data CreateMatchingInvitationCheckResponse
+	resp := &graphql.Response{Data: &data}
+
+	err = client.MakeRequest(
+		ctx,
+		req,
+		resp,
+	)
+
+	return &data, err
+}
+
+// The query or mutation executed by GetAllTopicAndCategoryAndTopicName.
+const GetAllTopicAndCategoryAndTopicName_Operation = `
+query GetAllTopicAndCategoryAndTopicName ($paginator: GraphQLPaginator!) {
+	topicCategories(paginator: $paginator) {
+		name
+		desc
+	}
+	topics(paginator: $paginator) {
+		id
+		name
+	}
+	areas(filter: {depth:1}) {
+		code
+		name
+	}
+}
+`
+
+func GetAllTopicAndCategoryAndTopicName(
+	ctx context.Context,
+	client graphql.Client,
+	paginator *GraphQLPaginator,
+) (*GetAllTopicAndCategoryAndTopicNameResponse, error) {
+	req := &graphql.Request{
+		OpName: "GetAllTopicAndCategoryAndTopicName",
+		Query:  GetAllTopicAndCategoryAndTopicName_Operation,
+		Variables: &__GetAllTopicAndCategoryAndTopicNameInput{
+			Paginator: paginator,
+		},
+	}
+	var err error
+
+	var data GetAllTopicAndCategoryAndTopicNameResponse
 	resp := &graphql.Response{Data: &data}
 
 	err = client.MakeRequest(
@@ -1277,10 +1410,10 @@ func GetTopicName(
 
 // The query or mutation executed by GetTopics.
 const GetTopics_Operation = `
-query GetTopics {
-	topics {
+query GetTopics ($paginator: GraphQLPaginator!) {
+	topics(paginator: $paginator) {
 		id
-		name
+		category
 	}
 }
 `
@@ -1288,10 +1421,14 @@ query GetTopics {
 func GetTopics(
 	ctx context.Context,
 	client graphql.Client,
+	paginator *GraphQLPaginator,
 ) (*GetTopicsResponse, error) {
 	req := &graphql.Request{
 		OpName: "GetTopics",
 		Query:  GetTopics_Operation,
+		Variables: &__GetTopicsInput{
+			Paginator: paginator,
+		},
 	}
 	var err error
 

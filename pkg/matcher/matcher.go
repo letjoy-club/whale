@@ -11,12 +11,13 @@ import (
 	"whale/pkg/modelutil"
 
 	"github.com/letjoy-club/mida-tool/dbutil"
+	"github.com/letjoy-club/mida-tool/keyer"
 	"github.com/letjoy-club/mida-tool/logger"
 	"github.com/letjoy-club/mida-tool/midacode"
 	"github.com/letjoy-club/mida-tool/midacontext"
+	"github.com/letjoy-club/mida-tool/redisutil"
 	"github.com/samber/lo"
 	"go.uber.org/zap"
-	"gorm.io/gorm"
 )
 
 type Matcher struct {
@@ -39,7 +40,9 @@ func (m *Matcher) Match(ctx context.Context) error {
 		}
 		if len(matchings) > 0 {
 			rx, err := Matching.WithContext(ctx).
-				Where(Matching.ID.In(lo.Map(matchings, func(m *models.Matching, i int) string { return m.ID })...)).
+				Where(
+					Matching.ID.In(lo.Map(matchings, func(m *models.Matching, i int) string { return m.ID })...),
+				).
 				UpdateSimple(Matching.State.Value(string(models.MatchingStateTimeout)))
 			if err != nil {
 				return err
@@ -50,7 +53,9 @@ func (m *Matcher) Match(ctx context.Context) error {
 		}
 	}
 
-	matchings, err := Matching.WithContext(ctx).Where(Matching.State.Eq(string(models.MatchingStateMatching))).Find()
+	matchings, err := Matching.WithContext(ctx).Where(
+		Matching.State.Eq(string(models.MatchingStateMatching)),
+	).Find()
 	if err != nil {
 		return err
 	}
@@ -252,8 +257,14 @@ func MatchingInArea(ctx context.Context, matchings []*models.Matching) error {
 }
 
 func NewMatchingResult(ctx context.Context, matchings []*models.Matching, score int) (*models.MatchingResult, error) {
+	// 给两个用户加锁
+	release, err := redisutil.LockAll(ctx, keyer.UserMatching(matchings[0].UserID), keyer.UserMatching(matchings[1].UserID))
+	if err != nil {
+		return nil, err
+	}
+	defer release(ctx)
+
 	db := dbutil.GetDB(ctx)
-	MatchingResult := dbquery.Use(db).MatchingResult
 
 	userIDs := make([]string, len(matchings))
 	states := make([]string, len(matchings))
@@ -274,13 +285,15 @@ func NewMatchingResult(ctx context.Context, matchings []*models.Matching, score 
 		TopicID:        matchings[0].TopicID,
 	}
 
-	err := db.Transaction(func(tx *gorm.DB) error {
+	err = dbquery.Use(db).Transaction(func(tx *dbquery.Query) error {
+		MatchingResult := tx.MatchingResult
+		Matching := tx.Matching
 		err := MatchingResult.WithContext(ctx).Create(matchingResult)
 		if err != nil {
 			return err
 		}
-		Matching := dbquery.Use(tx).Matching
 		matched := time.Now()
+		// 更新 matching 的状态
 		rx, err := Matching.
 			WithContext(ctx).
 			Where(Matching.ID.In(matchingIDs...), Matching.State.Eq(models.MatchingStateMatching.String())).
@@ -296,6 +309,7 @@ func NewMatchingResult(ctx context.Context, matchings []*models.Matching, score 
 		if rx.RowsAffected != int64(len(matchingIDs)) {
 			return midacode.ErrStateMayHaveChanged
 		}
+
 		return nil
 	})
 

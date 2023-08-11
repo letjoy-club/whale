@@ -15,7 +15,11 @@ type Matching struct {
 	AreaIDs []string `gorm:"serializer:json;type:json"`
 	CityID  string   `gorm:"index;type:varchar(64)"`
 
+	// 期望的性别
 	Gender string `gorm:"type:varchar(4)"`
+
+	// 创建者的性别
+	MyGender string `gorm:"type:varchar(4)"`
 
 	RejectedUserIDs []string `gorm:"serializer:json;type:json"`
 	InChatGroup     bool
@@ -29,6 +33,11 @@ type Matching struct {
 	// 优先时间段
 	PreferredPeriods []string           `gorm:"serializer:json;type:json"`
 	Properties       []MatchingProperty `gorm:"serializer:json;type:json"`
+
+	// 真正开始匹配的时间
+	StartMatchingAt *time.Time
+
+	Discoverable bool
 
 	FinishedAt *time.Time
 	MatchedAt  *time.Time
@@ -136,7 +145,8 @@ func (Matching) IsEntity() {}
 type MatchingResult struct {
 	ID          int      `gorm:"primaryKey"`
 	MatchingIDs []string `gorm:"serializer:json;type:json"`
-	TopicID     string   `gorm:"index"`
+	MotionIDs   []string `gorm:"serializer:json;type:json"`
+	TopicID     string   `gorm:"index;type:varchar(32)"`
 	UserIDs     []string `gorm:"serializer:json;type:json"`
 
 	ConfirmStates  []string `gorm:"serializer:json;type:json"`

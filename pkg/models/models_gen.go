@@ -15,6 +15,13 @@ type Area struct {
 
 func (Area) IsEntity() {}
 
+type AvailableMotionOffer struct {
+	// 可发起的意向
+	Motion *Motion `json:"motion,omitempty"`
+	// 下次获得一次配额的时间
+	NextQuotaTime *time.Time `json:"nextQuotaTime,omitempty"`
+}
+
 type CalendarEvent struct {
 	TopicID            string     `json:"topicId"`
 	MatchedAt          time.Time  `json:"matchedAt"`
@@ -30,6 +37,12 @@ func (ChatGroup) IsEntity() {}
 
 type CitiesTopicsFilter struct {
 	CityID *string `json:"cityId,omitempty"`
+}
+
+type CityToTopicMatching struct {
+	CityID string             `json:"cityId"`
+	Topics []*TopicToMatching `json:"topics"`
+	City   *Area              `json:"city"`
 }
 
 type CreateCityTopicParam struct {
@@ -69,8 +82,37 @@ type CreateMatchingParamV2 struct {
 	Deadline   *time.Time               `json:"deadline,omitempty"`
 }
 
+type CreateMotionParam struct {
+	TopicID string   `json:"topicId"`
+	AreaIds []string `json:"areaIds"`
+	CityID  string   `json:"cityId"`
+	Gender  Gender   `json:"gender"`
+	// 特定日期区间，格式 yyyyMMdd，一定要包含两个字符串，字符串区间为闭区间
+	DayRange []string `json:"dayRange"`
+	// 特定时间区间，如果不限，则长度为0
+	PreferredPeriods []DatePeriod `json:"preferredPeriods"`
+	// 匹配属性
+	Properties []*MotionPropertyParam `json:"properties"`
+	Remark     *string                `json:"remark,omitempty"`
+	Deadline   *time.Time             `json:"deadline,omitempty"`
+}
+
 type CreateUserJoinTopicParam struct {
 	MatchingID string `json:"matchingId"`
+}
+
+type DiscoverMotionResult struct {
+	Motions   []*Motion `json:"motions"`
+	NextToken string    `json:"nextToken"`
+}
+
+type DiscoverTopicCategoryMotionFilter struct {
+	// 城市 ID，可以不填，不填则为全国
+	CityID *string `json:"cityId,omitempty"`
+	// 发起人性别，可以不填，不填则为不限
+	Gender *Gender `json:"gender,omitempty"`
+	// 话题 id，不填则为不限
+	TopicIds []string `json:"topicIds,omitempty"`
 }
 
 type HotTopicsFilter struct {
@@ -106,6 +148,18 @@ type MatchingResultFilter struct {
 	After  *time.Time `json:"after,omitempty"`
 }
 
+type MotionFilter struct {
+	ID     *string `json:"id,omitempty"`
+	UserID *string `json:"userId,omitempty"`
+	CityID *string `json:"cityId,omitempty"`
+	Gender *Gender `json:"gender,omitempty"`
+}
+
+type MotionPropertyParam struct {
+	ID     string   `json:"id"`
+	Values []string `json:"values"`
+}
+
 type RecentMatchingFilter struct {
 	CityID *string `json:"cityId,omitempty"`
 }
@@ -123,6 +177,12 @@ type SimpleAvatarUser struct {
 
 type Summary struct {
 	Count int `json:"count"`
+}
+
+type ThumbUpMotion struct {
+	UserID    string    `json:"userId"`
+	MotionID  string    `json:"motionId"`
+	CreatedAt time.Time `json:"createdAt"`
 }
 
 type Topic struct {
@@ -143,6 +203,12 @@ type TopicOptionConfig struct {
 
 func (TopicOptionConfig) IsEntity() {}
 
+type TopicToMatching struct {
+	TopicID     string   `json:"topicId"`
+	MatchingIds []string `json:"matchingIds"`
+	Topic       *Topic   `json:"topic"`
+}
+
 type UpdateCityTopicParam struct {
 	TopicIds []string `json:"topicIds"`
 }
@@ -158,6 +224,13 @@ type UpdateHotTopicParam struct {
 	TopicMetrics []*UpdateHotTopicMetricsParam `json:"topicMetrics"`
 }
 
+type UpdateMatchingDurationConstraintParam struct {
+	Total     *int       `json:"total,omitempty"`
+	Remain    *int       `json:"remain,omitempty"`
+	StartDate *time.Time `json:"startDate,omitempty"`
+	StopDate  *time.Time `json:"stopDate,omitempty"`
+}
+
 type UpdateMatchingInvitationParam struct {
 	CreatedAt *time.Time `json:"createdAt,omitempty"`
 	TopicID   *string    `json:"topicId,omitempty"`
@@ -167,18 +240,33 @@ type UpdateMatchingInvitationParam struct {
 }
 
 type UpdateMatchingParam struct {
-	TopicID   *string    `json:"topicId,omitempty"`
-	AreaIds   []string   `json:"areaIds,omitempty"`
-	CityID    *string    `json:"cityId,omitempty"`
-	Gender    *Gender    `json:"gender,omitempty"`
-	Remark    *string    `json:"remark,omitempty"`
-	CreatedAt *time.Time `json:"createdAt,omitempty"`
-	Deadline  *time.Time `json:"deadline,omitempty"`
+	TopicID         *string    `json:"topicId,omitempty"`
+	AreaIds         []string   `json:"areaIds,omitempty"`
+	CityID          *string    `json:"cityId,omitempty"`
+	Gender          *Gender    `json:"gender,omitempty"`
+	Remark          *string    `json:"remark,omitempty"`
+	StartMatchingAt *time.Time `json:"startMatchingAt,omitempty"`
+	CreatedAt       *time.Time `json:"createdAt,omitempty"`
+	Deadline        *time.Time `json:"deadline,omitempty"`
 }
 
 type UpdateMatchingQuotaParam struct {
 	Total  *int `json:"total,omitempty"`
 	Remain *int `json:"remain,omitempty"`
+}
+
+type UpdateMotionParam struct {
+	AreaIds []string `json:"areaIds,omitempty"`
+	CityID  *string  `json:"cityId,omitempty"`
+	Gender  *Gender  `json:"gender,omitempty"`
+	// 特定日期区间，格式 yyyyMMdd，一定要包含两个字符串，字符串区间为闭区间
+	DayRange []string `json:"dayRange,omitempty"`
+	// 特定时间区间，如果不限，则长度为0
+	PreferredPeriods []DatePeriod `json:"preferredPeriods,omitempty"`
+	// 匹配属性
+	Properties []*MotionPropertyParam `json:"properties,omitempty"`
+	Remark     *string                `json:"remark,omitempty"`
+	Deadline   *time.Time             `json:"deadline,omitempty"`
 }
 
 type UpdateRecentMatchingParam struct {
@@ -222,6 +310,15 @@ type UserMatchingInTheDayParam struct {
 	// 日期格式 20060102
 	DayStr      string  `json:"dayStr"`
 	OtherUserID *string `json:"otherUserId,omitempty"`
+}
+
+type UserUpdateMotionParam struct {
+	AreaIds          []string               `json:"areaIds,omitempty"`
+	Gender           *string                `json:"gender,omitempty"`
+	DayRange         []string               `json:"dayRange,omitempty"`
+	PreferredPeriods []DatePeriod           `json:"preferredPeriods,omitempty"`
+	Properties       []*MotionPropertyParam `json:"properties,omitempty"`
+	Remark           *string                `json:"remark,omitempty"`
 }
 
 type ChatGroupState string
@@ -527,6 +624,61 @@ func (e MatchingState) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
+type MotionOfferState string
+
+const (
+	// 未处理
+	MotionOfferStatePending MotionOfferState = "Pending"
+	// 被接受
+	MotionOfferStateAccepted MotionOfferState = "Accepted"
+	// 被拒绝
+	MotionOfferStateRejected MotionOfferState = "Rejected"
+	// 意向已取消
+	MotionOfferStateCanceled MotionOfferState = "Canceled"
+	// 处理超时
+	MotionOfferStateTimeout MotionOfferState = "Timeout"
+	// 结束
+	MotionOfferStateFinished MotionOfferState = "Finished"
+)
+
+var AllMotionOfferState = []MotionOfferState{
+	MotionOfferStatePending,
+	MotionOfferStateAccepted,
+	MotionOfferStateRejected,
+	MotionOfferStateCanceled,
+	MotionOfferStateTimeout,
+	MotionOfferStateFinished,
+}
+
+func (e MotionOfferState) IsValid() bool {
+	switch e {
+	case MotionOfferStatePending, MotionOfferStateAccepted, MotionOfferStateRejected, MotionOfferStateCanceled, MotionOfferStateTimeout, MotionOfferStateFinished:
+		return true
+	}
+	return false
+}
+
+func (e MotionOfferState) String() string {
+	return string(e)
+}
+
+func (e *MotionOfferState) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = MotionOfferState(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid MotionOfferState", str)
+	}
+	return nil
+}
+
+func (e MotionOfferState) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
 type ResultCreatedBy string
 
 const (
@@ -534,16 +686,19 @@ const (
 	ResultCreatedByMatching ResultCreatedBy = "Matching"
 	// 由邀请创建的结果
 	ResultCreatedByInvitation ResultCreatedBy = "Invitation"
+	// 由匹配邀约创建的结果
+	ResultCreatedByOffer ResultCreatedBy = "Offer"
 )
 
 var AllResultCreatedBy = []ResultCreatedBy{
 	ResultCreatedByMatching,
 	ResultCreatedByInvitation,
+	ResultCreatedByOffer,
 }
 
 func (e ResultCreatedBy) IsValid() bool {
 	switch e {
-	case ResultCreatedByMatching, ResultCreatedByInvitation:
+	case ResultCreatedByMatching, ResultCreatedByInvitation, ResultCreatedByOffer:
 		return true
 	}
 	return false

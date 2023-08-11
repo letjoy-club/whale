@@ -1,0 +1,40 @@
+type UserLikeMotion {
+  toMotionId: String!
+  toUserId: String!
+
+  userId: String!
+  createdAt: Time!
+
+  # query
+  motion: DiscoverMotion!
+}
+
+type ThumbUpMotion {
+  userId: String!
+  motionId: String!
+  createdAt: Time!
+}
+
+extend type Query {
+  "【广场】我喜欢的动议"
+  likedMotions(userId: String, paginator: GraphQLPaginator): [UserLikeMotion!]!
+  "【广场】我喜欢的动议数量"
+  likedMotionsCount(userId: String): Summary!
+
+  "【广场】点赞动议"
+  thumbupMotion(userId: String, motionId: String!): String
+  "【广场】取消点赞动议"
+  cancelThumbupMotion(userId: String, motionId: String!): String
+
+  "【广场】点赞的动议，管理端"
+  thumbUpMotions(userId: String, paginator: GraphQLPaginator): [ThumbUpMotion!]!
+  "【广场】点赞的动议数量，管理端"
+  thumbUpMotionsCount(userId: String): Summary!
+}
+
+extend type Mutation {
+  "【广场】喜欢匹配"
+  likeMotion(userId: String, motionId: String!): Int!
+  "【广场】取消喜欢匹配"
+  unlikeMotion(userId: String, motionId: String!): Int!
+}

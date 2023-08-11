@@ -1,0 +1,80 @@
+input CreateMotionParam {
+  topicId: String!
+
+  areaIds: [String!]!
+  cityId: String!
+  gender: Gender!
+
+  "特定日期区间，格式 yyyyMMdd，一定要包含两个字符串，字符串区间为闭区间"
+  dayRange: [String!]!
+
+  "特定时间区间，如果不限，则长度为0"
+  preferredPeriods: [DatePeriod!]!
+
+  "匹配属性"
+  properties: [MotionPropertyParam!]!
+
+  remark: String
+
+  deadline: Time
+}
+
+input MotionPropertyParam {
+  id: String!
+  values: [String!]!
+}
+
+input UpdateMotionParam {
+  areaIds: [String!]
+  cityId: String
+  gender: Gender
+  "特定日期区间，格式 yyyyMMdd，一定要包含两个字符串，字符串区间为闭区间"
+  dayRange: [String!]
+
+  "特定时间区间，如果不限，则长度为0"
+  preferredPeriods: [DatePeriod!]
+  "匹配属性"
+  properties: [MotionPropertyParam!]
+
+  remark: String
+
+  deadline: Time
+}
+
+input UserUpdateMotionParam {
+  areaIds: [String!]
+  gender: String
+  dayRange: [String!]
+  preferredPeriods: [DatePeriod!]
+  properties: [MotionPropertyParam!]
+  remark: String
+}
+
+input MotionFilter {
+  id: String
+  userId: String
+  cityId: String
+  gender: Gender
+}
+
+extend type Query {
+  motion(id: String!): Motion!
+  userMotions(userId: String, paginator: GraphQLPaginator): [Motion!]!
+  userMotionsCount(userId: String): Summary!
+  "【匹配系统】获取用户活跃的动议"
+  activeMotions(userId: String): [Motion!]!
+
+  motions(filter: MotionFilter, paginator: GraphQLPaginator): [Motion!]!
+  motionsCount(filter: MotionFilter): Summary!
+}
+
+extend type Mutation {
+  "【匹配系统】创建动议"
+  createMotion(userId: String, param: CreateMotionParam!): Motion!
+  "【匹配系统】更新动议，管理端"
+  updateMotion(id: String!, param: UpdateMotionParam!): Motion!
+  "【匹配系统】用户更新动议"
+  userUpdateMotion(myMotionId: String!, param: UserUpdateMotionParam!): Motion!
+  "【匹配系统】关闭动议"
+  closeMotion(id: String!): String
+}

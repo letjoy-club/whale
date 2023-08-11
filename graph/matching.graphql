@@ -51,8 +51,9 @@ input UpdateMatchingParam {
   cityId: String
   gender: Gender
   remark: String
-  createdAt: Time
 
+  startMatchingAt: Time
+  createdAt: Time
   deadline: Time
 }
 
@@ -140,11 +141,52 @@ extend type Query {
 
   "【匹配系统】使用 id 获取最近的匹配"
   recentMatching(id: String!): RecentMatching!
+
+  "【匹配系统】获取匹配分布，管理员接口"
+  topicDistribution: [TopicToMatching!]!
+
+  "【匹配系统】获取城市匹配分布，管理员接口"
+  cityDistribution: [CityToTopicMatching!]!
+
+  "【匹配系统】时间段匹配配额限制，管理员接口"
+  matchingDurationConstraints(userId: String!): MatchingDurationConstraint!
+}
+
+type MatchingDurationConstraint {
+  startDate: Time!
+  stopDate: Time!
+  total: Int!
+  remain: Int!
+  updatedAt: Time!
+}
+
+type CityToTopicMatching {
+  cityId: String!
+  topics: [TopicToMatching!]!
+
+  # query
+  city: Area!
+}
+
+type TopicToMatching {
+  topicId: String!
+  matchingIds: [String!]!
+
+  # query
+  topic: Topic!
+}
+
+input UpdateMatchingDurationConstraintParam {
+  total: Int
+  remain: Int
+  startDate: Time
+  stopDate: Time
 }
 
 extend type Mutation {
   "【匹配系统】创建匹配"
-  createMatching(userId: String, param: CreateMatchingParam!): Matching! @deprecated
+  createMatching(userId: String, param: CreateMatchingParam!): Matching!
+    @deprecated
 
   "【匹配系统】创建匹配V2"
   createMatchingV2(userId: String, param: CreateMatchingParamV2!): Matching!
@@ -156,6 +198,12 @@ extend type Mutation {
   updateMatchingQuota(
     userId: String!
     param: UpdateMatchingQuotaParam!
+  ): String!
+
+  "【匹配系统】更新一个时间段中的匹配配额，管理端使用"
+  updateMatchingDurationConstraint(
+    userId: String!
+    param: UpdateMatchingDurationConstraintParam!
   ): String!
 
   "【匹配系统】确认/拒绝匹配结果"

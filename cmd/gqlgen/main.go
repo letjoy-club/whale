@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"go/types"
 	"os"
+	"strings"
 
 	"github.com/vektah/gqlparser/v2/ast"
 
@@ -12,17 +12,12 @@ import (
 	"github.com/99designs/gqlgen/plugin/modelgen"
 )
 
-// Defining mutation function
-func constraintFieldHook(td *ast.Definition, fd *ast.FieldDefinition, f *modelgen.Field) (*modelgen.Field, error) {
-	if f, err := modelgen.DefaultFieldMutateHook(td, fd, f); err != nil {
-		return f, err
+func DirectiveStr(fd ast.DirectiveList) string {
+	names := []string{}
+	for _, d := range fd {
+		names = append(names, d.Name)
 	}
-
-	c := fd.Directives.ForName("list")
-	if c != nil {
-		f.Type = types.NewArray(f.Type, 0)
-	}
-	return f, nil
+	return "[" + strings.Join(names, ",") + "]"
 }
 
 func main() {
@@ -34,7 +29,9 @@ func main() {
 
 	// Attaching the mutation function onto modelgen plugin
 	p := modelgen.Plugin{
-		FieldHook: constraintFieldHook,
+		MutateHook: func(b *modelgen.ModelBuild) *modelgen.ModelBuild {
+			return b
+		},
 	}
 
 	err = api.Generate(cfg, api.ReplacePlugin(&p))

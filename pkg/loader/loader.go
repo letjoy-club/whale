@@ -13,15 +13,25 @@ import (
 )
 
 type Loader struct {
+	AllMatching *AllMatchingLoader
+	AllMotion   *AllMotionLoader
+
 	Matching                   *dataloader.Loader[string, *models.Matching]
 	MatchingInvitation         *dataloader.Loader[string, *models.MatchingInvitation]
 	MatchingQuota              *dataloader.Loader[string, *models.MatchingQuota]
 	MatchingResult             *dataloader.Loader[int, *models.MatchingResult]
 	MatchingReviewed           *dataloader.Loader[string, MatchingReviewed]
 	MatchingDurationConstraint *dataloader.Loader[string, *models.MatchingDurationConstraint]
+	MatchingOfferSummary       *dataloader.Loader[string, *models.MatchingOfferSummary]
 
 	UserJoinTopic  *dataloader.Loader[int, *models.UserJoinTopic]
 	RecentMatching *dataloader.Loader[string, *models.RecentMatching]
+
+	Motion               *dataloader.Loader[string, *models.Motion]
+	UserLikeMotion       *dataloader.Loader[string, *UserLikeMotion]
+	UserSubmitMotion     *dataloader.Loader[string, *UserSubmitMotion]
+	InMotionOfferRecord  *dataloader.Loader[string, *MotionOffers]
+	OutMotionOfferRecord *dataloader.Loader[string, *MotionOffers]
 
 	// 从 recentMatching 中查询最近的 city, topic 对应的 matching id 信息
 	CityTopicMatchings *dataloader.Loader[CityTopicKey, CityTopicMatchings]
@@ -32,16 +42,21 @@ type Loader struct {
 
 	UserProfile        *dataloader.Loader[string, UserProfile]
 	UserAvatarNickname *dataloader.Loader[string, UserAvatarNickname]
+
 	// 查询城市的热门话题
 	HotTopics *dataloader.Loader[string, *models.HotTopicsInArea]
 
 	TopicOptionConfig *TopicOptionConfigLoader
+	TopicCategory     *TopicCategoryLoader
 	// 配置
 	WhaleConfig *dataloader.Loader[string, *models.WhaleConfig]
 }
 
 func NewLoader(db *gorm.DB) *Loader {
 	return &Loader{
+		AllMatching: NewAllMatchingLoader(db),
+		AllMotion:   NewAllMotionLoader(db),
+
 		CityTopicMatchings:  NewCityTopicMatchingLoader(db),
 		CityTopicRequestNum: NewCityTopicRequestNumLoader(db),
 		CityTopics:          NewCityTopicLoader(db),
@@ -54,6 +69,12 @@ func NewLoader(db *gorm.DB) *Loader {
 		MatchingReviewed:           NewMatchingReviewedLoader(db),
 		MatchingDurationConstraint: NewMatchingDurationConstraintLoader(db),
 
+		InMotionOfferRecord:  NewInMotionOfferLoader(db),
+		OutMotionOfferRecord: NewOutMotionOfferLoader(db),
+		Motion:               NewMotionLoader(db),
+		UserLikeMotion:       NewUserLikeMotionLoader(db),
+		UserSubmitMotion:     NewUserSubmitMotionLoader(db),
+
 		UserProfile:        NewUserProfileLoader(db),
 		UserAvatarNickname: NewUserAvatarNicknameLoader(db),
 		UserJoinTopic:      NewUserJoinTopicLoader(db),
@@ -61,6 +82,7 @@ func NewLoader(db *gorm.DB) *Loader {
 		RecentMatching: NewRecentMatchingLoader(db),
 
 		TopicOptionConfig: NewTopicOptionConfigLoader(),
+		TopicCategory:     NewTopicCategoryLoader(),
 
 		WhaleConfig: NewWhaleConfigLoader(db),
 	}

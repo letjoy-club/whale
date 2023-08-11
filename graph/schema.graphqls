@@ -1,5 +1,6 @@
 scalar Time
 scalar AreaCode
+scalar Map
 
 directive @adminOnly on FIELD_DEFINITION
 
@@ -81,6 +82,8 @@ enum ResultCreatedBy {
   Matching
   "由邀请创建的结果"
   Invitation
+  "由匹配邀约创建的结果"
+  Offer
 }
 
 enum DatePeriod {
@@ -199,6 +202,7 @@ type MatchingResult {
   id: Int! @adminOnly
 
   matchingIds: [String!]!
+  motionIds: [String!]!
   topicId: String!
   userIds: [String!]!
   confirmStates: [MatchingResultConfirmState!]!
@@ -219,6 +223,7 @@ type MatchingResult {
 
   # query
   users: [User!]!
+  discoverMotion: [DiscoverMotion!]!
   matchingPreviews: [MatchingPreview!]!
   topic: Topic!
   chatGroup: ChatGroup
@@ -364,6 +369,7 @@ input MatchingResultFilter {
   before: Time
   after: Time
 }
+
 
 type Query {
   "【匹配系统】内部专有"
