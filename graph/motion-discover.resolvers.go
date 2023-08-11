@@ -341,6 +341,25 @@ func (r *queryResolver) InMotionOffers(ctx context.Context, motionID string) ([]
 	return offers.Offers, nil
 }
 
+// GetMotionOffer is the resolver for the getMotionOffer field.
+func (r *queryResolver) GetMotionOffer(ctx context.Context, motionID string, toMotionID string) (*models.MotionOfferRecord, error) {
+	token := midacontext.GetClientToken(ctx)
+	if !token.IsUser() && !token.IsAdmin() {
+		return nil, midacode.ErrNotPermitted
+	}
+	uid := token.UserID()
+	db := dbutil.GetDB(ctx)
+	MotionOfferRecord := dbquery.Use(db).MotionOfferRecord
+	record, err := MotionOfferRecord.WithContext(ctx).Where(MotionOfferRecord.MotionID.Eq(motionID)).Where(MotionOfferRecord.ToMotionID.Eq(toMotionID)).Take()
+	if err != nil {
+		return nil, midacode.ItemMayNotFound(err)
+	}
+	if token.IsUser() && uid != record.UserID && uid != record.ToUserID {
+		return nil, midacode.ErrNotPermitted
+	}
+	return record, nil
+}
+
 // DiscoverMotion returns DiscoverMotionResolver implementation.
 func (r *Resolver) DiscoverMotion() DiscoverMotionResolver { return &discoverMotionResolver{r} }
 

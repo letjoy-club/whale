@@ -139,6 +139,9 @@ extend type Query {
 
   "【广场】我发出的活动意向"
   inMotionOffers(motionId: String!): [MotionOfferRecord!]!
+
+  "【广场】查询活动信息"
+  getMotionOffer(motionId: String!, toMotionId: String!): MotionOfferRecord!
 }
 
 extend type Mutation {

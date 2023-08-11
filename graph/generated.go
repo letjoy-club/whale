@@ -379,6 +379,7 @@ type ComplexityRoot struct {
 		CityDistribution            func(childComplexity int) int
 		CityTopics                  func(childComplexity int, cityID string) int
 		DiscoverCategoryMotions     func(childComplexity int, userID *string, filter *models.DiscoverTopicCategoryMotionFilter, topicCategoryID string, nextToken *string) int
+		GetMotionOffer              func(childComplexity int, motionID string, toMotionID string) int
 		HotTopics                   func(childComplexity int, filter *models.HotTopicsFilter, paginator *graphqlutil.GraphQLPaginator) int
 		HotTopicsCount              func(childComplexity int, filter *models.HotTopicsFilter) int
 		HotTopicsInArea             func(childComplexity int, cityID *string) int
@@ -692,6 +693,7 @@ type QueryResolver interface {
 	DiscoverCategoryMotions(ctx context.Context, userID *string, filter *models.DiscoverTopicCategoryMotionFilter, topicCategoryID string, nextToken *string) (*models.DiscoverMotionResult, error)
 	OutMotionOffers(ctx context.Context, motionID string) ([]*models.MotionOfferRecord, error)
 	InMotionOffers(ctx context.Context, motionID string) ([]*models.MotionOfferRecord, error)
+	GetMotionOffer(ctx context.Context, motionID string, toMotionID string) (*models.MotionOfferRecord, error)
 	Motion(ctx context.Context, id string) (*models.Motion, error)
 	UserMotions(ctx context.Context, userID *string, paginator *graphqlutil.GraphQLPaginator) ([]*models.Motion, error)
 	UserMotionsCount(ctx context.Context, userID *string) (*models.Summary, error)
@@ -2624,6 +2626,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.DiscoverCategoryMotions(childComplexity, args["userId"].(*string), args["filter"].(*models.DiscoverTopicCategoryMotionFilter), args["topicCategoryId"].(string), args["nextToken"].(*string)), true
+
+	case "Query.getMotionOffer":
+		if e.complexity.Query.GetMotionOffer == nil {
+			break
+		}
+
+		args, err := ec.field_Query_getMotionOffer_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.GetMotionOffer(childComplexity, args["motionId"].(string), args["toMotionId"].(string)), true
 
 	case "Query.hotTopics":
 		if e.complexity.Query.HotTopics == nil {
@@ -4878,6 +4892,30 @@ func (ec *executionContext) field_Query_discoverCategoryMotions_args(ctx context
 		}
 	}
 	args["nextToken"] = arg3
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_getMotionOffer_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["motionId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("motionId"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["motionId"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["toMotionId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("toMotionId"))
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["toMotionId"] = arg1
 	return args, nil
 }
 
@@ -19880,6 +19918,81 @@ func (ec *executionContext) fieldContext_Query_inMotionOffers(ctx context.Contex
 	return fc, nil
 }
 
+func (ec *executionContext) _Query_getMotionOffer(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_getMotionOffer(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().GetMotionOffer(rctx, fc.Args["motionId"].(string), fc.Args["toMotionId"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*models.MotionOfferRecord)
+	fc.Result = res
+	return ec.marshalNMotionOfferRecord2ᚖwhaleᚋpkgᚋmodelsᚐMotionOfferRecord(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_getMotionOffer(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "toMotionId":
+				return ec.fieldContext_MotionOfferRecord_toMotionId(ctx, field)
+			case "motionId":
+				return ec.fieldContext_MotionOfferRecord_motionId(ctx, field)
+			case "state":
+				return ec.fieldContext_MotionOfferRecord_state(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_MotionOfferRecord_createdAt(ctx, field)
+			case "reactAt":
+				return ec.fieldContext_MotionOfferRecord_reactAt(ctx, field)
+			case "remark":
+				return ec.fieldContext_MotionOfferRecord_remark(ctx, field)
+			case "chatChance":
+				return ec.fieldContext_MotionOfferRecord_chatChance(ctx, field)
+			case "toMotion":
+				return ec.fieldContext_MotionOfferRecord_toMotion(ctx, field)
+			case "motion":
+				return ec.fieldContext_MotionOfferRecord_motion(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type MotionOfferRecord", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_getMotionOffer_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_motion(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_motion(ctx, field)
 	if err != nil {
@@ -32202,6 +32315,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "getMotionOffer":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_getMotionOffer(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "motion":
 			field := field
 
@@ -35327,6 +35462,10 @@ func (ec *executionContext) marshalNMotion2ᚖwhaleᚋpkgᚋmodelsᚐMotion(ctx 
 		return graphql.Null
 	}
 	return ec._Motion(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNMotionOfferRecord2whaleᚋpkgᚋmodelsᚐMotionOfferRecord(ctx context.Context, sel ast.SelectionSet, v models.MotionOfferRecord) graphql.Marshaler {
+	return ec._MotionOfferRecord(ctx, sel, &v)
 }
 
 func (ec *executionContext) marshalNMotionOfferRecord2ᚕᚖwhaleᚋpkgᚋmodelsᚐMotionOfferRecordᚄ(ctx context.Context, sel ast.SelectionSet, v []*models.MotionOfferRecord) graphql.Marshaler {

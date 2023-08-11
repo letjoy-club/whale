@@ -12,7 +12,7 @@ require (
 	github.com/goccy/go-yaml v1.11.0
 	github.com/golang-module/carbon v1.7.3
 	github.com/graph-gophers/dataloader/v7 v7.1.0
-	github.com/letjoy-club/mida-tool v0.3.18
+	github.com/letjoy-club/mida-tool v0.3.19
 	github.com/redis/go-redis/v9 v9.0.3
 	github.com/samber/lo v1.38.1
 	github.com/stretchr/testify v1.8.3
