@@ -2,7 +2,6 @@ package modelutil
 
 import (
 	"context"
-	"gorm.io/gorm"
 	"time"
 	"whale/pkg/dbquery"
 	"whale/pkg/gqlient/smew"
@@ -557,55 +556,29 @@ func ClearOutdateMotionOffer(ctx context.Context) error {
 	return err
 }
 
-func SendChatInOffer(ctx context.Context, senderId, motionID, toMotionID, sentence string) error {
-	if senderId == "" {
-		return whalecode.ErrUserIDCannotBeEmpty
-	}
-
+func SendChatInOffer(ctx context.Context, myUserID, myMotionID, targetMotionID, sentence string) error {
 	db := dbutil.GetDB(ctx)
 	MotionOfferRecord := dbquery.Use(db).MotionOfferRecord
-	record, err := MotionOfferRecord.WithContext(ctx).Where(MotionOfferRecord.MotionID.Eq(motionID)).Where(MotionOfferRecord.ToMotionID.Eq(toMotionID)).Take()
+	record, err := MotionOfferRecord.WithContext(ctx).Where(MotionOfferRecord.MotionID.Eq(myMotionID)).Where(MotionOfferRecord.ToMotionID.Eq(targetMotionID)).Take()
 	if err != nil {
 		return midacode.ItemMayNotFound(err)
 	}
-	if record.State != string(models.MotionOfferStatePending) && record.State != string(models.MotionOfferStateAccepted) {
-		return whalecode.ErrOnlyChatWhenNotClosed
-	}
-
-	const fromUser = "fromUser"
-	const toUser = "toUser"
-	var role string
-	if senderId == record.UserID {
-		role = fromUser
-	} else if senderId == record.ToUserID {
-		role = toUser
-	}
-
-	if role == "" {
-		return midacode.ErrNotPermitted
-	}
-	if role == fromUser && record.ChatChance <= 0 {
+	if record.ChatChance <= 0 {
 		return whalecode.ErrChatChanceNotEnough
 	}
+	if record.State != string(models.MotionOfferStatePending) {
+		return whalecode.ErrOnlyChatWhenNotAccepted
+	}
+	if myUserID != "" {
+		if record.UserID != myUserID {
+			return midacode.ErrNotPermitted
+		}
+	}
 
-	if err := db.Transaction(func(tx *gorm.DB) error {
-		MotionOfferRecord := dbquery.Use(tx).MotionOfferRecord
-		if role == fromUser {
-			if _, err = MotionOfferRecord.WithContext(ctx).Where(MotionOfferRecord.ID.Eq(record.ID)).
-				UpdateSimple(MotionOfferRecord.ChatChance.Add(-1)); err != nil {
-				return err
-			}
-		} else if role == toUser {
-			if record.State == string(models.MotionOfferStatePending) {
-				// todo: 是否需要自动accept处理
-			}
-		}
-		if _, err = smew.SendTextMessage(ctx, midacontext.GetServices(ctx).Smew, record.ChatGroupID, record.UserID, sentence); err != nil {
-			return err
-		}
-		return nil
-	}); err != nil {
+	_, err = smew.SendTextMessage(ctx, midacontext.GetServices(ctx).Smew, record.ChatGroupID, record.UserID, sentence)
+	if err != nil {
 		return err
 	}
-	return nil
+	_, err = MotionOfferRecord.WithContext(ctx).Where(MotionOfferRecord.ID.Eq(record.ID)).UpdateSimple(MotionOfferRecord.ChatChance.Add(-1))
+	return err
 }
