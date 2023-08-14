@@ -582,3 +582,41 @@ func SendChatInOffer(ctx context.Context, myUserID, myMotionID, targetMotionID, 
 	_, err = MotionOfferRecord.WithContext(ctx).Where(MotionOfferRecord.ID.Eq(record.ID)).UpdateSimple(MotionOfferRecord.ChatChance.Add(-1))
 	return err
 }
+
+func FinishMotionOffer(ctx context.Context, myUserID, myMotionID, targetMotionID string) error {
+	db := dbutil.GetDB(ctx)
+	MotionOfferRecord := dbquery.Use(db).MotionOfferRecord
+	record, err := MotionOfferRecord.WithContext(ctx).Or(
+		MotionOfferRecord.MotionID.Eq(myMotionID), MotionOfferRecord.ToMotionID.Eq(targetMotionID),
+	).Or(
+		MotionOfferRecord.ToMotionID.Eq(myMotionID), MotionOfferRecord.MotionID.Eq(targetMotionID),
+	).Where(MotionOfferRecord.ToMotionID.Eq(targetMotionID)).Take()
+	if err != nil {
+		return midacode.ItemMayNotFound(err)
+	}
+	if record.State != string(models.MotionOfferStateAccepted) {
+		return whalecode.ErrMotionCanOnlyFinishedWhenAccepted
+	}
+	if myUserID != "" {
+		// 可以是被邀请方或者邀请方来结束邀约
+		if record.UserID != myUserID && record.ToUserID != myUserID {
+			return midacode.ErrNotPermitted
+		}
+	}
+
+	_, err = MotionOfferRecord.WithContext(ctx).Where(MotionOfferRecord.ID.Eq(record.ID)).UpdateSimple(MotionOfferRecord.State.Value(string(models.MotionOfferStateFinished)))
+	if err != nil {
+		return err
+	}
+
+	if myUserID == record.ToUserID {
+		// 如果是被邀请方来结束邀约
+		midacontext.GetLoader[loader.Loader](ctx).InMotionOfferRecord.Clear(ctx, record.ToMotionID)
+		midacontext.GetLoader[loader.Loader](ctx).OutMotionOfferRecord.Clear(ctx, record.MotionID)
+	} else {
+		// 如果是邀请方来结束邀约
+		midacontext.GetLoader[loader.Loader](ctx).OutMotionOfferRecord.Clear(ctx, record.MotionID)
+		midacontext.GetLoader[loader.Loader](ctx).InMotionOfferRecord.Clear(ctx, record.ToMotionID)
+	}
+	return nil
+}
