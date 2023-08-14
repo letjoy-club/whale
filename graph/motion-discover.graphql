@@ -161,5 +161,5 @@ extend type Mutation {
   rejectMotionOffer(myMotionId: String!, targetMotionId: String!): String
 
   "【广场】发送聊天消息"
-  sendChatInOffer(myMotionId: String!, targetMotionId: String!, sentence: String!): String
+  sendChatInOffer(motionId: String!, toMotionId: String!, sentence: String!, senderId: String): String
 }

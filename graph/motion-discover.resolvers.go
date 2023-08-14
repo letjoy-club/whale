@@ -239,12 +239,13 @@ func (r *mutationResolver) RejectMotionOffer(ctx context.Context, myMotionID str
 }
 
 // SendChatInOffer is the resolver for the sendChatInOffer field.
-func (r *mutationResolver) SendChatInOffer(ctx context.Context, myMotionID string, targetMotionID string, sentence string) (*string, error) {
+func (r *mutationResolver) SendChatInOffer(ctx context.Context, motionID string, toMotionID string, sentence string, senderID *string) (*string, error) {
 	token := midacontext.GetClientToken(ctx)
 	if !token.IsUser() && !token.IsAdmin() {
 		return nil, midacode.ErrNotPermitted
 	}
-	return nil, modelutil.SendChatInOffer(ctx, token.UserID(), myMotionID, targetMotionID, sentence)
+	senderId := graphqlutil.GetID(token, senderID)
+	return nil, modelutil.SendChatInOffer(ctx, senderId, motionID, toMotionID, sentence)
 }
 
 // DiscoverCategoryMotions is the resolver for the discoverCategoryMotions field.
