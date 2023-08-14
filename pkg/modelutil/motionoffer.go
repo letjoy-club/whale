@@ -2,6 +2,7 @@ package modelutil
 
 import (
 	"context"
+	"gorm.io/gorm"
 	"time"
 	"whale/pkg/dbquery"
 	"whale/pkg/gqlient/smew"
@@ -27,18 +28,18 @@ func CreateMotionOffer(ctx context.Context, myUserID, myMotionID, targetMotionID
 	myMotion := motions[0]
 	targetMotion := motions[1]
 
-	if myMotion.UserID == myUserID {
+	if myUserID != "" {
+		if myMotion.UserID != myUserID {
+			return midacode.ErrNotPermitted
+		}
+	}
+
+	if targetMotion.UserID == myUserID {
 		return whalecode.ErrCannotSendMatchingOfferToSelf
 	}
 
 	if myMotion.TopicID != targetMotion.TopicID {
 		return whalecode.ErrCannotSendMatchingOfferToDifferentTopic
-	}
-
-	if myUserID != "" {
-		if myMotion.UserID != myUserID {
-			return midacode.ErrNotPermitted
-		}
 	}
 
 	if !myMotion.Active || !myMotion.Discoverable {
@@ -165,8 +166,8 @@ func AcceptMotionOffer(ctx context.Context, myUserID, myMotionID, targetMotionID
 	err = dbquery.Use(db).Transaction(func(tx *dbquery.Query) error {
 		MotionOfferRecord := tx.MotionOfferRecord
 		record, err := MotionOfferRecord.WithContext(ctx).Where(
-			MotionOfferRecord.MotionID.Eq(myMotion.ID),
-			MotionOfferRecord.ToMotionID.Eq(targetMotion.ID),
+			MotionOfferRecord.MotionID.Eq(targetMotion.ID),
+			MotionOfferRecord.ToMotionID.Eq(myMotion.ID),
 		).Take()
 		if err != nil {
 			return err
@@ -177,8 +178,8 @@ func AcceptMotionOffer(ctx context.Context, myUserID, myMotionID, targetMotionID
 		}
 
 		rx, err := MotionOfferRecord.WithContext(ctx).Where(
-			MotionOfferRecord.MotionID.Eq(myMotion.ID),
-			MotionOfferRecord.ToMotionID.Eq(targetMotion.ID),
+			MotionOfferRecord.MotionID.Eq(targetMotion.ID),
+			MotionOfferRecord.ToMotionID.Eq(myMotion.ID),
 			MotionOfferRecord.State.Eq(string(models.MotionOfferStatePending)),
 		).UpdateSimple(
 			MotionOfferRecord.State.Value(string(models.MotionOfferStateAccepted)),
@@ -556,29 +557,55 @@ func ClearOutdateMotionOffer(ctx context.Context) error {
 	return err
 }
 
-func SendChatInOffer(ctx context.Context, myUserID, myMotionID, targetMotionID, sentence string) error {
+func SendChatInOffer(ctx context.Context, senderId, motionID, toMotionID, sentence string) error {
+	if senderId == "" {
+		return whalecode.ErrUserIDCannotBeEmpty
+	}
+
 	db := dbutil.GetDB(ctx)
 	MotionOfferRecord := dbquery.Use(db).MotionOfferRecord
-	record, err := MotionOfferRecord.WithContext(ctx).Where(MotionOfferRecord.MotionID.Eq(myMotionID)).Where(MotionOfferRecord.ToMotionID.Eq(targetMotionID)).Take()
+	record, err := MotionOfferRecord.WithContext(ctx).Where(MotionOfferRecord.MotionID.Eq(motionID)).Where(MotionOfferRecord.ToMotionID.Eq(toMotionID)).Take()
 	if err != nil {
 		return midacode.ItemMayNotFound(err)
 	}
-	if record.ChatChance <= 0 {
-		return whalecode.ErrChatChanceNotEnough
-	}
-	if record.State != string(models.MotionOfferStatePending) {
-		return whalecode.ErrOnlyChatWhenNotAccepted
-	}
-	if myUserID != "" {
-		if record.UserID != myUserID {
-			return midacode.ErrNotPermitted
-		}
+	if record.State != string(models.MotionOfferStatePending) && record.State != string(models.MotionOfferStateAccepted) {
+		return whalecode.ErrOnlyChatWhenNotClosed
 	}
 
-	_, err = smew.SendTextMessage(ctx, midacontext.GetServices(ctx).Smew, record.ChatGroupID, record.UserID, sentence)
-	if err != nil {
+	const fromUser = "fromUser"
+	const toUser = "toUser"
+	var role string
+	if senderId == record.UserID {
+		role = fromUser
+	} else if senderId == record.ToUserID {
+		role = toUser
+	}
+
+	if role == "" {
+		return midacode.ErrNotPermitted
+	}
+	if role == fromUser && record.ChatChance <= 0 {
+		return whalecode.ErrChatChanceNotEnough
+	}
+
+	if err := db.Transaction(func(tx *gorm.DB) error {
+		MotionOfferRecord := dbquery.Use(tx).MotionOfferRecord
+		if role == fromUser {
+			if _, err = MotionOfferRecord.WithContext(ctx).Where(MotionOfferRecord.ID.Eq(record.ID)).
+				UpdateSimple(MotionOfferRecord.ChatChance.Add(-1)); err != nil {
+				return err
+			}
+		} else if role == toUser {
+			if record.State == string(models.MotionOfferStatePending) {
+				// todo: 是否需要自动accept处理
+			}
+		}
+		if _, err = smew.SendTextMessage(ctx, midacontext.GetServices(ctx).Smew, record.ChatGroupID, record.UserID, sentence); err != nil {
+			return err
+		}
+		return nil
+	}); err != nil {
 		return err
 	}
-	_, err = MotionOfferRecord.WithContext(ctx).Where(MotionOfferRecord.ID.Eq(record.ID)).UpdateSimple(MotionOfferRecord.ChatChance.Add(-1))
-	return err
+	return nil
 }
