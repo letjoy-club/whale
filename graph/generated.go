@@ -355,7 +355,7 @@ type ComplexityRoot struct {
 		RefreshTopicMetrics              func(childComplexity int) int
 		RejectMotionOffer                func(childComplexity int, myMotionID string, targetMotionID string) int
 		ReviewMatching                   func(childComplexity int, matchingID string, param models.ReviewMatchingParam) int
-		SendChatInOffer                  func(childComplexity int, motionID string, toMotionID string, sentence string, senderID *string) int
+		SendChatInOffer                  func(childComplexity int, myMotionID string, targetMotionID string, sentence string) int
 		StartMatching                    func(childComplexity int) int
 		UnlikeMotion                     func(childComplexity int, userID *string, motionID string) int
 		UpdateCityTopics                 func(childComplexity int, cityID string, param models.UpdateCityTopicParam) int
@@ -646,7 +646,7 @@ type MutationResolver interface {
 	CancelMotionOffer(ctx context.Context, myMotionID string, targetMotionID string) (*string, error)
 	AcceptMotionOffer(ctx context.Context, myMotionID string, targetMotionID string) (*string, error)
 	RejectMotionOffer(ctx context.Context, myMotionID string, targetMotionID string) (*string, error)
-	SendChatInOffer(ctx context.Context, motionID string, toMotionID string, sentence string, senderID *string) (*string, error)
+	SendChatInOffer(ctx context.Context, myMotionID string, targetMotionID string, sentence string) (*string, error)
 	CreateMotion(ctx context.Context, userID *string, param models.CreateMotionParam) (*models.Motion, error)
 	UpdateMotion(ctx context.Context, id string, param models.UpdateMotionParam) (*models.Motion, error)
 	UserUpdateMotion(ctx context.Context, myMotionID string, param models.UserUpdateMotionParam) (*models.Motion, error)
@@ -2395,7 +2395,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.SendChatInOffer(childComplexity, args["motionId"].(string), args["toMotionId"].(string), args["sentence"].(string), args["senderId"].(*string)), true
+		return e.complexity.Mutation.SendChatInOffer(childComplexity, args["myMotionId"].(string), args["targetMotionId"].(string), args["sentence"].(string)), true
 
 	case "Mutation.startMatching":
 		if e.complexity.Mutation.StartMatching == nil {
@@ -4422,23 +4422,23 @@ func (ec *executionContext) field_Mutation_sendChatInOffer_args(ctx context.Cont
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
-	if tmp, ok := rawArgs["motionId"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("motionId"))
+	if tmp, ok := rawArgs["myMotionId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("myMotionId"))
 		arg0, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["motionId"] = arg0
+	args["myMotionId"] = arg0
 	var arg1 string
-	if tmp, ok := rawArgs["toMotionId"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("toMotionId"))
+	if tmp, ok := rawArgs["targetMotionId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("targetMotionId"))
 		arg1, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["toMotionId"] = arg1
+	args["targetMotionId"] = arg1
 	var arg2 string
 	if tmp, ok := rawArgs["sentence"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sentence"))
@@ -4448,15 +4448,6 @@ func (ec *executionContext) field_Mutation_sendChatInOffer_args(ctx context.Cont
 		}
 	}
 	args["sentence"] = arg2
-	var arg3 *string
-	if tmp, ok := rawArgs["senderId"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("senderId"))
-		arg3, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["senderId"] = arg3
 	return args, nil
 }
 
@@ -16580,7 +16571,7 @@ func (ec *executionContext) _Mutation_sendChatInOffer(ctx context.Context, field
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().SendChatInOffer(rctx, fc.Args["motionId"].(string), fc.Args["toMotionId"].(string), fc.Args["sentence"].(string), fc.Args["senderId"].(*string))
+		return ec.resolvers.Mutation().SendChatInOffer(rctx, fc.Args["myMotionId"].(string), fc.Args["targetMotionId"].(string), fc.Args["sentence"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
