@@ -63,7 +63,7 @@ func CreateMotionOffer(ctx context.Context, myUserID, myMotionID, targetMotionID
 			TopicID:        myMotion.TopicID,
 			MotionIDs:      []string{myMotionID, targetMotionID},
 			CreatedBy:      string(models.ResultCreatedByOffer),
-			ConfirmStates:  []string{string(models.MatchingResultConfirmStateUnconfirmed), string(models.MatchingResultConfirmStateUnconfirmed)},
+			ConfirmStates:  []string{string(models.MatchingResultConfirmStateConfirmed), string(models.MatchingResultConfirmStateUnconfirmed)},
 			ChatGroupState: models.ChatGroupStateUncreated.String(),
 		}
 		if err := MatchingResult.WithContext(ctx).Create(matchingResult); err != nil {
@@ -121,7 +121,16 @@ func CreateMotionOffer(ctx context.Context, myUserID, myMotionID, targetMotionID
 			return err
 		}
 		if rx.RowsAffected != 1 {
-			return midacode.ErrUnknownError
+			return midacode.ErrStateMayHaveChanged
+		}
+		if rx, err := MatchingResult.WithContext(ctx).Where(MatchingResult.ID.Eq(matchingResult.ID)).UpdateSimple(
+			MatchingResult.ChatGroupState.Value(models.ChatGroupStateCreated.String()),
+			MatchingResult.ChatGroupID.Value(resp.CreateMotionGroup),
+			MatchingResult.ChatGroupCreatedAt.Value(time.Now()),
+		); err != nil {
+			return err
+		} else if rx.RowsAffected != 1 {
+			return midacode.ErrStateMayHaveChanged
 		}
 
 		return nil
@@ -162,6 +171,7 @@ func AcceptMotionOffer(ctx context.Context, myUserID, myMotionID, targetMotionID
 
 	db := dbutil.GetDB(ctx)
 	now := time.Now()
+	matchingResultID := 0
 	err = dbquery.Use(db).Transaction(func(tx *dbquery.Query) error {
 		MotionOfferRecord := tx.MotionOfferRecord
 		record, err := MotionOfferRecord.WithContext(ctx).Where(
@@ -188,6 +198,20 @@ func AcceptMotionOffer(ctx context.Context, myUserID, myMotionID, targetMotionID
 			return err
 		}
 		if rx.RowsAffected != 1 {
+			return midacode.ErrStateMayHaveChanged
+		}
+		// 修改matchingResult
+		MatchingResult := tx.MatchingResult
+		matchingResult, err := MatchingResult.WithContext(ctx).Where(MatchingResult.ChatGroupID.Eq(record.ChatGroupID)).Take()
+		if err != nil {
+			return err
+		}
+		matchingResultID = matchingResult.ID
+		matchingResult.ConfirmStates = []string{models.MatchingResultConfirmStateConfirmed.String(), models.MatchingResultConfirmStateConfirmed.String()}
+		if rx, err := MatchingResult.WithContext(ctx).Where(MatchingResult.ID.Eq(matchingResultID)).
+			Select(MatchingResult.ConfirmStates).Updates(matchingResult); err != nil {
+			return err
+		} else if rx.RowsAffected != 1 {
 			return midacode.ErrStateMayHaveChanged
 		}
 		// 修改我的 motion
@@ -234,6 +258,7 @@ func AcceptMotionOffer(ctx context.Context, myUserID, myMotionID, targetMotionID
 	midacontext.GetLoader[loader.Loader](ctx).Motion.Clear(ctx, targetMotionID)
 	midacontext.GetLoader[loader.Loader](ctx).InMotionOfferRecord.Clear(ctx, myMotionID)
 	midacontext.GetLoader[loader.Loader](ctx).OutMotionOfferRecord.Clear(ctx, targetMotionID)
+	midacontext.GetLoader[loader.Loader](ctx).MatchingResult.Clear(ctx, matchingResultID)
 	return nil
 }
 
@@ -278,6 +303,8 @@ func RejectMotionOffer(ctx context.Context, userID, myMotionID, targetMotionID s
 	}
 	defer release(ctx)
 
+	matchingResultID := 0
+	now := time.Now()
 	db := dbutil.GetDB(ctx)
 	err = dbquery.Use(db).Transaction(func(tx *dbquery.Query) error {
 		MotionOfferRecord := tx.MotionOfferRecord
@@ -308,7 +335,28 @@ func RejectMotionOffer(ctx context.Context, userID, myMotionID, targetMotionID s
 			return midacode.ErrStateMayHaveChanged
 		}
 
+		// 修改matchingResult
+		MatchingResult := tx.MatchingResult
+		matchingResult, err := MatchingResult.WithContext(ctx).Where(MatchingResult.ChatGroupID.Eq(motionOffer.ChatGroupID)).Take()
+		if err != nil {
+			return err
+		}
+		updates := &models.MatchingResult{
+			ConfirmStates:  []string{models.MatchingResultConfirmStateConfirmed.String(), models.MatchingResultConfirmStateRejected.String()},
+			ChatGroupState: models.ChatGroupStateClosed.String(),
+			Closed:         true,
+			FinishedAt:     &now,
+		}
+		matchingResultID = matchingResult.ID
+		if rx, err := MatchingResult.WithContext(ctx).Where(MatchingResult.ID.Eq(matchingResultID)).
+			Updates(updates); err != nil {
+			return err
+		} else if rx.RowsAffected != 1 {
+			return midacode.ErrStateMayHaveChanged
+		}
+
 		Motion := tx.Motion
+		// 修改对方的 motion
 		fields := []field.AssignExpr{Motion.PendingInNum.Add(-1)}
 		if !targetMotion.Discoverable {
 			// 没关闭，但是不可见
@@ -317,7 +365,6 @@ func RejectMotionOffer(ctx context.Context, userID, myMotionID, targetMotionID s
 				fields = append(fields, Motion.Active.Value(false))
 			}
 		}
-		// 修改对方的 motion
 		rx, err = Motion.WithContext(ctx).Where(Motion.ID.Eq(targetMotionID)).UpdateSimple(fields...)
 		if err != nil {
 			return err
@@ -355,8 +402,11 @@ func RejectMotionOffer(ctx context.Context, userID, myMotionID, targetMotionID s
 	loader.Motion.Clear(ctx, targetMotionID)
 	loader.InMotionOfferRecord.Clear(ctx, myMotionID)
 	loader.OutMotionOfferRecord.Clear(ctx, targetMotionID)
+	loader.MatchingResult.Clear(ctx, matchingResultID)
 	return nil
 }
+
+// todo: cancel使用场景
 
 func CancelMotionOffer(ctx context.Context, myUserID, myMotionID, targetMotionID string) error {
 	motionsThunk := midacontext.GetLoader[loader.Loader](ctx).Motion.LoadMany(ctx, []string{myMotionID, targetMotionID})
@@ -586,6 +636,7 @@ func SendChatInOffer(ctx context.Context, myUserID, myMotionID, targetMotionID, 
 func FinishMotionOffer(ctx context.Context, myUserID, myMotionID, targetMotionID string) error {
 	db := dbutil.GetDB(ctx)
 	MotionOfferRecord := dbquery.Use(db).MotionOfferRecord
+	// todo: 有没有可能存在双向不同的Offer
 	record, err := MotionOfferRecord.WithContext(ctx).Or(
 		MotionOfferRecord.MotionID.Eq(myMotionID), MotionOfferRecord.ToMotionID.Eq(targetMotionID),
 	).Or(
@@ -603,9 +654,38 @@ func FinishMotionOffer(ctx context.Context, myUserID, myMotionID, targetMotionID
 			return midacode.ErrNotPermitted
 		}
 	}
+	matchingResultID := 0
+	if err = dbquery.Use(db).Transaction(func(tx *dbquery.Query) error {
+		if record.ChatGroupID != "" {
+			_, err := smew.DestroyGroup(ctx, midacontext.GetServices(ctx).Smew, record.ChatGroupID)
+			if err != nil {
+				return err
+			}
+		}
+		MotionOfferRecord := tx.MotionOfferRecord
+		_, err = MotionOfferRecord.WithContext(ctx).Where(MotionOfferRecord.ID.Eq(record.ID)).UpdateSimple(MotionOfferRecord.State.Value(string(models.MotionOfferStateFinished)))
+		if err != nil {
+			return err
+		}
 
-	_, err = MotionOfferRecord.WithContext(ctx).Where(MotionOfferRecord.ID.Eq(record.ID)).UpdateSimple(MotionOfferRecord.State.Value(string(models.MotionOfferStateFinished)))
-	if err != nil {
+		MatchingResult := tx.MatchingResult
+		matchingResult, err := MatchingResult.WithContext(ctx).Where(MatchingResult.ChatGroupID.Eq(record.ChatGroupID)).Take()
+		if err != nil {
+			return err
+		}
+		matchingResultID = matchingResult.ID
+		if rx, err := MatchingResult.WithContext(ctx).Where(MatchingResult.ID.Eq(matchingResultID)).UpdateSimple(
+			MatchingResult.Closed.Value(true),
+			MatchingResult.ChatGroupState.Value(models.ChatGroupStateClosed.String()),
+			MatchingResult.FinishedAt.Value(time.Now()),
+		); err != nil {
+			return err
+		} else if rx.RowsAffected != 1 {
+			return midacode.ErrStateMayHaveChanged
+		}
+
+		return nil
+	}); err != nil {
 		return err
 	}
 
@@ -618,5 +698,6 @@ func FinishMotionOffer(ctx context.Context, myUserID, myMotionID, targetMotionID
 		midacontext.GetLoader[loader.Loader](ctx).OutMotionOfferRecord.Clear(ctx, record.MotionID)
 		midacontext.GetLoader[loader.Loader](ctx).InMotionOfferRecord.Clear(ctx, record.ToMotionID)
 	}
+	midacontext.GetLoader[loader.Loader](ctx).MatchingResult.Clear(ctx, matchingResultID)
 	return nil
 }
