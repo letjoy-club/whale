@@ -285,7 +285,7 @@ func RejectMotionOffer(ctx context.Context, userID, myMotionID, targetMotionID s
 	}
 	found := false
 	for _, offer := range motionOffer.Offers {
-		if offer.MotionID != targetMotionID {
+		if offer.MotionID == targetMotionID {
 			if offer.State != string(models.MotionOfferStatePending) {
 				return whalecode.MotionOfferIsNotPending
 			}
