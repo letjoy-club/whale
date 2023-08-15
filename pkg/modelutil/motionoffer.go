@@ -540,7 +540,7 @@ func MarkMotionDiscoverable(ctx context.Context, userID, motionID string, discov
 	return nil
 }
 
-func ClearOutdateMotionOffer(ctx context.Context) error {
+func ClearOutDateMotionOffer(ctx context.Context) error {
 	db := dbutil.GetDB(ctx)
 	MotionOfferRecord := dbquery.Use(db).MotionOfferRecord
 	records, err := MotionOfferRecord.WithContext(ctx).Where(
@@ -555,9 +555,11 @@ func ClearOutdateMotionOffer(ctx context.Context) error {
 	loader := midacontext.GetLoader[loader.Loader](ctx)
 
 	for _, record := range records {
+		matchingResultID := 0
 		err := queryer.Transaction(func(tx *dbquery.Query) error {
 			MotionOfferRecord := tx.MotionOfferRecord
 			Motion := tx.Motion
+			MatchingResult := tx.MatchingResult
 			_, err := MotionOfferRecord.WithContext(ctx).Where(
 				MotionOfferRecord.ID.Eq(record.ID),
 			).UpdateSimple(
@@ -566,6 +568,22 @@ func ClearOutdateMotionOffer(ctx context.Context) error {
 			if err != nil {
 				return err
 			}
+
+			matchingResult, err := MatchingResult.WithContext(ctx).Where(MatchingResult.ChatGroupID.Eq(record.ChatGroupID)).Take()
+			if err != nil {
+				return err
+			}
+			matchingResultID = matchingResult.ID
+			if rx, err := MatchingResult.WithContext(ctx).Where(MatchingResult.ID.Eq(matchingResultID)).UpdateSimple(
+				MatchingResult.Closed.Value(true),
+				MatchingResult.ChatGroupState.Value(models.ChatGroupStateClosed.String()),
+				MatchingResult.FinishedAt.Value(time.Now()),
+			); err != nil {
+				return err
+			} else if rx.RowsAffected != 1 {
+				return midacode.ErrStateMayHaveChanged
+			}
+
 			_, err = Motion.WithContext(ctx).Where(Motion.ID.Eq(record.MotionID)).UpdateSimple(
 				Motion.PendingOutNum.Add(-1),
 			)
@@ -578,6 +596,13 @@ func ClearOutdateMotionOffer(ctx context.Context) error {
 			if err != nil {
 				return err
 			}
+
+			if record.ChatGroupID != "" {
+				_, err := smew.DestroyGroup(ctx, midacontext.GetServices(ctx).Smew, record.ChatGroupID)
+				if err != nil {
+					return err
+				}
+			}
 			return nil
 		})
 		if err != nil {
@@ -588,6 +613,7 @@ func ClearOutdateMotionOffer(ctx context.Context) error {
 		loader.Motion.Clear(ctx, record.ToMotionID)
 		loader.OutMotionOfferRecord.Clear(ctx, record.MotionID)
 		loader.InMotionOfferRecord.Clear(ctx, record.ToMotionID)
+		loader.MatchingResult.Clear(ctx, matchingResultID)
 	}
 
 	motionIDs := map[string]struct{}{}
