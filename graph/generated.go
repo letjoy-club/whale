@@ -349,6 +349,7 @@ type ComplexityRoot struct {
 		CreateMotionOffer                func(childComplexity int, myMotionID string, targetMotionID string) int
 		CreateUserJoinTopic              func(childComplexity int, param models.CreateUserJoinTopicParam) int
 		FinishMatching                   func(childComplexity int, matchingID string) int
+		FinishMotionOffer                func(childComplexity int, myMotionID string, targetMotionID string) int
 		GetAvailableMotionOffer          func(childComplexity int, userID *string, targetMotionID string) int
 		GetMatchingScore                 func(childComplexity int, id1 string, id2 string) int
 		LikeMotion                       func(childComplexity int, userID *string, motionID string) int
@@ -647,6 +648,7 @@ type MutationResolver interface {
 	AcceptMotionOffer(ctx context.Context, myMotionID string, targetMotionID string) (*string, error)
 	RejectMotionOffer(ctx context.Context, myMotionID string, targetMotionID string) (*string, error)
 	SendChatInOffer(ctx context.Context, myMotionID string, targetMotionID string, sentence string) (*string, error)
+	FinishMotionOffer(ctx context.Context, myMotionID string, targetMotionID string) (*string, error)
 	CreateMotion(ctx context.Context, userID *string, param models.CreateMotionParam) (*models.Motion, error)
 	UpdateMotion(ctx context.Context, id string, param models.UpdateMotionParam) (*models.Motion, error)
 	UserUpdateMotion(ctx context.Context, myMotionID string, param models.UserUpdateMotionParam) (*models.Motion, error)
@@ -2317,6 +2319,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.FinishMatching(childComplexity, args["matchingId"].(string)), true
+
+	case "Mutation.finishMotionOffer":
+		if e.complexity.Mutation.FinishMotionOffer == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_finishMotionOffer_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.FinishMotionOffer(childComplexity, args["myMotionId"].(string), args["targetMotionId"].(string)), true
 
 	case "Mutation.getAvailableMotionOffer":
 		if e.complexity.Mutation.GetAvailableMotionOffer == nil {
@@ -4295,6 +4309,30 @@ func (ec *executionContext) field_Mutation_finishMatching_args(ctx context.Conte
 		}
 	}
 	args["matchingId"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_finishMotionOffer_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["myMotionId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("myMotionId"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["myMotionId"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["targetMotionId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("targetMotionId"))
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["targetMotionId"] = arg1
 	return args, nil
 }
 
@@ -16603,6 +16641,58 @@ func (ec *executionContext) fieldContext_Mutation_sendChatInOffer(ctx context.Co
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_sendChatInOffer_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_finishMotionOffer(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_finishMotionOffer(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().FinishMotionOffer(rctx, fc.Args["myMotionId"].(string), fc.Args["targetMotionId"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_finishMotionOffer(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_finishMotionOffer_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -31478,6 +31568,10 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "sendChatInOffer":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_sendChatInOffer(ctx, field)
+			})
+		case "finishMotionOffer":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_finishMotionOffer(ctx, field)
 			})
 		case "createMotion":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {

@@ -162,4 +162,7 @@ extend type Mutation {
 
   "【广场】发送聊天消息"
   sendChatInOffer(myMotionId: String!, targetMotionId: String!, sentence: String!): String
+
+  "【广场】结束活动"
+  finishMotionOffer(myMotionId: String!, targetMotionId: String!): String
 }

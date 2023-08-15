@@ -247,6 +247,15 @@ func (r *mutationResolver) SendChatInOffer(ctx context.Context, myMotionID strin
 	return nil, modelutil.SendChatInOffer(ctx, token.UserID(), myMotionID, targetMotionID, sentence)
 }
 
+// FinishMotionOffer is the resolver for the finishMotionOffer field.
+func (r *mutationResolver) FinishMotionOffer(ctx context.Context, myMotionID string, targetMotionID string) (*string, error) {
+	token := midacontext.GetClientToken(ctx)
+	if !token.IsUser() && !token.IsAdmin() {
+		return nil, midacode.ErrNotPermitted
+	}
+	return nil, modelutil.FinishMotionOffer(ctx, token.UserID(), myMotionID, targetMotionID)
+}
+
 // DiscoverCategoryMotions is the resolver for the discoverCategoryMotions field.
 func (r *queryResolver) DiscoverCategoryMotions(ctx context.Context, userID *string, filter *models.DiscoverTopicCategoryMotionFilter, topicCategoryID string, nextToken *string) (*models.DiscoverMotionResult, error) {
 	err := midacontext.GetLoader[loader.Loader](ctx).AllMotion.Load(ctx)
