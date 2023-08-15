@@ -2,6 +2,8 @@ package modelutil
 
 import (
 	"context"
+	"errors"
+	"gorm.io/gorm"
 	"time"
 	"whale/pkg/dbquery"
 	"whale/pkg/gqlient/smew"
@@ -49,13 +51,25 @@ func CreateMotionOffer(ctx context.Context, myUserID, myMotionID, targetMotionID
 		return whalecode.ErrTheMotionIsNotActive
 	}
 
+	db := dbutil.GetDB(ctx)
+	MotionOfferRecord := dbquery.Use(db).MotionOfferRecord
+	record, err := MotionOfferRecord.WithContext(ctx).Where(
+		MotionOfferRecord.MotionID.Eq(myMotionID),
+		MotionOfferRecord.ToMotionID.Eq(targetMotionID),
+	).Take()
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		return err
+	}
+	if record != nil {
+		return whalecode.ErrAlreadySentOutMatchingOffer
+	}
+
 	release, err := redisutil.LockAll(ctx, keyer.UserMotion(myMotion.UserID), keyer.UserMotion(targetMotion.UserID))
 	if err != nil {
 		return err
 	}
 	defer release(ctx)
 
-	db := dbutil.GetDB(ctx).Debug()
 	err = dbquery.Use(db).Transaction(func(tx *dbquery.Query) error {
 		MatchingResult := tx.MatchingResult
 		matchingResult := &models.MatchingResult{
