@@ -3,6 +3,7 @@ package restfulserver
 import (
 	"net/http"
 	"whale/pkg/matcher"
+	"whale/pkg/modelutil"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
@@ -18,6 +19,13 @@ func Mount(r chi.Router) {
 		matcher := matcher.Matcher{}
 		err := matcher.Match(r.Context())
 		if err != nil {
+			render.JSON(w, r, Resp{Error: err.Error()})
+		} else {
+			render.JSON(w, r, Resp{})
+		}
+	})
+	r.Post("/clear-out-date-offer", func(w http.ResponseWriter, r *http.Request) {
+		if err := modelutil.ClearOutDateMotionOffer(r.Context()); err != nil {
 			render.JSON(w, r, Resp{Error: err.Error()})
 		} else {
 			render.JSON(w, r, Resp{})
