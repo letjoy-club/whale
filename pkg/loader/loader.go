@@ -29,6 +29,7 @@ type Loader struct {
 
 	Motion               *dataloader.Loader[string, *models.Motion]
 	UserLikeMotion       *dataloader.Loader[string, *UserLikeMotion]
+	UserThumbsUpMotion   *dataloader.Loader[string, *UserThumbsUpMotions]
 	UserSubmitMotion     *dataloader.Loader[string, *UserSubmitMotion]
 	InMotionOfferRecord  *dataloader.Loader[string, *MotionOffers]
 	OutMotionOfferRecord *dataloader.Loader[string, *MotionOffers]
@@ -78,6 +79,7 @@ func NewLoader(db *gorm.DB) *Loader {
 		UserProfile:        NewUserProfileLoader(db),
 		UserAvatarNickname: NewUserAvatarNicknameLoader(db),
 		UserJoinTopic:      NewUserJoinTopicLoader(db),
+		UserThumbsUpMotion: NewUserThumbsUpMotionLoader(db),
 
 		RecentMatching: NewRecentMatchingLoader(db),
 

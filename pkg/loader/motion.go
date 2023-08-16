@@ -132,6 +132,24 @@ func (u UserLikeMotion) IsLike(motionID string) bool {
 	return searchString(motionID, u.MotionIDs) != -1
 }
 
+func NewUserThumbsUpMotionLoader(db *gorm.DB) *dataloader.Loader[string, *UserThumbsUpMotions] {
+	UserThumbsUpMotion := dbquery.Use(db).UserThumbsUpMotion
+	return loaderutil.NewAggregatorLoader(db, func(ctx context.Context, keys []string) (items []*models.UserThumbsUpMotion, err error) {
+		return UserThumbsUpMotion.WithContext(ctx).Where(UserThumbsUpMotion.UserID.In(keys...)).Select(UserThumbsUpMotion.ToMotionID, UserThumbsUpMotion.UserID).Order(UserThumbsUpMotion.ToMotionID.Desc()).Find()
+	}, func(m map[string]*UserThumbsUpMotions, v *models.UserThumbsUpMotion) {
+		if _, ok := m[v.UserID]; !ok {
+			m[v.UserID] = &UserThumbsUpMotions{
+				UserID:    v.UserID,
+				MotionIDs: []string{v.ToMotionID},
+			}
+		} else {
+			m[v.UserID].MotionIDs = append(m[v.UserID].MotionIDs, v.ToMotionID)
+		}
+	}, time.Minute*5, loaderutil.Placeholder(func(ctx context.Context, keys string) (item *UserThumbsUpMotions, err error) {
+		return &UserThumbsUpMotions{MotionIDs: []string{}}, nil
+	}))
+}
+
 func NewUserLikeMotionLoader(db *gorm.DB) *dataloader.Loader[string, *UserLikeMotion] {
 	UserLikedMotion := dbquery.Use(db).UserLikeMotion
 	return loaderutil.NewAggregatorLoader(db, func(ctx context.Context, keys []string) (items []*models.UserLikeMotion, err error) {

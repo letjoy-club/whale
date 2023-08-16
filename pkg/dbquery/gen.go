@@ -37,6 +37,7 @@ func Use(db *gorm.DB, opts ...gen.DOOption) *Query {
 		RecentMatching:              newRecentMatching(db, opts...),
 		UserJoinTopic:               newUserJoinTopic(db, opts...),
 		UserLikeMotion:              newUserLikeMotion(db, opts...),
+		UserThumbsUpMotion:          newUserThumbsUpMotion(db, opts...),
 		UserViewMatching:            newUserViewMatching(db, opts...),
 		WhaleConfig:                 newWhaleConfig(db, opts...),
 	}
@@ -64,6 +65,7 @@ type Query struct {
 	RecentMatching              recentMatching
 	UserJoinTopic               userJoinTopic
 	UserLikeMotion              userLikeMotion
+	UserThumbsUpMotion          userThumbsUpMotion
 	UserViewMatching            userViewMatching
 	WhaleConfig                 whaleConfig
 }
@@ -92,6 +94,7 @@ func (q *Query) clone(db *gorm.DB) *Query {
 		RecentMatching:              q.RecentMatching.clone(db),
 		UserJoinTopic:               q.UserJoinTopic.clone(db),
 		UserLikeMotion:              q.UserLikeMotion.clone(db),
+		UserThumbsUpMotion:          q.UserThumbsUpMotion.clone(db),
 		UserViewMatching:            q.UserViewMatching.clone(db),
 		WhaleConfig:                 q.WhaleConfig.clone(db),
 	}
@@ -127,6 +130,7 @@ func (q *Query) ReplaceDB(db *gorm.DB) *Query {
 		RecentMatching:              q.RecentMatching.replaceDB(db),
 		UserJoinTopic:               q.UserJoinTopic.replaceDB(db),
 		UserLikeMotion:              q.UserLikeMotion.replaceDB(db),
+		UserThumbsUpMotion:          q.UserThumbsUpMotion.replaceDB(db),
 		UserViewMatching:            q.UserViewMatching.replaceDB(db),
 		WhaleConfig:                 q.WhaleConfig.replaceDB(db),
 	}
@@ -152,6 +156,7 @@ type queryCtx struct {
 	RecentMatching              IRecentMatchingDo
 	UserJoinTopic               IUserJoinTopicDo
 	UserLikeMotion              IUserLikeMotionDo
+	UserThumbsUpMotion          IUserThumbsUpMotionDo
 	UserViewMatching            IUserViewMatchingDo
 	WhaleConfig                 IWhaleConfigDo
 }
@@ -177,6 +182,7 @@ func (q *Query) WithContext(ctx context.Context) *queryCtx {
 		RecentMatching:              q.RecentMatching.WithContext(ctx),
 		UserJoinTopic:               q.UserJoinTopic.WithContext(ctx),
 		UserLikeMotion:              q.UserLikeMotion.WithContext(ctx),
+		UserThumbsUpMotion:          q.UserThumbsUpMotion.WithContext(ctx),
 		UserViewMatching:            q.UserViewMatching.WithContext(ctx),
 		WhaleConfig:                 q.WhaleConfig.WithContext(ctx),
 	}

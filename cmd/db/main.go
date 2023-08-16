@@ -50,6 +50,7 @@ func main() {
 		// 用户匹配意向
 		&models.MatchingOfferRecord{},
 		&models.MatchingOfferSummary{},
+		&models.UserThumbsUpMotion{},
 	}
 
 	g.ApplyBasic(m...)

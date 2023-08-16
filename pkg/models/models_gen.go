@@ -179,12 +179,6 @@ type Summary struct {
 	Count int `json:"count"`
 }
 
-type ThumbUpMotion struct {
-	UserID    string    `json:"userId"`
-	MotionID  string    `json:"motionId"`
-	CreatedAt time.Time `json:"createdAt"`
-}
-
 type Topic struct {
 	ID string `json:"id"`
 	// 匹配中用户

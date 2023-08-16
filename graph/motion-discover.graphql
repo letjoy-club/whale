@@ -41,6 +41,7 @@ type Motion {
   viewCount: Int!
   likeCount: Int!
   thumbsUpCount: Int!
+  thumbsUp: Boolean!
 
   topic: Topic!
   topicOptionConfig: TopicOptionConfig
@@ -86,7 +87,7 @@ type DiscoverMotion {
   remark: String!
   likeCount: Int!
   viewCount: Int!
-  thumbupCount: Int!
+  thumbsUpCount: Int!
 
   # query
   "是否标记为喜欢"
