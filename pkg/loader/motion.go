@@ -193,18 +193,16 @@ func searchString(id string, ids []string) int {
 }
 
 func insert[T constraints.Ordered](ts []T, t T) []T {
-	var dummy T
-	ts = append(ts, dummy) // extend the slice
-
-	i := slices.BinarySearch(ts, t) // find slot
-	copy(ts[i+1:], ts[i:])          // make room
-	ts[i] = t
+	pos, isFound := slices.BinarySearch(ts, t)
+	if !isFound {
+		ts = slices.Insert(ts, pos, t)
+	}
 	return ts
 }
 
 func remove[T constraints.Ordered](ts []T, t T) []T {
-	i := slices.BinarySearch(ts, t)
-	if i < 0 {
+	i, found := slices.BinarySearch(ts, t)
+	if !found {
 		return ts
 	}
 	copy(ts[i:], ts[i+1:])

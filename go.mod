@@ -1,6 +1,6 @@
 module whale
 
-go 1.19
+go 1.20
 
 require (
 	github.com/99designs/gqlgen v0.17.35
@@ -21,6 +21,7 @@ require (
 	go.opentelemetry.io/otel/sdk v1.16.0
 	go.uber.org/multierr v1.6.0
 	go.uber.org/zap v1.24.0
+	golang.org/x/exp v0.0.0-20230811145659-89c5cff77bcb
 	gorm.io/driver/mysql v1.4.7
 	gorm.io/gen v0.3.21
 	gorm.io/gorm v1.25.0
@@ -115,8 +116,7 @@ require (
 	go.opentelemetry.io/otel/metric v1.16.0 // indirect
 	go.opentelemetry.io/otel/trace v1.16.0 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
-	golang.org/x/exp v0.0.0-20220303212507-bbda1eaf7a17
-	golang.org/x/mod v0.10.0 // indirect
+	golang.org/x/mod v0.11.0 // indirect
 	golang.org/x/net v0.10.0 // indirect
 	golang.org/x/sys v0.8.0 // indirect
 	golang.org/x/text v0.9.0 // indirect
