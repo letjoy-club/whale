@@ -94,7 +94,7 @@ type DiscoverMotion {
   liked("管理员填写 userId" userId: String): Boolean!
   "是否向其提交过意向"
   submitted("管理员填写 userId" userId: String): Boolean!
-  thumbsUpped("管理员填写 userId" userId: String): Boolean!
+  thumbsUp("管理员填写 userId" userId: String): Boolean!
 
   topic: Topic!
   topicOptionConfig: TopicOptionConfig

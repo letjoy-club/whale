@@ -120,8 +120,8 @@ type ComplexityRoot struct {
 		Properties        func(childComplexity int) int
 		Remark            func(childComplexity int) int
 		Submitted         func(childComplexity int, userID *string) int
+		ThumbsUp          func(childComplexity int, userID *string) int
 		ThumbsUpCount     func(childComplexity int) int
-		ThumbsUpped       func(childComplexity int, userID *string) int
 		Topic             func(childComplexity int) int
 		TopicID           func(childComplexity int) int
 		TopicOptionConfig func(childComplexity int) int
@@ -535,7 +535,7 @@ type DiscoverMotionResolver interface {
 
 	Liked(ctx context.Context, obj *models.Motion, userID *string) (bool, error)
 	Submitted(ctx context.Context, obj *models.Motion, userID *string) (bool, error)
-	ThumbsUpped(ctx context.Context, obj *models.Motion, userID *string) (bool, error)
+	ThumbsUp(ctx context.Context, obj *models.Motion, userID *string) (bool, error)
 	Topic(ctx context.Context, obj *models.Motion) (*models.Topic, error)
 	TopicOptionConfig(ctx context.Context, obj *models.Motion) (*models.TopicOptionConfig, error)
 	User(ctx context.Context, obj *models.Motion) (*models.User, error)
@@ -976,24 +976,24 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.DiscoverMotion.Submitted(childComplexity, args["userId"].(*string)), true
 
+	case "DiscoverMotion.thumbsUp":
+		if e.complexity.DiscoverMotion.ThumbsUp == nil {
+			break
+		}
+
+		args, err := ec.field_DiscoverMotion_thumbsUp_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.DiscoverMotion.ThumbsUp(childComplexity, args["userId"].(*string)), true
+
 	case "DiscoverMotion.thumbsUpCount":
 		if e.complexity.DiscoverMotion.ThumbsUpCount == nil {
 			break
 		}
 
 		return e.complexity.DiscoverMotion.ThumbsUpCount(childComplexity), true
-
-	case "DiscoverMotion.thumbsUpped":
-		if e.complexity.DiscoverMotion.ThumbsUpped == nil {
-			break
-		}
-
-		args, err := ec.field_DiscoverMotion_thumbsUpped_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.DiscoverMotion.ThumbsUpped(childComplexity, args["userId"].(*string)), true
 
 	case "DiscoverMotion.topic":
 		if e.complexity.DiscoverMotion.Topic == nil {
@@ -3843,7 +3843,7 @@ func (ec *executionContext) field_DiscoverMotion_submitted_args(ctx context.Cont
 	return args, nil
 }
 
-func (ec *executionContext) field_DiscoverMotion_thumbsUpped_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_DiscoverMotion_thumbsUp_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 *string
@@ -7343,8 +7343,8 @@ func (ec *executionContext) fieldContext_DiscoverMotion_submitted(ctx context.Co
 	return fc, nil
 }
 
-func (ec *executionContext) _DiscoverMotion_thumbsUpped(ctx context.Context, field graphql.CollectedField, obj *models.Motion) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_DiscoverMotion_thumbsUpped(ctx, field)
+func (ec *executionContext) _DiscoverMotion_thumbsUp(ctx context.Context, field graphql.CollectedField, obj *models.Motion) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DiscoverMotion_thumbsUp(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -7357,7 +7357,7 @@ func (ec *executionContext) _DiscoverMotion_thumbsUpped(ctx context.Context, fie
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.DiscoverMotion().ThumbsUpped(rctx, obj, fc.Args["userId"].(*string))
+		return ec.resolvers.DiscoverMotion().ThumbsUp(rctx, obj, fc.Args["userId"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -7374,7 +7374,7 @@ func (ec *executionContext) _DiscoverMotion_thumbsUpped(ctx context.Context, fie
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_DiscoverMotion_thumbsUpped(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_DiscoverMotion_thumbsUp(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "DiscoverMotion",
 		Field:      field,
@@ -7391,7 +7391,7 @@ func (ec *executionContext) fieldContext_DiscoverMotion_thumbsUpped(ctx context.
 		}
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_DiscoverMotion_thumbsUpped_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+	if fc.Args, err = ec.field_DiscoverMotion_thumbsUp_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -7712,8 +7712,8 @@ func (ec *executionContext) fieldContext_DiscoverMotionResult_motions(ctx contex
 				return ec.fieldContext_DiscoverMotion_liked(ctx, field)
 			case "submitted":
 				return ec.fieldContext_DiscoverMotion_submitted(ctx, field)
-			case "thumbsUpped":
-				return ec.fieldContext_DiscoverMotion_thumbsUpped(ctx, field)
+			case "thumbsUp":
+				return ec.fieldContext_DiscoverMotion_thumbsUp(ctx, field)
 			case "topic":
 				return ec.fieldContext_DiscoverMotion_topic(ctx, field)
 			case "topicOptionConfig":
@@ -12902,8 +12902,8 @@ func (ec *executionContext) fieldContext_MatchingResult_discoverMotion(ctx conte
 				return ec.fieldContext_DiscoverMotion_liked(ctx, field)
 			case "submitted":
 				return ec.fieldContext_DiscoverMotion_submitted(ctx, field)
-			case "thumbsUpped":
-				return ec.fieldContext_DiscoverMotion_thumbsUpped(ctx, field)
+			case "thumbsUp":
+				return ec.fieldContext_DiscoverMotion_thumbsUp(ctx, field)
 			case "topic":
 				return ec.fieldContext_DiscoverMotion_topic(ctx, field)
 			case "topicOptionConfig":
@@ -14869,8 +14869,8 @@ func (ec *executionContext) fieldContext_MotionOfferRecord_toMotion(ctx context.
 				return ec.fieldContext_DiscoverMotion_liked(ctx, field)
 			case "submitted":
 				return ec.fieldContext_DiscoverMotion_submitted(ctx, field)
-			case "thumbsUpped":
-				return ec.fieldContext_DiscoverMotion_thumbsUpped(ctx, field)
+			case "thumbsUp":
+				return ec.fieldContext_DiscoverMotion_thumbsUp(ctx, field)
 			case "topic":
 				return ec.fieldContext_DiscoverMotion_topic(ctx, field)
 			case "topicOptionConfig":
@@ -14957,8 +14957,8 @@ func (ec *executionContext) fieldContext_MotionOfferRecord_motion(ctx context.Co
 				return ec.fieldContext_DiscoverMotion_liked(ctx, field)
 			case "submitted":
 				return ec.fieldContext_DiscoverMotion_submitted(ctx, field)
-			case "thumbsUpped":
-				return ec.fieldContext_DiscoverMotion_thumbsUpped(ctx, field)
+			case "thumbsUp":
+				return ec.fieldContext_DiscoverMotion_thumbsUp(ctx, field)
 			case "topic":
 				return ec.fieldContext_DiscoverMotion_topic(ctx, field)
 			case "topicOptionConfig":
@@ -24076,8 +24076,8 @@ func (ec *executionContext) fieldContext_UserLikeMotion_motion(ctx context.Conte
 				return ec.fieldContext_DiscoverMotion_liked(ctx, field)
 			case "submitted":
 				return ec.fieldContext_DiscoverMotion_submitted(ctx, field)
-			case "thumbsUpped":
-				return ec.fieldContext_DiscoverMotion_thumbsUpped(ctx, field)
+			case "thumbsUp":
+				return ec.fieldContext_DiscoverMotion_thumbsUp(ctx, field)
 			case "topic":
 				return ec.fieldContext_DiscoverMotion_topic(ctx, field)
 			case "topicOptionConfig":
@@ -28396,7 +28396,7 @@ func (ec *executionContext) _DiscoverMotion(ctx context.Context, sel ast.Selecti
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-		case "thumbsUpped":
+		case "thumbsUp":
 			field := field
 
 			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
@@ -28405,7 +28405,7 @@ func (ec *executionContext) _DiscoverMotion(ctx context.Context, sel ast.Selecti
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._DiscoverMotion_thumbsUpped(ctx, field, obj)
+				res = ec._DiscoverMotion_thumbsUp(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}

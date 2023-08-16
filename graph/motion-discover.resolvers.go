@@ -68,9 +68,22 @@ func (r *discoverMotionResolver) Submitted(ctx context.Context, obj *models.Moti
 	return u.IsSubmitted(obj.ID), nil
 }
 
-// ThumbsUpped is the resolver for the thumbsUpped field.
-func (r *discoverMotionResolver) ThumbsUpped(ctx context.Context, obj *models.Motion, userID *string) (bool, error) {
-	return false, nil
+// ThumbsUp is the resolver for the thumbsUp field.
+func (r *discoverMotionResolver) ThumbsUp(ctx context.Context, obj *models.Motion, userID *string) (bool, error) {
+	token := midacontext.GetClientToken(ctx)
+	if !token.IsUser() && !token.IsAdmin() {
+		return false, nil
+	}
+	uid := graphqlutil.GetID(token, userID)
+	if uid == "" {
+		return false, nil
+	}
+	thunk := midacontext.GetLoader[loader.Loader](ctx).UserThumbsUpMotion.Load(ctx, uid)
+	u, err := thunk()
+	if err != nil {
+		return false, err
+	}
+	return u.ThumbsUp(obj.ID), nil
 }
 
 // Topic is the resolver for the topic field.
