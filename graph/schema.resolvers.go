@@ -14,6 +14,7 @@ import (
 	"whale/pkg/matcher"
 	"whale/pkg/models"
 	"whale/pkg/modelutil"
+	"whale/pkg/utils"
 
 	"github.com/letjoy-club/mida-tool/dbutil"
 	"github.com/letjoy-club/mida-tool/midacode"
@@ -235,17 +236,20 @@ func (r *matchingResultResolver) Users(ctx context.Context, obj *models.Matching
 
 // DiscoverMotion is the resolver for the discoverMotion field.
 func (r *matchingResultResolver) DiscoverMotion(ctx context.Context, obj *models.MatchingResult) ([]*models.Motion, error) {
-	panic(fmt.Errorf("not implemented: DiscoverMotion - discoverMotion"))
+	if obj.CreatedBy != models.ResultCreatedByOffer.String() {
+		return nil, nil
+	}
+	thunk := midacontext.GetLoader[loader.Loader](ctx).Motion.LoadMany(ctx, obj.MotionIDs)
+	return utils.ReturnThunk(thunk)
 }
 
 // MatchingPreviews is the resolver for the matchingPreviews field.
 func (r *matchingResultResolver) MatchingPreviews(ctx context.Context, obj *models.MatchingResult) ([]*models.Matching, error) {
-	thunk := midacontext.GetLoader[loader.Loader](ctx).Matching.LoadMany(ctx, obj.MatchingIDs)
-	matchings, errors := thunk()
-	if len(errors) > 0 {
-		return nil, multierr.Combine(errors...)
+	if obj.CreatedBy != models.ResultCreatedByMatching.String() && obj.CreatedBy != models.ResultCreatedByInvitation.String() {
+		return nil, nil
 	}
-	return matchings, nil
+	thunk := midacontext.GetLoader[loader.Loader](ctx).Matching.LoadMany(ctx, obj.MatchingIDs)
+	return utils.ReturnThunk(thunk)
 }
 
 // Topic is the resolver for the topic field.
