@@ -168,7 +168,7 @@ func (r *mutationResolver) UpdateMatchingDurationConstraint(ctx context.Context,
 	}
 	if param.StopDate != nil {
 		if !param.StopDate.After(time.Now()) {
-			return "", whalecode.ErrStopDateShoulGreateThanNow
+			return "", whalecode.ErrStopDateShouldGreaterThanNow
 		}
 		fields = append(fields, MatchingDurationConstraint.StopDate.Value(*param.StopDate))
 	}
