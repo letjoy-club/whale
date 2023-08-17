@@ -97,6 +97,9 @@ models:
   UserLikeMotion:
     model:
       - whale/pkg/models.UserLikeMotion
+  UserThumbsUpMotion:
+    model:
+      - whale/pkg/models.UserThumbsUpMotion
   Motion:
     model:
       - whale/pkg/models.Motion

@@ -9,9 +9,9 @@ type UserLikeMotion {
   motion: DiscoverMotion!
 }
 
-type ThumbUpMotion {
+type UserThumbsUpMotion {
   userId: String!
-  motionId: String!
+  toMotionId: String!
   createdAt: Time!
 }
 
@@ -20,16 +20,6 @@ extend type Query {
   likedMotions(userId: String, paginator: GraphQLPaginator): [UserLikeMotion!]!
   "【广场】我喜欢的动议数量"
   likedMotionsCount(userId: String): Summary!
-
-  "【广场】点赞动议"
-  thumbupMotion(userId: String, motionId: String!): String
-  "【广场】取消点赞动议"
-  cancelThumbupMotion(userId: String, motionId: String!): String
-
-  "【广场】点赞的动议，管理端"
-  thumbUpMotions(userId: String, paginator: GraphQLPaginator): [ThumbUpMotion!]!
-  "【广场】点赞的动议数量，管理端"
-  thumbUpMotionsCount(userId: String): Summary!
 }
 
 extend type Mutation {
@@ -37,4 +27,14 @@ extend type Mutation {
   likeMotion(userId: String, motionId: String!): Int!
   "【广场】取消喜欢匹配"
   unlikeMotion(userId: String, motionId: String!): Int!
+
+  "【广场】点赞动议"
+  thumbsUpMotion(userId: String, motionId: String!): String
+  "【广场】取消点赞动议"
+  cancelThumbsUpMotion(userId: String, motionId: String!): String
+
+  "【广场】点赞的动议，管理端"
+  thumbsUpMotions(userId: String, paginator: GraphQLPaginator): [UserThumbsUpMotion!]!
+  "【广场】点赞的动议数量，管理端"
+  thumbsUpMotionsCount(userId: String): Summary!
 }

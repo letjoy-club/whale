@@ -6,7 +6,6 @@ package graph
 
 import (
 	"context"
-	"fmt"
 	"time"
 	"whale/pkg/dbquery"
 	"whale/pkg/loader"
@@ -31,11 +30,6 @@ func (r *discoverMotionResolver) PreferredPeriods(ctx context.Context, obj *mode
 	return lo.Map(obj.PreferredPeriods, func(v string, i int) models.DatePeriod {
 		return models.DatePeriod(v)
 	}), nil
-}
-
-// ThumbupCount is the resolver for the thumbupCount field.
-func (r *discoverMotionResolver) ThumbupCount(ctx context.Context, obj *models.Motion) (int, error) {
-	panic(fmt.Errorf("not implemented: ThumbupCount - thumbupCount"))
 }
 
 // Liked is the resolver for the liked field.
@@ -74,9 +68,22 @@ func (r *discoverMotionResolver) Submitted(ctx context.Context, obj *models.Moti
 	return u.IsSubmitted(obj.ID), nil
 }
 
-// ThumbsUpped is the resolver for the thumbsUpped field.
-func (r *discoverMotionResolver) ThumbsUpped(ctx context.Context, obj *models.Motion, userID *string) (bool, error) {
-	return false, nil
+// ThumbsUp is the resolver for the thumbsUp field.
+func (r *discoverMotionResolver) ThumbsUp(ctx context.Context, obj *models.Motion, userID *string) (bool, error) {
+	token := midacontext.GetClientToken(ctx)
+	if !token.IsUser() && !token.IsAdmin() {
+		return false, nil
+	}
+	uid := graphqlutil.GetID(token, userID)
+	if uid == "" {
+		return false, nil
+	}
+	thunk := midacontext.GetLoader[loader.Loader](ctx).UserThumbsUpMotion.Load(ctx, uid)
+	u, err := thunk()
+	if err != nil {
+		return false, err
+	}
+	return u.ThumbsUp(obj.ID), nil
 }
 
 // Topic is the resolver for the topic field.
@@ -128,6 +135,20 @@ func (r *motionResolver) Liked(ctx context.Context, obj *models.Motion) (bool, e
 			return false, err
 		}
 		return u.IsLike(obj.ID), nil
+	}
+	return false, nil
+}
+
+// ThumbsUp is the resolver for the thumbsUp field.
+func (r *motionResolver) ThumbsUp(ctx context.Context, obj *models.Motion) (bool, error) {
+	token := midacontext.GetClientToken(ctx)
+	if token.IsUser() {
+		thunk := midacontext.GetLoader[loader.Loader](ctx).UserThumbsUpMotion.Load(ctx, obj.UserID)
+		u, err := thunk()
+		if err != nil {
+			return false, err
+		}
+		return u.ThumbsUp(obj.ID), nil
 	}
 	return false, nil
 }
