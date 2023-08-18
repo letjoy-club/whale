@@ -19,6 +19,7 @@ import (
 	"github.com/letjoy-club/mida-tool/midacode"
 	"github.com/letjoy-club/mida-tool/midacontext"
 	"github.com/letjoy-club/mida-tool/redisutil"
+	"go.uber.org/multierr"
 	"gorm.io/gen/field"
 )
 
@@ -124,6 +125,59 @@ func (r *mutationResolver) CloseMotion(ctx context.Context, id string) (*string,
 		return nil, whalecode.ErrMatchingOfferIsNotActive
 	}
 	err = modelutil.CloseMotion(ctx, motion.UserID, id)
+	return nil, err
+}
+
+// ReviewMotionOffer is the resolver for the reviewMotionOffer field.
+func (r *mutationResolver) ReviewMotionOffer(ctx context.Context, userID *string, fromMotionID string, toMotionID string, param models.ReviewMotionParam) (*string, error) {
+	token := midacontext.GetClientToken(ctx)
+	if !token.IsAdmin() && !token.IsUser() {
+		return nil, midacode.ErrNotPermitted
+	}
+	uid := ""
+	motionThunk := midacontext.GetLoader[loader.Loader](ctx).Motion.LoadMany(ctx, []string{fromMotionID, toMotionID})
+	motions, errors := motionThunk()
+	if errors != nil {
+		return nil, multierr.Combine(errors...)
+	}
+
+	fromMotion, toMotion := motions[0], motions[1]
+	if token.IsUser() {
+		// 必须要邀约参与方才能评价
+		if fromMotion.UserID != token.String() && toMotion.UserID != token.String() {
+			return nil, midacode.ErrNotPermitted
+		}
+	}
+
+	db := dbutil.GetDB(ctx)
+	MotionReview := dbquery.Use(db).MotionReview
+	_, err := MotionReview.WithContext(ctx).Where(MotionReview.MotionID.Eq(fromMotionID), MotionReview.ToMotionID.Eq(toMotionID)).Take()
+	if err == nil {
+		return nil, whalecode.ErrMotionReviewAlreadyExists
+	}
+
+	var myMotion, targetMotion *models.Motion
+	if fromMotion.UserID == uid {
+		myMotion, targetMotion = fromMotion, toMotion
+	} else {
+		myMotion, targetMotion = toMotion, fromMotion
+	}
+
+	err = MotionReview.WithContext(ctx).Create(&models.MotionReview{
+		MotionID:   myMotion.ID,
+		ToMotionID: targetMotion.ID,
+		Score:      param.Score,
+		TopicID:    myMotion.TopicID,
+		Comment:    param.Comment,
+
+		// 评价者
+		UserID: uid,
+		// 被评价者
+		ToUserID: targetMotion.UserID,
+	})
+	if err == nil {
+		midacontext.GetLoader[loader.Loader](ctx).MotionReviewed.Clear(ctx, fromMotionID)
+	}
 	return nil, err
 }
 

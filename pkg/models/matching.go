@@ -128,7 +128,7 @@ type MatchingReview struct {
 	TopicID      string `gorm:"type:varchar(64)"`
 
 	Score      int
-	Comment    string    `gorm:"type:varchar(1024)"`
+	Comment    string    `gorm:"type:text"`
 	CreateTime time.Time `gorm:"autoCreateTime"`
 }
 

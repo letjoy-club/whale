@@ -390,12 +390,6 @@ input CreateMatchingInvitationParam {
   areaIds: [String!]!
 }
 
-input ReviewMatchingParam {
-  toUserId: String!
-  score: Int!
-  comment: String!
-}
-
 input UpdateMatchingQuotaParam {
   total: Int
   remain: Int

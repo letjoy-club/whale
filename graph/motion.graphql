@@ -68,13 +68,32 @@ extend type Query {
   motionsCount(filter: MotionFilter): Summary!
 }
 
+input ReviewMotionParam {
+  score: Int!
+  comment: String!
+}
+
 extend type Mutation {
   "【匹配系统】创建动议"
   createMotion(userId: String, param: CreateMotionParam!): Motion!
+
   "【匹配系统】更新动议，管理端"
   updateMotion(id: String!, param: UpdateMotionParam!): Motion!
+
   "【匹配系统】用户更新动议"
   userUpdateMotion(myMotionId: String!, param: UserUpdateMotionParam!): Motion!
+
   "【匹配系统】关闭动议"
   closeMotion(id: String!): String
+
+  "【匹配系统】评价动议"
+  reviewMotionOffer(
+    "无需填写"
+    userId: String
+    "邀请发起方的 motion id，可能是我的，也可能是别人的 motion"
+    fromMotionId: String!
+    "被邀请方的 motion id, 可能是我的，也可能是别人的 motion"
+    toMotionId: String!
+    param: ReviewMotionParam!
+  ): String
 }

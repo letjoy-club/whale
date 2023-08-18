@@ -185,6 +185,34 @@ func (r *motionOfferRecordResolver) State(ctx context.Context, obj *models.Motio
 	return models.MotionOfferState(obj.State), nil
 }
 
+// Reviewed is the resolver for the reviewed field.
+func (r *motionOfferRecordResolver) Reviewed(ctx context.Context, obj *models.MotionOfferRecord, userID *string) (bool, error) {
+	token := midacontext.GetClientToken(ctx)
+	if !token.IsAdmin() && !token.IsUser() {
+		return false, nil
+	}
+	// 查询是否已经被评价时，需要提供评价者 id
+	uid := graphqlutil.GetID(token, userID)
+	if obj.UserID != uid && obj.ToUserID != uid {
+		// id 不一致则无法查看
+		return false, nil
+	}
+	var myMotionID, targetMotionID string
+	if obj.UserID == uid {
+		myMotionID = obj.MotionID
+		targetMotionID = obj.ToMotionID
+	} else {
+		myMotionID = obj.ToMotionID
+		targetMotionID = obj.MotionID
+	}
+	thunk := midacontext.GetLoader[loader.Loader](ctx).MotionReviewed.Load(ctx, myMotionID)
+	u, err := thunk()
+	if err != nil {
+		return false, err
+	}
+	return u.IsReviewed(targetMotionID), nil
+}
+
 // ToMotion is the resolver for the toMotion field.
 func (r *motionOfferRecordResolver) ToMotion(ctx context.Context, obj *models.MotionOfferRecord) (*models.Motion, error) {
 	thunk := midacontext.GetLoader[loader.Loader](ctx).Motion.Load(ctx, obj.ToMotionID)
@@ -269,12 +297,12 @@ func (r *mutationResolver) SendChatInOffer(ctx context.Context, myMotionID strin
 }
 
 // FinishMotionOffer is the resolver for the finishMotionOffer field.
-func (r *mutationResolver) FinishMotionOffer(ctx context.Context, myMotionID string, targetMotionID string) (*string, error) {
+func (r *mutationResolver) FinishMotionOffer(ctx context.Context, fromMotionID string, toMotionID string) (*string, error) {
 	token := midacontext.GetClientToken(ctx)
 	if !token.IsUser() && !token.IsAdmin() {
 		return nil, midacode.ErrNotPermitted
 	}
-	return nil, modelutil.FinishMotionOffer(ctx, token.UserID(), myMotionID, targetMotionID)
+	return nil, modelutil.FinishMotionOffer(ctx, token.UserID(), fromMotionID, toMotionID)
 }
 
 // DiscoverCategoryMotions is the resolver for the discoverCategoryMotions field.

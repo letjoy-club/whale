@@ -170,6 +170,11 @@ type ReviewMatchingParam struct {
 	Comment  string `json:"comment"`
 }
 
+type ReviewMotionParam struct {
+	Score   int    `json:"score"`
+	Comment string `json:"comment"`
+}
+
 type SimpleAvatarUser struct {
 	Avatar   string `json:"avatar"`
 	Nickname string `json:"nickname"`

@@ -33,6 +33,7 @@ type Loader struct {
 	UserSubmitMotion     *dataloader.Loader[string, *UserSubmitMotion]
 	InMotionOfferRecord  *dataloader.Loader[string, *MotionOffers]
 	OutMotionOfferRecord *dataloader.Loader[string, *MotionOffers]
+	MotionReviewed       *dataloader.Loader[string, *MotionReviewed]
 
 	// 从 recentMatching 中查询最近的 city, topic 对应的 matching id 信息
 	CityTopicMatchings *dataloader.Loader[CityTopicKey, CityTopicMatchings]
@@ -73,6 +74,7 @@ func NewLoader(db *gorm.DB) *Loader {
 		InMotionOfferRecord:  NewInMotionOfferLoader(db),
 		OutMotionOfferRecord: NewOutMotionOfferLoader(db),
 		Motion:               NewMotionLoader(db),
+		MotionReviewed:       NewMotionReviewedLoader(db),
 		UserLikeMotion:       NewUserLikeMotionLoader(db),
 		UserSubmitMotion:     NewUserSubmitMotionLoader(db),
 

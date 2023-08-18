@@ -39,6 +39,12 @@ input CreateMatchingParamV2 {
   deadline: Time
 }
 
+input ReviewMatchingParam {
+  toUserId: String!
+  score: Int!
+  comment: String!
+}
+
 input MatchingPropertyParam {
   id: String!
   values: [String!]!
@@ -229,7 +235,7 @@ extend type Mutation {
   "【匹配系统】完成匹配，退出聊天"
   finishMatching(matchingId: String!): String
 
-  "【匹配系统】打分"
+  "【匹配系统】评价匹配"
   reviewMatching(matchingId: String!, param: ReviewMatchingParam!): String
 
   "【匹配系统】更新最近的匹配，管理端"

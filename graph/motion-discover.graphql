@@ -66,6 +66,7 @@ type MotionOfferRecord {
   chatChance: Int!
 
   # query
+  reviewed("无需填写" userId: String): Boolean!
   toMotion: DiscoverMotion!
   motion: DiscoverMotion!
 }
@@ -148,7 +149,11 @@ extend type Query {
 
 extend type Mutation {
   "【广场】获取可以发起响应的意向 id"
-  getAvailableMotionOffer("用户 ID，不填" userId: String, targetMotionId: String!): AvailableMotionOffer!
+  getAvailableMotionOffer(
+    "用户 ID，不填"
+    userId: String
+    targetMotionId: String!
+  ): AvailableMotionOffer!
 
   "【广场】发起活动意向"
   createMotionOffer(myMotionId: String!, targetMotionId: String!): String
@@ -163,8 +168,17 @@ extend type Mutation {
   rejectMotionOffer(myMotionId: String!, targetMotionId: String!): String
 
   "【广场】发送聊天消息"
-  sendChatInOffer(myMotionId: String!, targetMotionId: String!, sentence: String!): String
+  sendChatInOffer(
+    myMotionId: String!
+    targetMotionId: String!
+    sentence: String!
+  ): String
 
   "【广场】结束活动"
-  finishMotionOffer(myMotionId: String!, targetMotionId: String!): String
+  finishMotionOffer(
+    "发出邀约的 motion id"
+    fromMotionId: String!
+    "被邀约的 motion id"
+    toMotionId: String!
+  ): String
 }

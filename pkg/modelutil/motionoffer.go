@@ -3,7 +3,6 @@ package modelutil
 import (
 	"context"
 	"errors"
-	"gorm.io/gorm"
 	"time"
 	"whale/pkg/dbquery"
 	"whale/pkg/gqlient/smew"
@@ -11,6 +10,8 @@ import (
 	"whale/pkg/models"
 	"whale/pkg/utils"
 	"whale/pkg/whalecode"
+
+	"gorm.io/gorm"
 
 	"github.com/letjoy-club/mida-tool/dbutil"
 	"github.com/letjoy-club/mida-tool/keyer"
@@ -673,15 +674,14 @@ func SendChatInOffer(ctx context.Context, myUserID, myMotionID, targetMotionID, 
 	return err
 }
 
-func FinishMotionOffer(ctx context.Context, myUserID, myMotionID, targetMotionID string) error {
+// FinishMotionOffer 结束邀约 fromMatchingID 表示邀约的一方，toMatchingID 表示被邀约的一方
+func FinishMotionOffer(ctx context.Context, myUserID, fromMatchingID, toMatchingID string) error {
 	db := dbutil.GetDB(ctx)
 	MotionOfferRecord := dbquery.Use(db).MotionOfferRecord
 	// todo: 有没有可能存在双向不同的Offer
-	record, err := MotionOfferRecord.WithContext(ctx).Or(
-		MotionOfferRecord.MotionID.Eq(myMotionID), MotionOfferRecord.ToMotionID.Eq(targetMotionID),
-	).Or(
-		MotionOfferRecord.ToMotionID.Eq(myMotionID), MotionOfferRecord.MotionID.Eq(targetMotionID),
-	).Where(MotionOfferRecord.ToMotionID.Eq(targetMotionID)).Take()
+	record, err := MotionOfferRecord.WithContext(ctx).Where(
+		MotionOfferRecord.MotionID.Eq(fromMatchingID), MotionOfferRecord.ToMotionID.Eq(toMatchingID),
+	).Take()
 	if err != nil {
 		return midacode.ItemMayNotFound(err)
 	}
@@ -729,15 +729,8 @@ func FinishMotionOffer(ctx context.Context, myUserID, myMotionID, targetMotionID
 		return err
 	}
 
-	if myUserID == record.ToUserID {
-		// 如果是被邀请方来结束邀约
-		midacontext.GetLoader[loader.Loader](ctx).InMotionOfferRecord.Clear(ctx, record.ToMotionID)
-		midacontext.GetLoader[loader.Loader](ctx).OutMotionOfferRecord.Clear(ctx, record.MotionID)
-	} else {
-		// 如果是邀请方来结束邀约
-		midacontext.GetLoader[loader.Loader](ctx).OutMotionOfferRecord.Clear(ctx, record.MotionID)
-		midacontext.GetLoader[loader.Loader](ctx).InMotionOfferRecord.Clear(ctx, record.ToMotionID)
-	}
+	midacontext.GetLoader[loader.Loader](ctx).InMotionOfferRecord.Clear(ctx, toMatchingID)
+	midacontext.GetLoader[loader.Loader](ctx).OutMotionOfferRecord.Clear(ctx, fromMatchingID)
 	midacontext.GetLoader[loader.Loader](ctx).MatchingResult.Clear(ctx, matchingResultID)
 	return nil
 }

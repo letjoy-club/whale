@@ -323,6 +323,7 @@ type ComplexityRoot struct {
 		MotionID   func(childComplexity int) int
 		ReactAt    func(childComplexity int) int
 		Remark     func(childComplexity int) int
+		Reviewed   func(childComplexity int, userID *string) int
 		State      func(childComplexity int) int
 		ToMotion   func(childComplexity int) int
 		ToMotionID func(childComplexity int) int
@@ -353,13 +354,14 @@ type ComplexityRoot struct {
 		CreateMotionOffer                func(childComplexity int, myMotionID string, targetMotionID string) int
 		CreateUserJoinTopic              func(childComplexity int, param models.CreateUserJoinTopicParam) int
 		FinishMatching                   func(childComplexity int, matchingID string) int
-		FinishMotionOffer                func(childComplexity int, myMotionID string, targetMotionID string) int
+		FinishMotionOffer                func(childComplexity int, fromMotionID string, toMotionID string) int
 		GetAvailableMotionOffer          func(childComplexity int, userID *string, targetMotionID string) int
 		GetMatchingScore                 func(childComplexity int, id1 string, id2 string) int
 		LikeMotion                       func(childComplexity int, userID *string, motionID string) int
 		RefreshTopicMetrics              func(childComplexity int) int
 		RejectMotionOffer                func(childComplexity int, myMotionID string, targetMotionID string) int
 		ReviewMatching                   func(childComplexity int, matchingID string, param models.ReviewMatchingParam) int
+		ReviewMotionOffer                func(childComplexity int, userID *string, fromMotionID string, toMotionID string, param models.ReviewMotionParam) int
 		SendChatInOffer                  func(childComplexity int, myMotionID string, targetMotionID string, sentence string) int
 		StartMatching                    func(childComplexity int) int
 		ThumbsUpMotion                   func(childComplexity int, userID *string, motionID string) int
@@ -621,6 +623,7 @@ type MotionResolver interface {
 type MotionOfferRecordResolver interface {
 	State(ctx context.Context, obj *models.MotionOfferRecord) (models.MotionOfferState, error)
 
+	Reviewed(ctx context.Context, obj *models.MotionOfferRecord, userID *string) (bool, error)
 	ToMotion(ctx context.Context, obj *models.MotionOfferRecord) (*models.Motion, error)
 	Motion(ctx context.Context, obj *models.MotionOfferRecord) (*models.Motion, error)
 }
@@ -651,11 +654,12 @@ type MutationResolver interface {
 	AcceptMotionOffer(ctx context.Context, myMotionID string, targetMotionID string) (*string, error)
 	RejectMotionOffer(ctx context.Context, myMotionID string, targetMotionID string) (*string, error)
 	SendChatInOffer(ctx context.Context, myMotionID string, targetMotionID string, sentence string) (*string, error)
-	FinishMotionOffer(ctx context.Context, myMotionID string, targetMotionID string) (*string, error)
+	FinishMotionOffer(ctx context.Context, fromMotionID string, toMotionID string) (*string, error)
 	CreateMotion(ctx context.Context, userID *string, param models.CreateMotionParam) (*models.Motion, error)
 	UpdateMotion(ctx context.Context, id string, param models.UpdateMotionParam) (*models.Motion, error)
 	UserUpdateMotion(ctx context.Context, myMotionID string, param models.UserUpdateMotionParam) (*models.Motion, error)
 	CloseMotion(ctx context.Context, id string) (*string, error)
+	ReviewMotionOffer(ctx context.Context, userID *string, fromMotionID string, toMotionID string, param models.ReviewMotionParam) (*string, error)
 	CreateCityTopics(ctx context.Context, param models.CreateCityTopicParam) (*models.CityTopics, error)
 	UpdateCityTopics(ctx context.Context, cityID string, param models.UpdateCityTopicParam) (*models.CityTopics, error)
 	UpdateHotTopicsInArea(ctx context.Context, cityID string, param models.UpdateHotTopicParam) (*models.HotTopicsInArea, error)
@@ -2093,6 +2097,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.MotionOfferRecord.Remark(childComplexity), true
 
+	case "MotionOfferRecord.reviewed":
+		if e.complexity.MotionOfferRecord.Reviewed == nil {
+			break
+		}
+
+		args, err := ec.field_MotionOfferRecord_reviewed_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.MotionOfferRecord.Reviewed(childComplexity, args["userId"].(*string)), true
+
 	case "MotionOfferRecord.state":
 		if e.complexity.MotionOfferRecord.State == nil {
 			break
@@ -2366,7 +2382,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.FinishMotionOffer(childComplexity, args["myMotionId"].(string), args["targetMotionId"].(string)), true
+		return e.complexity.Mutation.FinishMotionOffer(childComplexity, args["fromMotionId"].(string), args["toMotionId"].(string)), true
 
 	case "Mutation.getAvailableMotionOffer":
 		if e.complexity.Mutation.GetAvailableMotionOffer == nil {
@@ -2434,6 +2450,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.ReviewMatching(childComplexity, args["matchingId"].(string), args["param"].(models.ReviewMatchingParam)), true
+
+	case "Mutation.reviewMotionOffer":
+		if e.complexity.Mutation.ReviewMotionOffer == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_reviewMotionOffer_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.ReviewMotionOffer(childComplexity, args["userId"].(*string), args["fromMotionId"].(string), args["toMotionId"].(string), args["param"].(models.ReviewMotionParam)), true
 
 	case "Mutation.sendChatInOffer":
 		if e.complexity.Mutation.SendChatInOffer == nil {
@@ -3617,6 +3645,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputMotionPropertyParam,
 		ec.unmarshalInputRecentMatchingFilter,
 		ec.unmarshalInputReviewMatchingParam,
+		ec.unmarshalInputReviewMotionParam,
 		ec.unmarshalInputUpdateCityTopicParam,
 		ec.unmarshalInputUpdateHotTopicMetricsParam,
 		ec.unmarshalInputUpdateHotTopicParam,
@@ -3946,6 +3975,21 @@ func (ec *executionContext) field_Entity_findUserByID_args(ctx context.Context, 
 		}
 	}
 	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_MotionOfferRecord_reviewed_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["userId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userId"))
+		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["userId"] = arg0
 	return args, nil
 }
 
@@ -4364,23 +4408,23 @@ func (ec *executionContext) field_Mutation_finishMotionOffer_args(ctx context.Co
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
-	if tmp, ok := rawArgs["myMotionId"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("myMotionId"))
+	if tmp, ok := rawArgs["fromMotionId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("fromMotionId"))
 		arg0, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["myMotionId"] = arg0
+	args["fromMotionId"] = arg0
 	var arg1 string
-	if tmp, ok := rawArgs["targetMotionId"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("targetMotionId"))
+	if tmp, ok := rawArgs["toMotionId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("toMotionId"))
 		arg1, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["targetMotionId"] = arg1
+	args["toMotionId"] = arg1
 	return args, nil
 }
 
@@ -4501,6 +4545,48 @@ func (ec *executionContext) field_Mutation_reviewMatching_args(ctx context.Conte
 		}
 	}
 	args["param"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_reviewMotionOffer_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["userId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userId"))
+		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["userId"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["fromMotionId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("fromMotionId"))
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["fromMotionId"] = arg1
+	var arg2 string
+	if tmp, ok := rawArgs["toMotionId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("toMotionId"))
+		arg2, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["toMotionId"] = arg2
+	var arg3 models.ReviewMotionParam
+	if tmp, ok := rawArgs["param"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("param"))
+		arg3, err = ec.unmarshalNReviewMotionParam2whaleᚋpkgᚋmodelsᚐReviewMotionParam(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["param"] = arg3
 	return args, nil
 }
 
@@ -14925,6 +15011,61 @@ func (ec *executionContext) fieldContext_MotionOfferRecord_chatChance(ctx contex
 	return fc, nil
 }
 
+func (ec *executionContext) _MotionOfferRecord_reviewed(ctx context.Context, field graphql.CollectedField, obj *models.MotionOfferRecord) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MotionOfferRecord_reviewed(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.MotionOfferRecord().Reviewed(rctx, obj, fc.Args["userId"].(*string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MotionOfferRecord_reviewed(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MotionOfferRecord",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_MotionOfferRecord_reviewed_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _MotionOfferRecord_toMotion(ctx context.Context, field graphql.CollectedField, obj *models.MotionOfferRecord) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_MotionOfferRecord_toMotion(ctx, field)
 	if err != nil {
@@ -16846,7 +16987,7 @@ func (ec *executionContext) _Mutation_finishMotionOffer(ctx context.Context, fie
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().FinishMotionOffer(rctx, fc.Args["myMotionId"].(string), fc.Args["targetMotionId"].(string))
+		return ec.resolvers.Mutation().FinishMotionOffer(rctx, fc.Args["fromMotionId"].(string), fc.Args["toMotionId"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -17257,6 +17398,58 @@ func (ec *executionContext) fieldContext_Mutation_closeMotion(ctx context.Contex
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_closeMotion_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_reviewMotionOffer(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_reviewMotionOffer(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().ReviewMotionOffer(rctx, fc.Args["userId"].(*string), fc.Args["fromMotionId"].(string), fc.Args["toMotionId"].(string), fc.Args["param"].(models.ReviewMotionParam))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_reviewMotionOffer(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_reviewMotionOffer_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -20342,6 +20535,8 @@ func (ec *executionContext) fieldContext_Query_outMotionOffers(ctx context.Conte
 				return ec.fieldContext_MotionOfferRecord_remark(ctx, field)
 			case "chatChance":
 				return ec.fieldContext_MotionOfferRecord_chatChance(ctx, field)
+			case "reviewed":
+				return ec.fieldContext_MotionOfferRecord_reviewed(ctx, field)
 			case "toMotion":
 				return ec.fieldContext_MotionOfferRecord_toMotion(ctx, field)
 			case "motion":
@@ -20417,6 +20612,8 @@ func (ec *executionContext) fieldContext_Query_inMotionOffers(ctx context.Contex
 				return ec.fieldContext_MotionOfferRecord_remark(ctx, field)
 			case "chatChance":
 				return ec.fieldContext_MotionOfferRecord_chatChance(ctx, field)
+			case "reviewed":
+				return ec.fieldContext_MotionOfferRecord_reviewed(ctx, field)
 			case "toMotion":
 				return ec.fieldContext_MotionOfferRecord_toMotion(ctx, field)
 			case "motion":
@@ -20492,6 +20689,8 @@ func (ec *executionContext) fieldContext_Query_getMotionOffer(ctx context.Contex
 				return ec.fieldContext_MotionOfferRecord_remark(ctx, field)
 			case "chatChance":
 				return ec.fieldContext_MotionOfferRecord_chatChance(ctx, field)
+			case "reviewed":
+				return ec.fieldContext_MotionOfferRecord_reviewed(ctx, field)
 			case "toMotion":
 				return ec.fieldContext_MotionOfferRecord_toMotion(ctx, field)
 			case "motion":
@@ -27143,6 +27342,44 @@ func (ec *executionContext) unmarshalInputReviewMatchingParam(ctx context.Contex
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputReviewMotionParam(ctx context.Context, obj interface{}) (models.ReviewMotionParam, error) {
+	var it models.ReviewMotionParam
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"score", "comment"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "score":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("score"))
+			data, err := ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Score = data
+		case "comment":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("comment"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Comment = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputUpdateCityTopicParam(ctx context.Context, obj interface{}) (models.UpdateCityTopicParam, error) {
 	var it models.UpdateCityTopicParam
 	asMap := map[string]interface{}{}
@@ -31511,6 +31748,42 @@ func (ec *executionContext) _MotionOfferRecord(ctx context.Context, sel ast.Sele
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
 			}
+		case "reviewed":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._MotionOfferRecord_reviewed(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "toMotion":
 			field := field
 
@@ -31834,6 +32107,10 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "closeMotion":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_closeMotion(ctx, field)
+			})
+		case "reviewMotionOffer":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_reviewMotionOffer(ctx, field)
 			})
 		case "createCityTopics":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
@@ -35943,6 +36220,11 @@ func (ec *executionContext) marshalNResultCreatedBy2whaleᚋpkgᚋmodelsᚐResul
 
 func (ec *executionContext) unmarshalNReviewMatchingParam2whaleᚋpkgᚋmodelsᚐReviewMatchingParam(ctx context.Context, v interface{}) (models.ReviewMatchingParam, error) {
 	res, err := ec.unmarshalInputReviewMatchingParam(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNReviewMotionParam2whaleᚋpkgᚋmodelsᚐReviewMotionParam(ctx context.Context, v interface{}) (models.ReviewMotionParam, error) {
+	res, err := ec.unmarshalInputReviewMotionParam(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 

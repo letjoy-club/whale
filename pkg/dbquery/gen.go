@@ -33,6 +33,7 @@ func Use(db *gorm.DB, opts ...gen.DOOption) *Query {
 		MatchingViewHistory:         newMatchingViewHistory(db, opts...),
 		Motion:                      newMotion(db, opts...),
 		MotionOfferRecord:           newMotionOfferRecord(db, opts...),
+		MotionReview:                newMotionReview(db, opts...),
 		MotionViewHistory:           newMotionViewHistory(db, opts...),
 		RecentMatching:              newRecentMatching(db, opts...),
 		UserJoinTopic:               newUserJoinTopic(db, opts...),
@@ -61,6 +62,7 @@ type Query struct {
 	MatchingViewHistory         matchingViewHistory
 	Motion                      motion
 	MotionOfferRecord           motionOfferRecord
+	MotionReview                motionReview
 	MotionViewHistory           motionViewHistory
 	RecentMatching              recentMatching
 	UserJoinTopic               userJoinTopic
@@ -90,6 +92,7 @@ func (q *Query) clone(db *gorm.DB) *Query {
 		MatchingViewHistory:         q.MatchingViewHistory.clone(db),
 		Motion:                      q.Motion.clone(db),
 		MotionOfferRecord:           q.MotionOfferRecord.clone(db),
+		MotionReview:                q.MotionReview.clone(db),
 		MotionViewHistory:           q.MotionViewHistory.clone(db),
 		RecentMatching:              q.RecentMatching.clone(db),
 		UserJoinTopic:               q.UserJoinTopic.clone(db),
@@ -126,6 +129,7 @@ func (q *Query) ReplaceDB(db *gorm.DB) *Query {
 		MatchingViewHistory:         q.MatchingViewHistory.replaceDB(db),
 		Motion:                      q.Motion.replaceDB(db),
 		MotionOfferRecord:           q.MotionOfferRecord.replaceDB(db),
+		MotionReview:                q.MotionReview.replaceDB(db),
 		MotionViewHistory:           q.MotionViewHistory.replaceDB(db),
 		RecentMatching:              q.RecentMatching.replaceDB(db),
 		UserJoinTopic:               q.UserJoinTopic.replaceDB(db),
@@ -152,6 +156,7 @@ type queryCtx struct {
 	MatchingViewHistory         IMatchingViewHistoryDo
 	Motion                      IMotionDo
 	MotionOfferRecord           IMotionOfferRecordDo
+	MotionReview                IMotionReviewDo
 	MotionViewHistory           IMotionViewHistoryDo
 	RecentMatching              IRecentMatchingDo
 	UserJoinTopic               IUserJoinTopicDo
@@ -178,6 +183,7 @@ func (q *Query) WithContext(ctx context.Context) *queryCtx {
 		MatchingViewHistory:         q.MatchingViewHistory.WithContext(ctx),
 		Motion:                      q.Motion.WithContext(ctx),
 		MotionOfferRecord:           q.MotionOfferRecord.WithContext(ctx),
+		MotionReview:                q.MotionReview.WithContext(ctx),
 		MotionViewHistory:           q.MotionViewHistory.WithContext(ctx),
 		RecentMatching:              q.RecentMatching.WithContext(ctx),
 		UserJoinTopic:               q.UserJoinTopic.WithContext(ctx),
