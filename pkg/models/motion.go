@@ -34,9 +34,11 @@ type Motion struct {
 
 	Discoverable bool
 
+	RelatedMatchingID string `gorm:"type:varchar(32)"`
+
 	Deadline  time.Time
-	UpdatedAt time.Time
-	CreatedAt time.Time
+	UpdatedAt time.Time `gorm:"autoUpdateTime"`
+	CreatedAt time.Time `gorm:"autoCreateTime"`
 }
 
 type RecentLikeMotion struct {

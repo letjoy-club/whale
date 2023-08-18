@@ -6,7 +6,6 @@ package graph
 
 import (
 	"context"
-	"fmt"
 	"whale/pkg/dbquery"
 	"whale/pkg/loader"
 	"whale/pkg/models"
@@ -20,6 +19,7 @@ import (
 	"github.com/letjoy-club/mida-tool/midacode"
 	"github.com/letjoy-club/mida-tool/midacontext"
 	"github.com/letjoy-club/mida-tool/redisutil"
+	"gorm.io/gen/field"
 )
 
 // CreateMotion is the resolver for the createMotion field.
@@ -70,7 +70,43 @@ func (r *mutationResolver) UpdateMotion(ctx context.Context, id string, param mo
 
 // UserUpdateMotion is the resolver for the userUpdateMotion field.
 func (r *mutationResolver) UserUpdateMotion(ctx context.Context, myMotionID string, param models.UserUpdateMotionParam) (*models.Motion, error) {
-	panic(fmt.Errorf("not implemented: UserUpdateMotion - userUpdateMotion"))
+	token := midacontext.GetClientToken(ctx)
+	if !token.IsAdmin() && !token.IsUser() {
+		return nil, midacode.ErrNotPermitted
+	}
+	thunk := midacontext.GetLoader[loader.Loader](ctx).Motion.Load(ctx, myMotionID)
+	_, err := thunk()
+	if err != nil {
+		return nil, err
+	}
+
+	db := dbutil.GetDB(ctx)
+	Motion := dbquery.Use(db).Motion
+
+	fields := []field.AssignExpr{}
+	if param.Gender != nil {
+		fields = append(fields, Motion.Gender.Value(*param.Gender))
+	}
+	if param.Remark != nil {
+		fields = append(fields, Motion.Remark.Value(*param.Remark))
+	}
+	if param.AreaIds != nil {
+		fields = append(fields, Motion.AreaIDs.Value(graphqlutil.ElementList[string](param.AreaIds)))
+	}
+	if param.DayRange != nil {
+		fields = append(fields, Motion.DayRange.Value(graphqlutil.ElementList[string](param.DayRange)))
+	}
+	if param.Properties != nil {
+		fields = append(fields, Motion.Properties.Value(graphqlutil.ElementList[*models.MotionPropertyParam](param.Properties)))
+	}
+	if param.PreferredPeriods != nil {
+		fields = append(fields, Motion.Properties.Value(graphqlutil.ElementList[models.DatePeriod](param.PreferredPeriods)))
+	}
+	_, err = Motion.WithContext(ctx).Where(Motion.ID.Eq(myMotionID)).UpdateSimple(fields...)
+	if err == nil {
+		midacontext.GetLoader[loader.Loader](ctx).Motion.Clear(ctx, myMotionID)
+	}
+	return nil, err
 }
 
 // CloseMotion is the resolver for the closeMotion field.

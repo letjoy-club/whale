@@ -8,9 +8,9 @@ import (
 )
 
 type Matching struct {
-	ID string `gorm:"primaryKey"`
+	ID string `gorm:"primaryKey;type:varchar(32)"`
 
-	TopicID string   `gorm:"index"`
+	TopicID string   `gorm:"index;type:varchar(32)"`
 	UserID  string   `gorm:"index;type:varchar(64)"`
 	AreaIDs []string `gorm:"serializer:json;type:json"`
 	CityID  string   `gorm:"index;type:varchar(64)"`
@@ -36,8 +36,7 @@ type Matching struct {
 
 	// 真正开始匹配的时间
 	StartMatchingAt *time.Time
-
-	Discoverable bool
+	RelatedMotionID string `gorm:"type:varchar(32)"`
 
 	FinishedAt *time.Time
 	MatchedAt  *time.Time
@@ -198,7 +197,7 @@ type MatchingResultConfirmAction struct {
 }
 
 type MatchingQuota struct {
-	UserID string `gorm:"primaryKey"`
+	UserID string `gorm:"primaryKey;type:varchar(32)"`
 
 	Remain int
 	Total  int

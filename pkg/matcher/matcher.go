@@ -55,6 +55,10 @@ func (m *Matcher) Match(ctx context.Context) error {
 
 	matchings, err := Matching.WithContext(ctx).Where(
 		Matching.State.Eq(string(models.MatchingStateMatching)),
+		Matching.WithContext(ctx).Or(
+			Matching.StartMatchingAt.Gt(time.Now()),
+			Matching.StartMatchingAt.IsNull(),
+		),
 	).Find()
 	if err != nil {
 		return err

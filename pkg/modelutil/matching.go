@@ -176,7 +176,6 @@ func CreateMatching(ctx context.Context, uid string, param models.CreateMatching
 		Deadline:        time.Now().Add(time.Hour * 24 * 7),
 		AreaIDs:         param.AreaIds,
 		MyGender:        profile.Gender.String(),
-		Discoverable:    true,
 		StartMatchingAt: &startMatchingAt,
 	}
 

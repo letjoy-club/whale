@@ -124,6 +124,7 @@ type Matching @key(fields: "id") {
   "其它键值对属性"
   properties: [MatchingProperty!]!
 
+  startMatchingAt: Time @adminOnly
   deadline: Time! @adminOnly
   updatedAt: Time! @adminOnly
   createdAt: Time!

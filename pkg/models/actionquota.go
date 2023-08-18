@@ -10,6 +10,6 @@ type ActionQuota struct {
 
 	Day string `gorm:"type:varchar(16);uniqueIndex:user_day"`
 
-	UpdatedAt time.Time
-	CreatedAt time.Time
+	UpdatedAt time.Time `gorm:"autoUpdatetime"`
+	CreatedAt time.Time `gorm:"autoCreatetime"`
 }

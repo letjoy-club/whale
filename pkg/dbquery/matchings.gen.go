@@ -43,7 +43,7 @@ func newMatching(db *gorm.DB, opts ...gen.DOOption) matching {
 	_matching.PreferredPeriods = field.NewField(tableName, "preferred_periods")
 	_matching.Properties = field.NewField(tableName, "properties")
 	_matching.StartMatchingAt = field.NewTime(tableName, "start_matching_at")
-	_matching.Discoverable = field.NewBool(tableName, "discoverable")
+	_matching.RelatedMotionID = field.NewString(tableName, "related_motion_id")
 	_matching.FinishedAt = field.NewTime(tableName, "finished_at")
 	_matching.MatchedAt = field.NewTime(tableName, "matched_at")
 	_matching.Deadline = field.NewTime(tableName, "deadline")
@@ -76,7 +76,7 @@ type matching struct {
 	PreferredPeriods field.Field
 	Properties       field.Field
 	StartMatchingAt  field.Time
-	Discoverable     field.Bool
+	RelatedMotionID  field.String
 	FinishedAt       field.Time
 	MatchedAt        field.Time
 	Deadline         field.Time
@@ -115,7 +115,7 @@ func (m *matching) updateTableName(table string) *matching {
 	m.PreferredPeriods = field.NewField(table, "preferred_periods")
 	m.Properties = field.NewField(table, "properties")
 	m.StartMatchingAt = field.NewTime(table, "start_matching_at")
-	m.Discoverable = field.NewBool(table, "discoverable")
+	m.RelatedMotionID = field.NewString(table, "related_motion_id")
 	m.FinishedAt = field.NewTime(table, "finished_at")
 	m.MatchedAt = field.NewTime(table, "matched_at")
 	m.Deadline = field.NewTime(table, "deadline")
@@ -161,7 +161,7 @@ func (m *matching) fillFieldMap() {
 	m.fieldMap["preferred_periods"] = m.PreferredPeriods
 	m.fieldMap["properties"] = m.Properties
 	m.fieldMap["start_matching_at"] = m.StartMatchingAt
-	m.fieldMap["discoverable"] = m.Discoverable
+	m.fieldMap["related_motion_id"] = m.RelatedMotionID
 	m.fieldMap["finished_at"] = m.FinishedAt
 	m.fieldMap["matched_at"] = m.MatchedAt
 	m.fieldMap["deadline"] = m.Deadline

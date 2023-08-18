@@ -3,8 +3,8 @@ package models
 import "time"
 
 type MatchingOfferSummary struct {
-	MatchingID string `gorm:"primaryKey"`
-	UserID     string `gorm:"index"`
+	MatchingID string `gorm:"primaryKey;type:varchar(32)"`
+	UserID     string `gorm:"index;type:varchar(32)"`
 
 	// 用户收到的匹配意向数量
 	InOfferNum int
@@ -32,14 +32,14 @@ type MatchingOfferSummary struct {
 type MatchingOfferRecord struct {
 	ID int `gorm:"primaryKey"`
 
-	ToMatchingID string `gorm:"index"`
-	ToUserID     string
+	ToMatchingID string `gorm:"type:varchar(32);index"`
+	ToUserID     string `gorm:"type:varchar(32);index"`
 
 	MatchingID string `gorm:"index"`
-	UserID     string
+	UserID     string `gorm:"type:varchar(32);index"`
 
 	// Unprocessed, Accepted, Rejected, Canceled
-	State     string
+	State     string `gorm:"type:varchar(32)"`
 	ReactedAt *time.Time
 
 	Remark string `gorm:"text"`

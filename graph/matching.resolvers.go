@@ -808,6 +808,10 @@ func (r *queryResolver) UserMatchings(ctx context.Context, userID *string, filte
 			query = query.Where(Matching.State.In(states...))
 		}
 	}
+	if token.IsUser() {
+		// 用户只能看到非 motion 创建的匹配
+		query = query.Where(Matching.RelatedMotionID.Eq(""))
+	}
 	ids := []string{}
 	err := query.Limit(pager.Limit()).Offset(pager.Offset()).Order(Matching.CreatedAt.Desc()).Pluck(Matching.ID, &ids)
 	if err != nil {
@@ -878,6 +882,10 @@ func (r *queryResolver) UserMatchingsCount(ctx context.Context, userID *string, 
 		if filter.State != nil {
 			query = query.Where(Matching.State.Eq(filter.State.String()))
 		}
+	}
+	if token.IsUser() {
+		// 用户只能看到非 motion 创建的匹配
+		query = query.Where(Matching.RelatedMotionID.Eq(""))
 	}
 	count, err := query.Count()
 	return &models.Summary{Count: int(count)}, err

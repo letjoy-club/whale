@@ -47,6 +47,7 @@ func newMotion(db *gorm.DB, opts ...gen.DOOption) motion {
 	_motion.PendingOutNum = field.NewInt(tableName, "pending_out_num")
 	_motion.ActiveNum = field.NewInt(tableName, "active_num")
 	_motion.Discoverable = field.NewBool(tableName, "discoverable")
+	_motion.RelatedMatchingID = field.NewString(tableName, "related_matching_id")
 	_motion.Deadline = field.NewTime(tableName, "deadline")
 	_motion.UpdatedAt = field.NewTime(tableName, "updated_at")
 	_motion.CreatedAt = field.NewTime(tableName, "created_at")
@@ -59,31 +60,32 @@ func newMotion(db *gorm.DB, opts ...gen.DOOption) motion {
 type motion struct {
 	motionDo motionDo
 
-	ALL              field.Asterisk
-	ID               field.String
-	UserID           field.String
-	TopicID          field.String
-	CityID           field.String
-	AreaIDs          field.Field
-	Properties       field.Field
-	Active           field.Bool
-	Remark           field.String
-	MyGender         field.String
-	Gender           field.String
-	DayRange         field.Field
-	PreferredPeriods field.Field
-	ViewCount        field.Int
-	LikeCount        field.Int
-	ThumbsUpCount    field.Int
-	InOfferNum       field.Int
-	OutOfferNum      field.Int
-	PendingInNum     field.Int
-	PendingOutNum    field.Int
-	ActiveNum        field.Int
-	Discoverable     field.Bool
-	Deadline         field.Time
-	UpdatedAt        field.Time
-	CreatedAt        field.Time
+	ALL               field.Asterisk
+	ID                field.String
+	UserID            field.String
+	TopicID           field.String
+	CityID            field.String
+	AreaIDs           field.Field
+	Properties        field.Field
+	Active            field.Bool
+	Remark            field.String
+	MyGender          field.String
+	Gender            field.String
+	DayRange          field.Field
+	PreferredPeriods  field.Field
+	ViewCount         field.Int
+	LikeCount         field.Int
+	ThumbsUpCount     field.Int
+	InOfferNum        field.Int
+	OutOfferNum       field.Int
+	PendingInNum      field.Int
+	PendingOutNum     field.Int
+	ActiveNum         field.Int
+	Discoverable      field.Bool
+	RelatedMatchingID field.String
+	Deadline          field.Time
+	UpdatedAt         field.Time
+	CreatedAt         field.Time
 
 	fieldMap map[string]field.Expr
 }
@@ -121,6 +123,7 @@ func (m *motion) updateTableName(table string) *motion {
 	m.PendingOutNum = field.NewInt(table, "pending_out_num")
 	m.ActiveNum = field.NewInt(table, "active_num")
 	m.Discoverable = field.NewBool(table, "discoverable")
+	m.RelatedMatchingID = field.NewString(table, "related_matching_id")
 	m.Deadline = field.NewTime(table, "deadline")
 	m.UpdatedAt = field.NewTime(table, "updated_at")
 	m.CreatedAt = field.NewTime(table, "created_at")
@@ -146,7 +149,7 @@ func (m *motion) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 }
 
 func (m *motion) fillFieldMap() {
-	m.fieldMap = make(map[string]field.Expr, 24)
+	m.fieldMap = make(map[string]field.Expr, 25)
 	m.fieldMap["id"] = m.ID
 	m.fieldMap["user_id"] = m.UserID
 	m.fieldMap["topic_id"] = m.TopicID
@@ -168,6 +171,7 @@ func (m *motion) fillFieldMap() {
 	m.fieldMap["pending_out_num"] = m.PendingOutNum
 	m.fieldMap["active_num"] = m.ActiveNum
 	m.fieldMap["discoverable"] = m.Discoverable
+	m.fieldMap["related_matching_id"] = m.RelatedMatchingID
 	m.fieldMap["deadline"] = m.Deadline
 	m.fieldMap["updated_at"] = m.UpdatedAt
 	m.fieldMap["created_at"] = m.CreatedAt

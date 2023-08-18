@@ -180,6 +180,7 @@ type ComplexityRoot struct {
 		RejectedUserIDs  func(childComplexity int) int
 		Remark           func(childComplexity int) int
 		Reviewed         func(childComplexity int) int
+		StartMatchingAt  func(childComplexity int) int
 		State            func(childComplexity int) int
 		Topic            func(childComplexity int) int
 		TopicID          func(childComplexity int) int
@@ -304,6 +305,7 @@ type ComplexityRoot struct {
 		PendingOutNum     func(childComplexity int) int
 		PreferredPeriods  func(childComplexity int) int
 		Properties        func(childComplexity int) int
+		RelatedMatchingID func(childComplexity int) int
 		Remark            func(childComplexity int) int
 		ThumbsUp          func(childComplexity int) int
 		ThumbsUpCount     func(childComplexity int) int
@@ -1300,6 +1302,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Matching.Reviewed(childComplexity), true
 
+	case "Matching.startMatchingAt":
+		if e.complexity.Matching.StartMatchingAt == nil {
+			break
+		}
+
+		return e.complexity.Matching.StartMatchingAt(childComplexity), true
+
 	case "Matching.state":
 		if e.complexity.Matching.State == nil {
 			break
@@ -1978,6 +1987,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Motion.Properties(childComplexity), true
+
+	case "Motion.relatedMatchingId":
+		if e.complexity.Motion.RelatedMatchingID == nil {
+			break
+		}
+
+		return e.complexity.Motion.RelatedMatchingID(childComplexity), true
 
 	case "Motion.remark":
 		if e.complexity.Motion.Remark == nil {
@@ -5984,6 +6000,8 @@ func (ec *executionContext) fieldContext_AvailableMotionOffer_motion(ctx context
 				return ec.fieldContext_Motion_activeNum(ctx, field)
 			case "discoverable":
 				return ec.fieldContext_Motion_discoverable(ctx, field)
+			case "relatedMatchingId":
+				return ec.fieldContext_Motion_relatedMatchingId(ctx, field)
 			case "properties":
 				return ec.fieldContext_Motion_properties(ctx, field)
 			case "dayRange":
@@ -7903,6 +7921,8 @@ func (ec *executionContext) fieldContext_Entity_findMatchingByID(ctx context.Con
 				return ec.fieldContext_Matching_preferredPeriods(ctx, field)
 			case "properties":
 				return ec.fieldContext_Matching_properties(ctx, field)
+			case "startMatchingAt":
+				return ec.fieldContext_Matching_startMatchingAt(ctx, field)
 			case "deadline":
 				return ec.fieldContext_Matching_deadline(ctx, field)
 			case "updatedAt":
@@ -9227,6 +9247,67 @@ func (ec *executionContext) fieldContext_Matching_properties(ctx context.Context
 				return ec.fieldContext_MatchingProperty_values(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type MatchingProperty", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Matching_startMatchingAt(ctx context.Context, field graphql.CollectedField, obj *models.Matching) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Matching_startMatchingAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return obj.StartMatchingAt, nil
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.AdminOnly == nil {
+				return nil, errors.New("directive adminOnly is not implemented")
+			}
+			return ec.directives.AdminOnly(ctx, obj, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*time.Time); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *time.Time`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*time.Time)
+	fc.Result = res
+	return ec.marshalOTime2ᚖtimeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Matching_startMatchingAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Matching",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
 		},
 	}
 	return fc, nil
@@ -13828,6 +13909,50 @@ func (ec *executionContext) fieldContext_Motion_discoverable(ctx context.Context
 	return fc, nil
 }
 
+func (ec *executionContext) _Motion_relatedMatchingId(ctx context.Context, field graphql.CollectedField, obj *models.Motion) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Motion_relatedMatchingId(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RelatedMatchingID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Motion_relatedMatchingId(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Motion",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Motion_properties(ctx context.Context, field graphql.CollectedField, obj *models.Motion) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Motion_properties(ctx, field)
 	if err != nil {
@@ -15516,6 +15641,8 @@ func (ec *executionContext) fieldContext_Mutation_createMatching(ctx context.Con
 				return ec.fieldContext_Matching_preferredPeriods(ctx, field)
 			case "properties":
 				return ec.fieldContext_Matching_properties(ctx, field)
+			case "startMatchingAt":
+				return ec.fieldContext_Matching_startMatchingAt(ctx, field)
 			case "deadline":
 				return ec.fieldContext_Matching_deadline(ctx, field)
 			case "updatedAt":
@@ -15617,6 +15744,8 @@ func (ec *executionContext) fieldContext_Mutation_createMatchingV2(ctx context.C
 				return ec.fieldContext_Matching_preferredPeriods(ctx, field)
 			case "properties":
 				return ec.fieldContext_Matching_properties(ctx, field)
+			case "startMatchingAt":
+				return ec.fieldContext_Matching_startMatchingAt(ctx, field)
 			case "deadline":
 				return ec.fieldContext_Matching_deadline(ctx, field)
 			case "updatedAt":
@@ -15718,6 +15847,8 @@ func (ec *executionContext) fieldContext_Mutation_updateMatching(ctx context.Con
 				return ec.fieldContext_Matching_preferredPeriods(ctx, field)
 			case "properties":
 				return ec.fieldContext_Matching_properties(ctx, field)
+			case "startMatchingAt":
+				return ec.fieldContext_Matching_startMatchingAt(ctx, field)
 			case "deadline":
 				return ec.fieldContext_Matching_deadline(ctx, field)
 			case "updatedAt":
@@ -16814,6 +16945,8 @@ func (ec *executionContext) fieldContext_Mutation_createMotion(ctx context.Conte
 				return ec.fieldContext_Motion_activeNum(ctx, field)
 			case "discoverable":
 				return ec.fieldContext_Motion_discoverable(ctx, field)
+			case "relatedMatchingId":
+				return ec.fieldContext_Motion_relatedMatchingId(ctx, field)
 			case "properties":
 				return ec.fieldContext_Motion_properties(ctx, field)
 			case "dayRange":
@@ -16921,6 +17054,8 @@ func (ec *executionContext) fieldContext_Mutation_updateMotion(ctx context.Conte
 				return ec.fieldContext_Motion_activeNum(ctx, field)
 			case "discoverable":
 				return ec.fieldContext_Motion_discoverable(ctx, field)
+			case "relatedMatchingId":
+				return ec.fieldContext_Motion_relatedMatchingId(ctx, field)
 			case "properties":
 				return ec.fieldContext_Motion_properties(ctx, field)
 			case "dayRange":
@@ -17028,6 +17163,8 @@ func (ec *executionContext) fieldContext_Mutation_userUpdateMotion(ctx context.C
 				return ec.fieldContext_Motion_activeNum(ctx, field)
 			case "discoverable":
 				return ec.fieldContext_Motion_discoverable(ctx, field)
+			case "relatedMatchingId":
+				return ec.fieldContext_Motion_relatedMatchingId(ctx, field)
 			case "properties":
 				return ec.fieldContext_Motion_properties(ctx, field)
 			case "dayRange":
@@ -18431,6 +18568,8 @@ func (ec *executionContext) fieldContext_Query_matching(ctx context.Context, fie
 				return ec.fieldContext_Matching_preferredPeriods(ctx, field)
 			case "properties":
 				return ec.fieldContext_Matching_properties(ctx, field)
+			case "startMatchingAt":
+				return ec.fieldContext_Matching_startMatchingAt(ctx, field)
 			case "deadline":
 				return ec.fieldContext_Matching_deadline(ctx, field)
 			case "updatedAt":
@@ -18864,6 +19003,8 @@ func (ec *executionContext) fieldContext_Query_matchings(ctx context.Context, fi
 				return ec.fieldContext_Matching_preferredPeriods(ctx, field)
 			case "properties":
 				return ec.fieldContext_Matching_properties(ctx, field)
+			case "startMatchingAt":
+				return ec.fieldContext_Matching_startMatchingAt(ctx, field)
 			case "deadline":
 				return ec.fieldContext_Matching_deadline(ctx, field)
 			case "updatedAt":
@@ -19281,6 +19422,8 @@ func (ec *executionContext) fieldContext_Query_userMatchings(ctx context.Context
 				return ec.fieldContext_Matching_preferredPeriods(ctx, field)
 			case "properties":
 				return ec.fieldContext_Matching_properties(ctx, field)
+			case "startMatchingAt":
+				return ec.fieldContext_Matching_startMatchingAt(ctx, field)
 			case "deadline":
 				return ec.fieldContext_Matching_deadline(ctx, field)
 			case "updatedAt":
@@ -19382,6 +19525,8 @@ func (ec *executionContext) fieldContext_Query_unconfirmedUserMatchings(ctx cont
 				return ec.fieldContext_Matching_preferredPeriods(ctx, field)
 			case "properties":
 				return ec.fieldContext_Matching_properties(ctx, field)
+			case "startMatchingAt":
+				return ec.fieldContext_Matching_startMatchingAt(ctx, field)
 			case "deadline":
 				return ec.fieldContext_Matching_deadline(ctx, field)
 			case "updatedAt":
@@ -20430,6 +20575,8 @@ func (ec *executionContext) fieldContext_Query_motion(ctx context.Context, field
 				return ec.fieldContext_Motion_activeNum(ctx, field)
 			case "discoverable":
 				return ec.fieldContext_Motion_discoverable(ctx, field)
+			case "relatedMatchingId":
+				return ec.fieldContext_Motion_relatedMatchingId(ctx, field)
 			case "properties":
 				return ec.fieldContext_Motion_properties(ctx, field)
 			case "dayRange":
@@ -20537,6 +20684,8 @@ func (ec *executionContext) fieldContext_Query_userMotions(ctx context.Context, 
 				return ec.fieldContext_Motion_activeNum(ctx, field)
 			case "discoverable":
 				return ec.fieldContext_Motion_discoverable(ctx, field)
+			case "relatedMatchingId":
+				return ec.fieldContext_Motion_relatedMatchingId(ctx, field)
 			case "properties":
 				return ec.fieldContext_Motion_properties(ctx, field)
 			case "dayRange":
@@ -20703,6 +20852,8 @@ func (ec *executionContext) fieldContext_Query_activeMotions(ctx context.Context
 				return ec.fieldContext_Motion_activeNum(ctx, field)
 			case "discoverable":
 				return ec.fieldContext_Motion_discoverable(ctx, field)
+			case "relatedMatchingId":
+				return ec.fieldContext_Motion_relatedMatchingId(ctx, field)
 			case "properties":
 				return ec.fieldContext_Motion_properties(ctx, field)
 			case "dayRange":
@@ -20810,6 +20961,8 @@ func (ec *executionContext) fieldContext_Query_motions(ctx context.Context, fiel
 				return ec.fieldContext_Motion_activeNum(ctx, field)
 			case "discoverable":
 				return ec.fieldContext_Motion_discoverable(ctx, field)
+			case "relatedMatchingId":
+				return ec.fieldContext_Motion_relatedMatchingId(ctx, field)
 			case "properties":
 				return ec.fieldContext_Motion_properties(ctx, field)
 			case "dayRange":
@@ -22303,6 +22456,8 @@ func (ec *executionContext) fieldContext_RecentMatching_matchings(ctx context.Co
 				return ec.fieldContext_Matching_preferredPeriods(ctx, field)
 			case "properties":
 				return ec.fieldContext_Matching_properties(ctx, field)
+			case "startMatchingAt":
+				return ec.fieldContext_Matching_startMatchingAt(ctx, field)
 			case "deadline":
 				return ec.fieldContext_Matching_deadline(ctx, field)
 			case "updatedAt":
@@ -23806,6 +23961,8 @@ func (ec *executionContext) fieldContext_UserJoinTopic_matching(ctx context.Cont
 				return ec.fieldContext_Matching_preferredPeriods(ctx, field)
 			case "properties":
 				return ec.fieldContext_Matching_properties(ctx, field)
+			case "startMatchingAt":
+				return ec.fieldContext_Matching_startMatchingAt(ctx, field)
 			case "deadline":
 				return ec.fieldContext_Matching_deadline(ctx, field)
 			case "updatedAt":
@@ -29216,6 +29373,8 @@ func (ec *executionContext) _Matching(ctx context.Context, sel ast.SelectionSet,
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
 			}
+		case "startMatchingAt":
+			out.Values[i] = ec._Matching_startMatchingAt(ctx, field, obj)
 		case "deadline":
 			out.Values[i] = ec._Matching_deadline(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -30901,6 +31060,11 @@ func (ec *executionContext) _Motion(ctx context.Context, sel ast.SelectionSet, o
 			}
 		case "discoverable":
 			out.Values[i] = ec._Motion_discoverable(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "relatedMatchingId":
+			out.Values[i] = ec._Motion_relatedMatchingId(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
 			}
