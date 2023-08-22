@@ -125,7 +125,7 @@ func (r *mutationResolver) ThumbsUpMotion(ctx context.Context, userID *string, m
 			return err
 		}
 		Motion := tx.Motion
-		if _, err := Motion.WithContext(ctx).Where(Motion.ID.Eq(motionID)).UpdateSimple(Motion.ThumbsUpCount.Add(-1)); err != nil {
+		if _, err := Motion.WithContext(ctx).Where(Motion.ID.Eq(motionID)).UpdateSimple(Motion.ThumbsUpCount.Add(1)); err != nil {
 			return err
 		}
 		thumbsUp.DoThumbsUp(motionID)
