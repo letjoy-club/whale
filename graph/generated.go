@@ -106,6 +106,10 @@ type ComplexityRoot struct {
 		UpdatedAt func(childComplexity int) int
 	}
 
+	CreateMotionOfferResult struct {
+		ChatGroupID func(childComplexity int) int
+	}
+
 	DiscoverMotion struct {
 		AreaIDs           func(childComplexity int) int
 		Areas             func(childComplexity int) int
@@ -649,7 +653,7 @@ type MutationResolver interface {
 	AddMatchingToRecent(ctx context.Context, matchingID string) (*models.RecentMatching, error)
 	GetMatchingScore(ctx context.Context, id1 string, id2 string) (*matcher.EvaluatorResult, error)
 	GetAvailableMotionOffer(ctx context.Context, userID *string, targetMotionID string) (*models.AvailableMotionOffer, error)
-	CreateMotionOffer(ctx context.Context, myMotionID string, targetMotionID string) (*string, error)
+	CreateMotionOffer(ctx context.Context, myMotionID string, targetMotionID string) (*models.CreateMotionOfferResult, error)
 	CancelMotionOffer(ctx context.Context, myMotionID string, targetMotionID string) (*string, error)
 	AcceptMotionOffer(ctx context.Context, myMotionID string, targetMotionID string) (*string, error)
 	RejectMotionOffer(ctx context.Context, myMotionID string, targetMotionID string) (*string, error)
@@ -880,6 +884,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.CityTopics.UpdatedAt(childComplexity), true
+
+	case "CreateMotionOfferResult.chatGroupId":
+		if e.complexity.CreateMotionOfferResult.ChatGroupID == nil {
+			break
+		}
+
+		return e.complexity.CreateMotionOfferResult.ChatGroupID(childComplexity), true
 
 	case "DiscoverMotion.areaIds":
 		if e.complexity.DiscoverMotion.AreaIDs == nil {
@@ -6754,6 +6765,50 @@ func (ec *executionContext) fieldContext_CityTopics_city(ctx context.Context, fi
 				return ec.fieldContext_Area_code(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Area", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CreateMotionOfferResult_chatGroupId(ctx context.Context, field graphql.CollectedField, obj *models.CreateMotionOfferResult) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CreateMotionOfferResult_chatGroupId(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ChatGroupID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CreateMotionOfferResult_chatGroupId(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CreateMotionOfferResult",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -16734,11 +16789,14 @@ func (ec *executionContext) _Mutation_createMotionOffer(ctx context.Context, fie
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(*models.CreateMotionOfferResult)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalNCreateMotionOfferResult2ᚖwhaleᚋpkgᚋmodelsᚐCreateMotionOfferResult(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_createMotionOffer(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -16748,7 +16806,11 @@ func (ec *executionContext) fieldContext_Mutation_createMotionOffer(ctx context.
 		IsMethod:   true,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			switch field.Name {
+			case "chatGroupId":
+				return ec.fieldContext_CreateMotionOfferResult_chatGroupId(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type CreateMotionOfferResult", field.Name)
 		},
 	}
 	defer func() {
@@ -28580,6 +28642,45 @@ func (ec *executionContext) _CityTopics(ctx context.Context, sel ast.SelectionSe
 	return out
 }
 
+var createMotionOfferResultImplementors = []string{"CreateMotionOfferResult"}
+
+func (ec *executionContext) _CreateMotionOfferResult(ctx context.Context, sel ast.SelectionSet, obj *models.CreateMotionOfferResult) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, createMotionOfferResultImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("CreateMotionOfferResult")
+		case "chatGroupId":
+			out.Values[i] = ec._CreateMotionOfferResult_chatGroupId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var discoverMotionImplementors = []string{"DiscoverMotion"}
 
 func (ec *executionContext) _DiscoverMotion(ctx context.Context, sel ast.SelectionSet, obj *models.Motion) graphql.Marshaler {
@@ -32063,6 +32164,9 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_createMotionOffer(ctx, field)
 			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "cancelMotionOffer":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_cancelMotionOffer(ctx, field)
@@ -35170,6 +35274,20 @@ func (ec *executionContext) unmarshalNCreateMatchingParam2whaleᚋpkgᚋmodels�
 func (ec *executionContext) unmarshalNCreateMatchingParamV22whaleᚋpkgᚋmodelsᚐCreateMatchingParamV2(ctx context.Context, v interface{}) (models.CreateMatchingParamV2, error) {
 	res, err := ec.unmarshalInputCreateMatchingParamV2(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNCreateMotionOfferResult2whaleᚋpkgᚋmodelsᚐCreateMotionOfferResult(ctx context.Context, sel ast.SelectionSet, v models.CreateMotionOfferResult) graphql.Marshaler {
+	return ec._CreateMotionOfferResult(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNCreateMotionOfferResult2ᚖwhaleᚋpkgᚋmodelsᚐCreateMotionOfferResult(ctx context.Context, sel ast.SelectionSet, v *models.CreateMotionOfferResult) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._CreateMotionOfferResult(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNCreateMotionParam2whaleᚋpkgᚋmodelsᚐCreateMotionParam(ctx context.Context, v interface{}) (models.CreateMotionParam, error) {

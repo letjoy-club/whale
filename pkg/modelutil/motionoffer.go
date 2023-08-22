@@ -21,35 +21,35 @@ import (
 	"gorm.io/gen/field"
 )
 
-func CreateMotionOffer(ctx context.Context, myUserID, myMotionID, targetMotionID string) error {
+func CreateMotionOffer(ctx context.Context, myUserID, myMotionID, targetMotionID string) (string, error) {
 	motionsThunk := midacontext.GetLoader[loader.Loader](ctx).Motion.LoadMany(ctx, []string{myMotionID, targetMotionID})
 	motions, err := utils.ReturnThunk(motionsThunk)
 	if err != nil {
-		return err
+		return "", err
 	}
 	myMotion := motions[0]
 	targetMotion := motions[1]
 
 	if myUserID != "" {
 		if myMotion.UserID != myUserID {
-			return midacode.ErrNotPermitted
+			return "", midacode.ErrNotPermitted
 		}
 	}
 
 	if targetMotion.UserID == myUserID {
-		return whalecode.ErrCannotSendMatchingOfferToSelf
+		return "", whalecode.ErrCannotSendMatchingOfferToSelf
 	}
 
 	if myMotion.TopicID != targetMotion.TopicID {
-		return whalecode.ErrCannotSendMatchingOfferToDifferentTopic
+		return "", whalecode.ErrCannotSendMatchingOfferToDifferentTopic
 	}
 
 	if !myMotion.Active || !myMotion.Discoverable {
-		return whalecode.ErrYourMotionIsNotActive
+		return "", whalecode.ErrYourMotionIsNotActive
 	}
 
 	if !targetMotion.Active || !targetMotion.Discoverable {
-		return whalecode.ErrTheMotionIsNotActive
+		return "", whalecode.ErrTheMotionIsNotActive
 	}
 
 	db := dbutil.GetDB(ctx)
@@ -59,18 +59,19 @@ func CreateMotionOffer(ctx context.Context, myUserID, myMotionID, targetMotionID
 		MotionOfferRecord.ToMotionID.Eq(targetMotionID),
 	).Take()
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		return err
+		return "", err
 	}
 	if record != nil {
-		return whalecode.ErrAlreadySentOutMatchingOffer
+		return "", whalecode.ErrAlreadySentOutMatchingOffer
 	}
 
 	release, err := redisutil.LockAll(ctx, keyer.UserMotion(myMotion.UserID), keyer.UserMotion(targetMotion.UserID))
 	if err != nil {
-		return err
+		return "", err
 	}
 	defer release(ctx)
 
+	var groupId string
 	err = dbquery.Use(db).Transaction(func(tx *dbquery.Query) error {
 		MatchingResult := tx.MatchingResult
 		matchingResult := &models.MatchingResult{
@@ -130,8 +131,9 @@ func CreateMotionOffer(ctx context.Context, myUserID, myMotionID, targetMotionID
 		if err != nil {
 			return err
 		}
+		groupId = resp.CreateMotionGroup
 
-		rx, err = MotionOfferRecord.WithContext(ctx).Where(MotionOfferRecord.ID.Eq(record.ID)).UpdateSimple(MotionOfferRecord.ChatGroupID.Value(resp.CreateMotionGroup))
+		rx, err = MotionOfferRecord.WithContext(ctx).Where(MotionOfferRecord.ID.Eq(record.ID)).UpdateSimple(MotionOfferRecord.ChatGroupID.Value(groupId))
 		if err != nil {
 			return err
 		}
@@ -157,7 +159,7 @@ func CreateMotionOffer(ctx context.Context, myUserID, myMotionID, targetMotionID
 		midacontext.GetLoader[loader.Loader](ctx).InMotionOfferRecord.Clear(ctx, myMotionID)
 		midacontext.GetLoader[loader.Loader](ctx).OutMotionOfferRecord.Clear(ctx, targetMotionID)
 	}
-	return err
+	return groupId, err
 }
 
 func AcceptMotionOffer(ctx context.Context, myUserID, myMotionID, targetMotionID string) error {

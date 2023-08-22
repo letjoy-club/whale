@@ -252,12 +252,18 @@ func (r *mutationResolver) GetAvailableMotionOffer(ctx context.Context, userID *
 }
 
 // CreateMotionOffer is the resolver for the createMotionOffer field.
-func (r *mutationResolver) CreateMotionOffer(ctx context.Context, myMotionID string, targetMotionID string) (*string, error) {
+func (r *mutationResolver) CreateMotionOffer(ctx context.Context, myMotionID string, targetMotionID string) (*models.CreateMotionOfferResult, error) {
 	token := midacontext.GetClientToken(ctx)
 	if !token.IsUser() && !token.IsAdmin() {
 		return nil, midacode.ErrNotPermitted
 	}
-	return nil, modelutil.CreateMotionOffer(ctx, token.UserID(), myMotionID, targetMotionID)
+	groupId, err := modelutil.CreateMotionOffer(ctx, token.UserID(), myMotionID, targetMotionID)
+	if err != nil {
+		return nil, err
+	}
+	return &models.CreateMotionOfferResult{
+		ChatGroupID: groupId,
+	}, nil
 }
 
 // CancelMotionOffer is the resolver for the cancelMotionOffer field.

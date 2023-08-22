@@ -82,6 +82,10 @@ type CreateMatchingParamV2 struct {
 	Deadline   *time.Time               `json:"deadline,omitempty"`
 }
 
+type CreateMotionOfferResult struct {
+	ChatGroupID string `json:"chatGroupId"`
+}
+
 type CreateMotionParam struct {
 	TopicID string   `json:"topicId"`
 	AreaIds []string `json:"areaIds"`
