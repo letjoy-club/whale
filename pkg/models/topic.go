@@ -11,7 +11,7 @@ type HotTopic struct {
 }
 
 type TopicMetrics struct {
-	ID       string `json:"id;type:varchar(32)"`
+	ID       string `json:"id"`
 	Matching int    `json:"matching"`
 	Matched  int    `json:"matched"`
 	Heat     int    `json:"heat"`
