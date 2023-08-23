@@ -290,7 +290,7 @@ func (l *AllMotionLoader) Load(ctx context.Context) error {
 		Motion := dbquery.Use(l.db).Motion
 		motions, err := Motion.WithContext(ctx).Select(
 			Motion.ID, Motion.UserID, Motion.CityID, Motion.Gender, Motion.MyGender, Motion.TopicID,
-		).Where(Motion.Active.Is(true)).Find()
+		).Where(Motion.Active.Is(true), Motion.Discoverable.Is(true)).Find()
 		if err != nil {
 			logger.L.Error("load motions failed", zap.Error(err))
 			return nil
