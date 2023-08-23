@@ -239,7 +239,10 @@ func (r *mutationResolver) GetAvailableMotionOffer(ctx context.Context, userID *
 	uid := graphqlutil.GetID(token, userID)
 	db := dbutil.GetDB(ctx)
 	Motion := dbquery.Use(db).Motion
-	motion, err = Motion.WithContext(ctx).Where(Motion.UserID.Eq(uid), Motion.TopicID.Eq(motion.TopicID)).Where(Motion.Discoverable.Is(true)).Take()
+	motion, err = Motion.WithContext(ctx).
+		Where(Motion.UserID.Eq(uid), Motion.TopicID.Eq(motion.TopicID)).
+		Where(Motion.Discoverable.Is(true), Motion.Active.Is(true)).
+		Take()
 	if err != nil {
 		if midacode.ItemIsNotFound(err) == midacode.ErrItemNotFound {
 			return &models.AvailableMotionOffer{}, nil
