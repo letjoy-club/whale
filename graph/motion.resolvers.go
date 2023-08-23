@@ -6,6 +6,7 @@ package graph
 
 import (
 	"context"
+	"unicode/utf8"
 	"whale/pkg/dbquery"
 	"whale/pkg/loader"
 	"whale/pkg/models"
@@ -33,9 +34,11 @@ func (r *mutationResolver) CreateMotion(ctx context.Context, userID *string, par
 	if uid == "" {
 		return nil, whalecode.ErrUserIDCannotBeEmpty
 	}
-	if param.Remark == nil {
-		emptyStr := ""
-		param.Remark = &emptyStr
+	if param.Remark == nil || utf8.RuneCountInString(*param.Remark) < 3 {
+		return nil, whalecode.ErrRemarkTooShort
+	}
+	if utf8.RuneCountInString(*param.Remark) > 250 {
+		return nil, whalecode.ErrRemarkTooLong
 	}
 	release, err := redisutil.LockAll(ctx, keyer.UserMatching(uid))
 	if err != nil {
