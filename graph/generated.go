@@ -139,6 +139,15 @@ type ComplexityRoot struct {
 		NextToken func(childComplexity int) int
 	}
 
+	DurationConstraint struct {
+		RemainMotionQuota func(childComplexity int) int
+		StartDate         func(childComplexity int) int
+		StopDate          func(childComplexity int) int
+		TotalMotionQuota  func(childComplexity int) int
+		UpdatedAt         func(childComplexity int) int
+		UserID            func(childComplexity int) int
+	}
+
 	Entity struct {
 		FindLevelRightsByLevel    func(childComplexity int, level int) int
 		FindMatchingByID          func(childComplexity int, id string) int
@@ -345,7 +354,6 @@ type ComplexityRoot struct {
 		CancelMatchingInvitation         func(childComplexity int, invitationID string) int
 		CancelMotionOffer                func(childComplexity int, myMotionID string, targetMotionID string) int
 		CancelThumbsUpMotion             func(childComplexity int, userID *string, motionID string) int
-		CheckAndCreateChatGroup          func(childComplexity int, matchingID string) int
 		CloseMotion                      func(childComplexity int, id string) int
 		ConfirmMatchingInvitation        func(childComplexity int, userID *string, invitationID string, confirm bool) int
 		ConfirmMatchingResult            func(childComplexity int, userID *string, matchingID string, reject bool) int
@@ -373,6 +381,7 @@ type ComplexityRoot struct {
 		ThumbsUpMotionsCount             func(childComplexity int, userID *string) int
 		UnlikeMotion                     func(childComplexity int, userID *string, motionID string) int
 		UpdateCityTopics                 func(childComplexity int, cityID string, param models.UpdateCityTopicParam) int
+		UpdateDurationConstraint         func(childComplexity int, userID string, param models.UpdateDurationConstraintParam) int
 		UpdateHotTopicsInArea            func(childComplexity int, cityID string, param models.UpdateHotTopicParam) int
 		UpdateMatching                   func(childComplexity int, matchingID string, param models.UpdateMatchingParam) int
 		UpdateMatchingDurationConstraint func(childComplexity int, userID string, param models.UpdateMatchingDurationConstraintParam) int
@@ -487,8 +496,9 @@ type ComplexityRoot struct {
 	}
 
 	User struct {
-		ID            func(childComplexity int) int
-		MatchingQuota func(childComplexity int) int
+		DurationConstraint func(childComplexity int) int
+		ID                 func(childComplexity int) int
+		MatchingQuota      func(childComplexity int) int
 	}
 
 	UserConfirmState struct {
@@ -632,8 +642,8 @@ type MotionOfferRecordResolver interface {
 	Motion(ctx context.Context, obj *models.MotionOfferRecord) (*models.Motion, error)
 }
 type MutationResolver interface {
-	CheckAndCreateChatGroup(ctx context.Context, matchingID string) (*string, error)
 	RefreshTopicMetrics(ctx context.Context) (*string, error)
+	UpdateDurationConstraint(ctx context.Context, userID string, param models.UpdateDurationConstraintParam) (*string, error)
 	CreateMatchingInvitation(ctx context.Context, userID *string, param models.CreateMatchingInvitationParam) (*models.MatchingInvitation, error)
 	CancelMatchingInvitation(ctx context.Context, invitationID string) (*string, error)
 	ConfirmMatchingInvitation(ctx context.Context, userID *string, invitationID string, confirm bool) (*string, error)
@@ -747,6 +757,7 @@ type TopicToMatchingResolver interface {
 }
 type UserResolver interface {
 	MatchingQuota(ctx context.Context, obj *models.User) (*models.MatchingQuota, error)
+	DurationConstraint(ctx context.Context, obj *models.User) (*models.DurationConstraint, error)
 }
 type UserJoinTopicResolver interface {
 	Topic(ctx context.Context, obj *models.UserJoinTopic) (*models.Topic, error)
@@ -1067,6 +1078,48 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.DiscoverMotionResult.NextToken(childComplexity), true
+
+	case "DurationConstraint.remainMotionQuota":
+		if e.complexity.DurationConstraint.RemainMotionQuota == nil {
+			break
+		}
+
+		return e.complexity.DurationConstraint.RemainMotionQuota(childComplexity), true
+
+	case "DurationConstraint.startDate":
+		if e.complexity.DurationConstraint.StartDate == nil {
+			break
+		}
+
+		return e.complexity.DurationConstraint.StartDate(childComplexity), true
+
+	case "DurationConstraint.stopDate":
+		if e.complexity.DurationConstraint.StopDate == nil {
+			break
+		}
+
+		return e.complexity.DurationConstraint.StopDate(childComplexity), true
+
+	case "DurationConstraint.totalMotionQuota":
+		if e.complexity.DurationConstraint.TotalMotionQuota == nil {
+			break
+		}
+
+		return e.complexity.DurationConstraint.TotalMotionQuota(childComplexity), true
+
+	case "DurationConstraint.updatedAt":
+		if e.complexity.DurationConstraint.UpdatedAt == nil {
+			break
+		}
+
+		return e.complexity.DurationConstraint.UpdatedAt(childComplexity), true
+
+	case "DurationConstraint.userId":
+		if e.complexity.DurationConstraint.UserID == nil {
+			break
+		}
+
+		return e.complexity.DurationConstraint.UserID(childComplexity), true
 
 	case "Entity.findLevelRightsByLevel":
 		if e.complexity.Entity.FindLevelRightsByLevel == nil {
@@ -2227,18 +2280,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.CancelThumbsUpMotion(childComplexity, args["userId"].(*string), args["motionId"].(string)), true
 
-	case "Mutation.checkAndCreateChatGroup":
-		if e.complexity.Mutation.CheckAndCreateChatGroup == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_checkAndCreateChatGroup_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.CheckAndCreateChatGroup(childComplexity, args["matchingId"].(string)), true
-
 	case "Mutation.closeMotion":
 		if e.complexity.Mutation.CloseMotion == nil {
 			break
@@ -2552,6 +2593,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.UpdateCityTopics(childComplexity, args["cityId"].(string), args["param"].(models.UpdateCityTopicParam)), true
+
+	case "Mutation.updateDurationConstraint":
+		if e.complexity.Mutation.UpdateDurationConstraint == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateDurationConstraint_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UpdateDurationConstraint(childComplexity, args["userId"].(string), args["param"].(models.UpdateDurationConstraintParam)), true
 
 	case "Mutation.updateHotTopicsInArea":
 		if e.complexity.Mutation.UpdateHotTopicsInArea == nil {
@@ -3462,6 +3515,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.TopicToMatching.TopicID(childComplexity), true
 
+	case "User.durationConstraint":
+		if e.complexity.User.DurationConstraint == nil {
+			break
+		}
+
+		return e.complexity.User.DurationConstraint(childComplexity), true
+
 	case "User.id":
 		if e.complexity.User.ID == nil {
 			break
@@ -3658,6 +3718,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputReviewMatchingParam,
 		ec.unmarshalInputReviewMotionParam,
 		ec.unmarshalInputUpdateCityTopicParam,
+		ec.unmarshalInputUpdateDurationConstraintParam,
 		ec.unmarshalInputUpdateHotTopicMetricsParam,
 		ec.unmarshalInputUpdateHotTopicParam,
 		ec.unmarshalInputUpdateMatchingDurationConstraintParam,
@@ -4118,21 +4179,6 @@ func (ec *executionContext) field_Mutation_cancelThumbsUpMotion_args(ctx context
 		}
 	}
 	args["motionId"] = arg1
-	return args, nil
-}
-
-func (ec *executionContext) field_Mutation_checkAndCreateChatGroup_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["matchingId"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("matchingId"))
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["matchingId"] = arg0
 	return args, nil
 }
 
@@ -4737,6 +4783,30 @@ func (ec *executionContext) field_Mutation_updateCityTopics_args(ctx context.Con
 	if tmp, ok := rawArgs["param"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("param"))
 		arg1, err = ec.unmarshalNUpdateCityTopicParam2whaleᚋpkgᚋmodelsᚐUpdateCityTopicParam(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["param"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_updateDurationConstraint_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["userId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userId"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["userId"] = arg0
+	var arg1 models.UpdateDurationConstraintParam
+	if tmp, ok := rawArgs["param"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("param"))
+		arg1, err = ec.unmarshalNUpdateDurationConstraintParam2whaleᚋpkgᚋmodelsᚐUpdateDurationConstraintParam(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -7699,6 +7769,8 @@ func (ec *executionContext) fieldContext_DiscoverMotion_user(ctx context.Context
 				return ec.fieldContext_User_id(ctx, field)
 			case "matchingQuota":
 				return ec.fieldContext_User_matchingQuota(ctx, field)
+			case "durationConstraint":
+				return ec.fieldContext_User_durationConstraint(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},
@@ -7929,6 +8001,290 @@ func (ec *executionContext) fieldContext_DiscoverMotionResult_nextToken(ctx cont
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DurationConstraint_userId(ctx context.Context, field graphql.CollectedField, obj *models.DurationConstraint) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DurationConstraint_userId(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UserID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DurationConstraint_userId(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DurationConstraint",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DurationConstraint_startDate(ctx context.Context, field graphql.CollectedField, obj *models.DurationConstraint) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DurationConstraint_startDate(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.StartDate, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DurationConstraint_startDate(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DurationConstraint",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DurationConstraint_stopDate(ctx context.Context, field graphql.CollectedField, obj *models.DurationConstraint) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DurationConstraint_stopDate(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.StopDate, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DurationConstraint_stopDate(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DurationConstraint",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DurationConstraint_totalMotionQuota(ctx context.Context, field graphql.CollectedField, obj *models.DurationConstraint) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DurationConstraint_totalMotionQuota(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TotalMotionQuota, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DurationConstraint_totalMotionQuota(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DurationConstraint",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DurationConstraint_remainMotionQuota(ctx context.Context, field graphql.CollectedField, obj *models.DurationConstraint) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DurationConstraint_remainMotionQuota(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RemainMotionQuota, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DurationConstraint_remainMotionQuota(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DurationConstraint",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DurationConstraint_updatedAt(ctx context.Context, field graphql.CollectedField, obj *models.DurationConstraint) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DurationConstraint_updatedAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return obj.UpdatedAt, nil
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.AdminOnly == nil {
+				return nil, errors.New("directive adminOnly is not implemented")
+			}
+			return ec.directives.AdminOnly(ctx, obj, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(time.Time); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be time.Time`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DurationConstraint_updatedAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DurationConstraint",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
 		},
 	}
 	return fc, nil
@@ -8277,6 +8633,8 @@ func (ec *executionContext) fieldContext_Entity_findUserByID(ctx context.Context
 				return ec.fieldContext_User_id(ctx, field)
 			case "matchingQuota":
 				return ec.fieldContext_User_matchingQuota(ctx, field)
+			case "durationConstraint":
+				return ec.fieldContext_User_durationConstraint(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},
@@ -9798,6 +10156,8 @@ func (ec *executionContext) fieldContext_Matching_user(ctx context.Context, fiel
 				return ec.fieldContext_User_id(ctx, field)
 			case "matchingQuota":
 				return ec.fieldContext_User_matchingQuota(ctx, field)
+			case "durationConstraint":
+				return ec.fieldContext_User_durationConstraint(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},
@@ -10847,6 +11207,8 @@ func (ec *executionContext) fieldContext_MatchingInvitation_invitee(ctx context.
 				return ec.fieldContext_User_id(ctx, field)
 			case "matchingQuota":
 				return ec.fieldContext_User_matchingQuota(ctx, field)
+			case "durationConstraint":
+				return ec.fieldContext_User_durationConstraint(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},
@@ -11047,6 +11409,8 @@ func (ec *executionContext) fieldContext_MatchingInvitation_user(ctx context.Con
 				return ec.fieldContext_User_id(ctx, field)
 			case "matchingQuota":
 				return ec.fieldContext_User_matchingQuota(ctx, field)
+			case "durationConstraint":
+				return ec.fieldContext_User_durationConstraint(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},
@@ -11446,6 +11810,8 @@ func (ec *executionContext) fieldContext_MatchingOfTopic_user(ctx context.Contex
 				return ec.fieldContext_User_id(ctx, field)
 			case "matchingQuota":
 				return ec.fieldContext_User_matchingQuota(ctx, field)
+			case "durationConstraint":
+				return ec.fieldContext_User_durationConstraint(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},
@@ -11863,6 +12229,8 @@ func (ec *executionContext) fieldContext_MatchingPreview_user(ctx context.Contex
 				return ec.fieldContext_User_id(ctx, field)
 			case "matchingQuota":
 				return ec.fieldContext_User_matchingQuota(ctx, field)
+			case "durationConstraint":
+				return ec.fieldContext_User_durationConstraint(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},
@@ -13048,6 +13416,8 @@ func (ec *executionContext) fieldContext_MatchingResult_users(ctx context.Contex
 				return ec.fieldContext_User_id(ctx, field)
 			case "matchingQuota":
 				return ec.fieldContext_User_matchingQuota(ctx, field)
+			case "durationConstraint":
+				return ec.fieldContext_User_durationConstraint(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},
@@ -14638,6 +15008,8 @@ func (ec *executionContext) fieldContext_Motion_user(ctx context.Context, field 
 				return ec.fieldContext_User_id(ctx, field)
 			case "matchingQuota":
 				return ec.fieldContext_User_matchingQuota(ctx, field)
+			case "durationConstraint":
+				return ec.fieldContext_User_durationConstraint(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},
@@ -15385,58 +15757,6 @@ func (ec *executionContext) fieldContext_MotionProperty_values(ctx context.Conte
 	return fc, nil
 }
 
-func (ec *executionContext) _Mutation_checkAndCreateChatGroup(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Mutation_checkAndCreateChatGroup(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().CheckAndCreateChatGroup(rctx, fc.Args["matchingId"].(string))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Mutation_checkAndCreateChatGroup(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Mutation",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Mutation_checkAndCreateChatGroup_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return fc, err
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _Mutation_refreshTopicMetrics(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Mutation_refreshTopicMetrics(ctx, field)
 	if err != nil {
@@ -15474,6 +15794,58 @@ func (ec *executionContext) fieldContext_Mutation_refreshTopicMetrics(ctx contex
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
 		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_updateDurationConstraint(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_updateDurationConstraint(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().UpdateDurationConstraint(rctx, fc.Args["userId"].(string), fc.Args["param"].(models.UpdateDurationConstraintParam))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_updateDurationConstraint(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_updateDurationConstraint_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
 	}
 	return fc, nil
 }
@@ -23609,6 +23981,64 @@ func (ec *executionContext) fieldContext_User_matchingQuota(ctx context.Context,
 	return fc, nil
 }
 
+func (ec *executionContext) _User_durationConstraint(ctx context.Context, field graphql.CollectedField, obj *models.User) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_User_durationConstraint(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.User().DurationConstraint(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*models.DurationConstraint)
+	fc.Result = res
+	return ec.marshalNDurationConstraint2ᚖwhaleᚋpkgᚋmodelsᚐDurationConstraint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_User_durationConstraint(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "User",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "userId":
+				return ec.fieldContext_DurationConstraint_userId(ctx, field)
+			case "startDate":
+				return ec.fieldContext_DurationConstraint_startDate(ctx, field)
+			case "stopDate":
+				return ec.fieldContext_DurationConstraint_stopDate(ctx, field)
+			case "totalMotionQuota":
+				return ec.fieldContext_DurationConstraint_totalMotionQuota(ctx, field)
+			case "remainMotionQuota":
+				return ec.fieldContext_DurationConstraint_remainMotionQuota(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_DurationConstraint_updatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type DurationConstraint", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _UserConfirmState_userId(ctx context.Context, field graphql.CollectedField, obj *models.UserConfirmState) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_UserConfirmState_userId(ctx, field)
 	if err != nil {
@@ -24150,6 +24580,8 @@ func (ec *executionContext) fieldContext_UserJoinTopic_user(ctx context.Context,
 				return ec.fieldContext_User_id(ctx, field)
 			case "matchingQuota":
 				return ec.fieldContext_User_matchingQuota(ctx, field)
+			case "durationConstraint":
+				return ec.fieldContext_User_durationConstraint(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},
@@ -27471,6 +27903,62 @@ func (ec *executionContext) unmarshalInputUpdateCityTopicParam(ctx context.Conte
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputUpdateDurationConstraintParam(ctx context.Context, obj interface{}) (models.UpdateDurationConstraintParam, error) {
+	var it models.UpdateDurationConstraintParam
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"startDate", "stopDate", "totalMotionQuota", "remainMotionQuota"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "startDate":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("startDate"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.StartDate = data
+		case "stopDate":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("stopDate"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.StopDate = data
+		case "totalMotionQuota":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("totalMotionQuota"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TotalMotionQuota = data
+		case "remainMotionQuota":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("remainMotionQuota"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.RemainMotionQuota = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputUpdateHotTopicMetricsParam(ctx context.Context, obj interface{}) (models.UpdateHotTopicMetricsParam, error) {
 	var it models.UpdateHotTopicMetricsParam
 	asMap := map[string]interface{}{}
@@ -29145,6 +29633,70 @@ func (ec *executionContext) _DiscoverMotionResult(ctx context.Context, sel ast.S
 			}
 		case "nextToken":
 			out.Values[i] = ec._DiscoverMotionResult_nextToken(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var durationConstraintImplementors = []string{"DurationConstraint"}
+
+func (ec *executionContext) _DurationConstraint(ctx context.Context, sel ast.SelectionSet, obj *models.DurationConstraint) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, durationConstraintImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("DurationConstraint")
+		case "userId":
+			out.Values[i] = ec._DurationConstraint_userId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "startDate":
+			out.Values[i] = ec._DurationConstraint_startDate(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "stopDate":
+			out.Values[i] = ec._DurationConstraint_stopDate(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "totalMotionQuota":
+			out.Values[i] = ec._DurationConstraint_totalMotionQuota(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "remainMotionQuota":
+			out.Values[i] = ec._DurationConstraint_remainMotionQuota(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updatedAt":
+			out.Values[i] = ec._DurationConstraint_updatedAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -32043,13 +32595,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Mutation")
-		case "checkAndCreateChatGroup":
-			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Mutation_checkAndCreateChatGroup(ctx, field)
-			})
 		case "refreshTopicMetrics":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_refreshTopicMetrics(ctx, field)
+			})
+		case "updateDurationConstraint":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_updateDurationConstraint(ctx, field)
 			})
 		case "createMatchingInvitation":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
@@ -34183,6 +34735,42 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "durationConstraint":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._User_durationConstraint(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -35443,6 +36031,20 @@ func (ec *executionContext) marshalNDiscoverMotionResult2ᚖwhaleᚋpkgᚋmodels
 	return ec._DiscoverMotionResult(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNDurationConstraint2whaleᚋpkgᚋmodelsᚐDurationConstraint(ctx context.Context, sel ast.SelectionSet, v models.DurationConstraint) graphql.Marshaler {
+	return ec._DurationConstraint(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNDurationConstraint2ᚖwhaleᚋpkgᚋmodelsᚐDurationConstraint(ctx context.Context, sel ast.SelectionSet, v *models.DurationConstraint) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._DurationConstraint(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNEvaluatorResult2whaleᚋpkgᚋmatcherᚐEvaluatorResult(ctx context.Context, sel ast.SelectionSet, v matcher.EvaluatorResult) graphql.Marshaler {
 	return ec._EvaluatorResult(ctx, sel, &v)
 }
@@ -36638,6 +37240,11 @@ func (ec *executionContext) marshalNTopicToMatching2ᚖwhaleᚋpkgᚋmodelsᚐTo
 
 func (ec *executionContext) unmarshalNUpdateCityTopicParam2whaleᚋpkgᚋmodelsᚐUpdateCityTopicParam(ctx context.Context, v interface{}) (models.UpdateCityTopicParam, error) {
 	res, err := ec.unmarshalInputUpdateCityTopicParam(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNUpdateDurationConstraintParam2whaleᚋpkgᚋmodelsᚐUpdateDurationConstraintParam(ctx context.Context, v interface{}) (models.UpdateDurationConstraintParam, error) {
+	res, err := ec.unmarshalInputUpdateDurationConstraintParam(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 

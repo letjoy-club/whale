@@ -11,6 +11,7 @@ extend type TopicOptionConfig @key(fields: "topicId") {
 extend type User @key(fields: "id") {
   id: String! @external
   matchingQuota: MatchingQuota!
+  durationConstraint: DurationConstraint!
 }
 
 extend type Topic @key(fields: "id") {
@@ -371,6 +372,16 @@ input MatchingResultFilter {
   after: Time
 }
 
+type DurationConstraint {
+  userId: String!
+  startDate: Time!
+  stopDate: Time!
+
+  totalMotionQuota: Int!
+  remainMotionQuota: Int!
+
+  updatedAt: Time! @adminOnly
+}
 
 type Query {
   "【匹配系统】内部专有"
@@ -403,10 +414,17 @@ input UpdateMatchingInvitationParam {
   remark: String
 }
 
-type Mutation {
-  "【匹配系统】尝试创建聊天室，管理端使用"
-  checkAndCreateChatGroup(matchingId: String!): String
+input UpdateDurationConstraintParam {
+  startDate: Time
+  stopDate: Time
+  totalMotionQuota: Int
+  remainMotionQuota: Int
+}
 
+type Mutation {
   "【匹配系统】分析话题热度，管理端使用"
   refreshTopicMetrics: String
+
+  "【匹配系统】更新时间段内限制，管理端使用"
+  updateDurationConstraint(userId: String!, param: UpdateDurationConstraintParam!): String
 }

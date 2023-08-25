@@ -28,6 +28,32 @@ func CreateMotion(ctx context.Context, userID string, param *models.CreateMotion
 		return nil, err
 	}
 
+	// allAreas := areaTable
+	// if len(allAreas) == 0 {
+	// 	return nil, whalecode.ErrAreaNotSupport
+	// }
+	//
+	// if len(param.AreaIds) > 0 {
+	// 	param.AreaIds = lo.Uniq(param.AreaIds)
+	// 	for _, selectedAreaID := range param.AreaIds {
+	// 		index := lo.IndexOf(allAreas, func(areaID string, i int) bool {
+	// 			return areaID == selectedAreaID
+	// 		})
+	// 		if index == -1 {
+	// 			return nil, whalecode.ErrAreaNotSupport
+	// 		}
+	// 	}
+	// }
+	//
+	durationConstraintThunk := midacontext.GetLoader[loader.Loader](ctx).DurationConstraint.Load(ctx, userID)
+	durationConstraint, err := durationConstraintThunk()
+	if err != nil {
+		return nil, err
+	}
+	if durationConstraint.RemainMotionQuota <= 0 {
+		return nil, whalecode.ErrMotionQuotaNotEnough
+	}
+
 	if err := checkMatchingParam(ctx, userID, param.TopicID, param.CityID, param.Gender); err != nil {
 		return nil, err
 	}
@@ -121,6 +147,9 @@ func CreateMotion(ctx context.Context, userID string, param *models.CreateMotion
 		if err := Motion.WithContext(ctx).Create(motion); err != nil {
 			return err
 		}
+
+		tx.DurationConstraint.WithContext(ctx).Where(tx.DurationConstraint.ID.Eq(durationConstraint.ID)).UpdateSimple(tx.DurationConstraint.RemainMotionQuota.Value(durationConstraint.RemainMotionQuota - 1))
+		midacontext.GetLoader[loader.Loader](ctx).DurationConstraint.Clear(ctx, userID)
 		return nil
 	})
 

@@ -216,6 +216,13 @@ type UpdateCityTopicParam struct {
 	TopicIds []string `json:"topicIds"`
 }
 
+type UpdateDurationConstraintParam struct {
+	StartDate         *time.Time `json:"startDate,omitempty"`
+	StopDate          *time.Time `json:"stopDate,omitempty"`
+	TotalMotionQuota  *int       `json:"totalMotionQuota,omitempty"`
+	RemainMotionQuota *int       `json:"remainMotionQuota,omitempty"`
+}
+
 type UpdateHotTopicMetricsParam struct {
 	TopicID  string `json:"topicId"`
 	Heat     int    `json:"heat"`
@@ -281,8 +288,9 @@ type UpdateUserJoinTopicParam struct {
 }
 
 type User struct {
-	ID            string         `json:"id"`
-	MatchingQuota *MatchingQuota `json:"matchingQuota"`
+	ID                 string              `json:"id"`
+	MatchingQuota      *MatchingQuota      `json:"matchingQuota"`
+	DurationConstraint *DurationConstraint `json:"durationConstraint"`
 }
 
 func (User) IsEntity() {}

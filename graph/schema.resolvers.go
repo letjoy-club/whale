@@ -6,7 +6,6 @@ package graph
 
 import (
 	"context"
-	"fmt"
 	"math/rand"
 	"time"
 	"whale/pkg/dbquery"
@@ -21,6 +20,7 @@ import (
 	"github.com/letjoy-club/mida-tool/midacontext"
 	"github.com/samber/lo"
 	"go.uber.org/multierr"
+	"gorm.io/gen/field"
 )
 
 // Topics is the resolver for the topics field.
@@ -273,11 +273,6 @@ func (r *matchingResultResolver) MatchingDegree(ctx context.Context, obj *models
 	return 80 + (obj.MatchingScore * 2 / 10), nil
 }
 
-// CheckAndCreateChatGroup is the resolver for the checkAndCreateChatGroup field.
-func (r *mutationResolver) CheckAndCreateChatGroup(ctx context.Context, matchingID string) (*string, error) {
-	panic(fmt.Errorf("not implemented: CheckAndCreateChatGroup - checkAndCreateChatGroup"))
-}
-
 // RefreshTopicMetrics is the resolver for the refreshTopicMetrics field.
 func (r *mutationResolver) RefreshTopicMetrics(ctx context.Context) (*string, error) {
 	token := midacontext.GetClientToken(ctx)
@@ -288,6 +283,39 @@ func (r *mutationResolver) RefreshTopicMetrics(ctx context.Context) (*string, er
 	err := modelutil.RefreshHotTopic(ctx, time.Now().Add(time.Hour*24*-10))
 	midacontext.GetLoader[loader.Loader](ctx).HotTopics.ClearAll()
 	return nil, err
+}
+
+// UpdateDurationConstraint is the resolver for the updateDurationConstraint field.
+func (r *mutationResolver) UpdateDurationConstraint(ctx context.Context, userID string, param models.UpdateDurationConstraintParam) (*string, error) {
+	token := midacontext.GetClientToken(ctx)
+	if !token.IsAdmin() {
+		return nil, midacode.ErrNotPermitted
+	}
+	db := dbutil.GetDB(ctx)
+	DurationConstraint := dbquery.Use(db).DurationConstraint
+
+	query := DurationConstraint.WithContext(ctx).Where(DurationConstraint.UserID.Eq(userID), DurationConstraint.StartDate.Lt(time.Now()), DurationConstraint.StopDate.Gt(time.Now()))
+
+	fields := []field.AssignExpr{}
+	if param.RemainMotionQuota != nil {
+		fields = append(fields, DurationConstraint.RemainMotionQuota.Value(*param.RemainMotionQuota))
+	}
+	if param.TotalMotionQuota != nil {
+		fields = append(fields, DurationConstraint.TotalMotionQuota.Value(*param.TotalMotionQuota))
+	}
+
+	if param.StopDate != nil {
+		fields = append(fields, DurationConstraint.StopDate.Value(*param.StopDate))
+	}
+	if param.StopDate != nil {
+		fields = append(fields, DurationConstraint.StopDate.Value(*param.StopDate))
+	}
+	_, err := query.UpdateSimple(fields...)
+	if err != nil {
+		return nil, err
+	}
+	midacontext.GetLoader[loader.Loader](ctx).DurationConstraint.Clear(ctx, userID)
+	return nil, nil
 }
 
 // ChatGroupByResultID is the resolver for the ChatGroupByResultId field.
@@ -407,6 +435,12 @@ func (r *userResolver) MatchingQuota(ctx context.Context, obj *models.User) (*mo
 		}
 	}
 	thunk := midacontext.GetLoader[loader.Loader](ctx).MatchingQuota.Load(ctx, obj.ID)
+	return thunk()
+}
+
+// DurationConstraint is the resolver for the durationConstraint field.
+func (r *userResolver) DurationConstraint(ctx context.Context, obj *models.User) (*models.DurationConstraint, error) {
+	thunk := midacontext.GetLoader[loader.Loader](ctx).DurationConstraint.Load(ctx, obj.ID)
 	return thunk()
 }
 

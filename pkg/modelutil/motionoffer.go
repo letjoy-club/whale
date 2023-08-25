@@ -5,6 +5,7 @@ import (
 	"errors"
 	"time"
 	"whale/pkg/dbquery"
+	"whale/pkg/gqlient/hoopoe"
 	"whale/pkg/gqlient/smew"
 	"whale/pkg/loader"
 	"whale/pkg/models"
@@ -50,6 +51,30 @@ func CreateMotionOffer(ctx context.Context, myUserID, myMotionID, targetMotionID
 
 	if !targetMotion.Active || !targetMotion.Discoverable {
 		return "", whalecode.ErrTheMotionIsNotActive
+	}
+
+	// 对方是否被我拉黑
+	inMyBlocklist, err := hoopoe.IsInBlacklist(ctx, midacontext.GetServices(ctx).Hoopoe, myMotion.UserID, targetMotion.UserID)
+	if err != nil {
+		return err
+	}
+	if inMyBlocklist.IsInBlacklist {
+		return whalecode.ErrUserInYourBlocklist
+	}
+
+	// 我是否被对方拉黑
+	inTargetBlocklist, err := hoopoe.IsInBlacklist(ctx, midacontext.GetServices(ctx).Hoopoe, myMotion.UserID, myMotion.UserID)
+	if err != nil {
+		return err
+	}
+	if inTargetBlocklist.IsInBlacklist {
+		return whalecode.ErrYouAreInUserBlocklist
+	}
+
+	if myUserID != "" {
+		if myMotion.UserID != myUserID {
+			return midacode.ErrNotPermitted
+		}
 	}
 
 	db := dbutil.GetDB(ctx)

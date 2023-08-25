@@ -35,6 +35,8 @@ type Loader struct {
 	OutMotionOfferRecord *dataloader.Loader[string, *MotionOffers]
 	MotionReviewed       *dataloader.Loader[string, *MotionReviewed]
 
+	DurationConstraint *dataloader.Loader[string, *models.DurationConstraint]
+
 	// 从 recentMatching 中查询最近的 city, topic 对应的 matching id 信息
 	CityTopicMatchings *dataloader.Loader[CityTopicKey, CityTopicMatchings]
 	// 从 matching 表中获取最近的 topic 匹配中/已匹配数量
@@ -70,6 +72,8 @@ func NewLoader(db *gorm.DB) *Loader {
 		MatchingResult:             NewMatchingResultLoader(db),
 		MatchingReviewed:           NewMatchingReviewedLoader(db),
 		MatchingDurationConstraint: NewMatchingDurationConstraintLoader(db),
+
+		DurationConstraint: NewDurationConstraintLoader(db),
 
 		InMotionOfferRecord:  NewInMotionOfferLoader(db),
 		OutMotionOfferRecord: NewOutMotionOfferLoader(db),

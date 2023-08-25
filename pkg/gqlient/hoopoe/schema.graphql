@@ -555,8 +555,8 @@ type Mutation {
     """被关注人的ID"""
     userId: String!
 
-    """匹配结ID"""
-    matchingId: String!
+    """聊天群组ID"""
+    chatGroupId: String!
   ): String
 
   """取消关注"""
@@ -624,30 +624,6 @@ type Mutation {
     """用户ID，管理端使用"""
     userId: String
   ): String
-
-  """【标签】新增用户标签"""
-  addUserTag(
-    """标签ID"""
-    tagId: String!
-
-    """被打标签的人，为空时表示给自己打标签"""
-    userId: String
-  ): String @deprecated(reason: "no longer use")
-
-  """【标签】移除用户标签"""
-  removeUserTag(
-    """标签ID"""
-    tagId: String!
-
-    """被打标签的人，为空时表示移除自己的标签"""
-    userId: String
-  ): String @deprecated(reason: "no longer use")
-
-  """【标签】用户更新个人标签"""
-  updatePersonalTag(
-    """个人所有标签ID列表"""
-    tagIds: [String!]!
-  ): String @deprecated(reason: "no longer use")
 
   """【标签】新增标签"""
   addTag(param: AddTagParam!): String
@@ -940,8 +916,8 @@ type Mutation {
 
   """【举报】用户举报"""
   userReport(
-    """匹配ID"""
-    matchingId: String!
+    """聊天群组ID"""
+    chatGroupId: String!
 
     """被举报人用户ID"""
     userId: String!
@@ -1129,6 +1105,12 @@ type Query {
   personalTags(
     """标签分类ID"""
     categoryId: Int!
+  ): [Tag!] @deprecated(reason: "replaced by tagsByCategories")
+
+  """【标签】按类别查询标签"""
+  tagsByCategories(
+    """标签分类ID"""
+    categoryId: Int!
   ): [Tag!]
 
   """【标签】用户自己打的标签"""
@@ -1151,33 +1133,6 @@ type Query {
     """用户ID"""
     userId: String!
   ): Summary!
-
-  """【标签】我的标签-自己对自己打的标签"""
-  myTags: [Tag!] @deprecated(reason: "no longer use")
-
-  """【话题】评价时备选话题类别"""
-  evaluateTagCategories(
-    """话题ID"""
-    topicId: String
-  ): [TagCategory!] @deprecated(reason: "no longer use")
-
-  """【标签】评价他们标签-按类别查询"""
-  evaluateTags(
-    """标签分类ID"""
-    categoryId: Int!
-  ): [Tag!] @deprecated(reason: "no longer use")
-
-  """【标签】用户标签-自己对他人打的标签"""
-  userTags(
-    """用户ID"""
-    userId: String!
-  ): [Tag!] @deprecated(reason: "no longer use")
-
-  """【标签】个人主页标签"""
-  homePageTags(
-    """用户ID"""
-    userId: String!
-  ): [Tag!] @deprecated(reason: "no longer use")
 
   """【话题】类别查询"""
   topicCategory(
@@ -1324,8 +1279,8 @@ type Query {
 
   """【举报】是否已举报"""
   userReportState(
-    """匹配ID"""
-    matchingId: String!
+    """聊天群组ID"""
+    chatGroupId: String!
 
     """被举报人用户ID"""
     userId: String!
@@ -1825,9 +1780,6 @@ type User {
   """用户封禁信息"""
   blockInfo: UserBlockInfo!
 
-  """用户标签"""
-  tags: [Tag!] @deprecated(reason: "no longer use")
-
   """本人打的标签"""
   personalTags: [Tag!]
 
@@ -2102,8 +2054,8 @@ input UserReportFilter {
   """举报人ID"""
   reporterId: String
 
-  """匹配ID"""
-  matchingId: String
+  """聊天群组ID"""
+  chatGroupId: String
 
   """是否已处理"""
   processed: Boolean

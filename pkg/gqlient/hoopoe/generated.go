@@ -730,6 +730,15 @@ func (v *GraphQLPaginator) GetPage() int { return v.Page }
 // GetSize returns GraphQLPaginator.Size, and is useful for accessing the field via an interface.
 func (v *GraphQLPaginator) GetSize() int { return v.Size }
 
+// IsInBlacklistResponse is returned by IsInBlacklist on success.
+type IsInBlacklistResponse struct {
+	// 【黑名单】判断是否在黑名单中
+	IsInBlacklist bool `json:"isInBlacklist"`
+}
+
+// GetIsInBlacklist returns IsInBlacklistResponse.IsInBlacklist, and is useful for accessing the field via an interface.
+func (v *IsInBlacklistResponse) GetIsInBlacklist() bool { return v.IsInBlacklist }
+
 // TopicOptionConfigFields includes the GraphQL fields of TopicOptionConfig requested by the fragment TopicOptionConfigFields.
 type TopicOptionConfigFields struct {
 	TopicId    string `json:"topicId"`
@@ -952,6 +961,18 @@ type __GetUserByIDsInput struct {
 
 // GetIds returns __GetUserByIDsInput.Ids, and is useful for accessing the field via an interface.
 func (v *__GetUserByIDsInput) GetIds() []string { return v.Ids }
+
+// __IsInBlacklistInput is used internally by genqlient
+type __IsInBlacklistInput struct {
+	UserId  string `json:"userId"`
+	BlockId string `json:"blockId"`
+}
+
+// GetUserId returns __IsInBlacklistInput.UserId, and is useful for accessing the field via an interface.
+func (v *__IsInBlacklistInput) GetUserId() string { return v.UserId }
+
+// GetBlockId returns __IsInBlacklistInput.BlockId, and is useful for accessing the field via an interface.
+func (v *__IsInBlacklistInput) GetBlockId() string { return v.BlockId }
 
 // The query or mutation executed by CreateMatchingCheck.
 const CreateMatchingCheck_Operation = `
@@ -1470,6 +1491,41 @@ func GetUserByIDs(
 	var err error
 
 	var data GetUserByIDsResponse
+	resp := &graphql.Response{Data: &data}
+
+	err = client.MakeRequest(
+		ctx,
+		req,
+		resp,
+	)
+
+	return &data, err
+}
+
+// The query or mutation executed by IsInBlacklist.
+const IsInBlacklist_Operation = `
+query IsInBlacklist ($userId: String!, $blockId: String!) {
+	isInBlacklist(userId: $userId, blockId: $blockId)
+}
+`
+
+func IsInBlacklist(
+	ctx context.Context,
+	client graphql.Client,
+	userId string,
+	blockId string,
+) (*IsInBlacklistResponse, error) {
+	req := &graphql.Request{
+		OpName: "IsInBlacklist",
+		Query:  IsInBlacklist_Operation,
+		Variables: &__IsInBlacklistInput{
+			UserId:  userId,
+			BlockId: blockId,
+		},
+	}
+	var err error
+
+	var data IsInBlacklistResponse
 	resp := &graphql.Response{Data: &data}
 
 	err = client.MakeRequest(

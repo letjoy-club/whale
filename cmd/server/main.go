@@ -5,9 +5,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"github.com/letjoy-club/mida-tool/qcloudutil"
-	"github.com/redis/go-redis/v9"
-	"gorm.io/gorm"
 	"log"
 	"net/http"
 	"whale/graph"
@@ -15,6 +12,10 @@ import (
 	"whale/pkg/mq"
 	"whale/pkg/restfulserver"
 	"whale/pkg/whaleconf"
+
+	"github.com/letjoy-club/mida-tool/qcloudutil"
+	"github.com/redis/go-redis/v9"
+	"gorm.io/gorm"
 
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
@@ -97,7 +98,7 @@ func main() {
 			ctx = dbutil.WithDB(ctx, db)
 			ctx = clsutil.WithGraphLogger(ctx, whaleConf.QCloud.CLS.Client, whaleConf.QCloud.CLS.TopicID, "whale")
 			ctx = redisutil.WithRedis(ctx, redis)
-			ctx = pulsarutil.WithMQ[*whaleconf.Publisher](ctx, publisher)
+			ctx = pulsarutil.WithMQ(ctx, publisher)
 			ctx = midacontext.WithLoader(ctx, loader)
 			ctx = midacontext.WithServices(ctx, services)
 			ctx = midacontext.WithClientToken(ctx, token)
@@ -136,6 +137,6 @@ func pullTopics(subscriber *whaleconf.Subscriber, db *gorm.DB, redis *redis.Clie
 	ctx = redisutil.WithRedis(ctx, redis)
 	ctx = midacontext.WithLoader(ctx, loader)
 	ctx = dbutil.WithDB(ctx, db)
-	ctx = pulsarutil.WithMQ[*whaleconf.Subscriber](ctx, subscriber)
+	ctx = pulsarutil.WithMQ(ctx, subscriber)
 	go mq.UserLevelChangeListener(ctx)
 }

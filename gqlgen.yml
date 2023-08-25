@@ -64,6 +64,8 @@ models:
     fields:
       matchingQuota:
         resolver: true
+      durationConstraint:
+        resolver: true
   Topic:
     fields:
       matchingNum:
@@ -118,3 +120,6 @@ models:
   LevelRights:
     model:
       - whale/pkg/models.LevelRights
+  DurationConstraint:
+    model:
+      - whale/pkg/models.DurationConstraint

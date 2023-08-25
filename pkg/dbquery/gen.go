@@ -19,6 +19,7 @@ func Use(db *gorm.DB, opts ...gen.DOOption) *Query {
 	return &Query{
 		db:                          db,
 		CityTopics:                  newCityTopics(db, opts...),
+		DurationConstraint:          newDurationConstraint(db, opts...),
 		HotTopicsInArea:             newHotTopicsInArea(db, opts...),
 		Matching:                    newMatching(db, opts...),
 		MatchingDurationConstraint:  newMatchingDurationConstraint(db, opts...),
@@ -48,6 +49,7 @@ type Query struct {
 	db *gorm.DB
 
 	CityTopics                  cityTopics
+	DurationConstraint          durationConstraint
 	HotTopicsInArea             hotTopicsInArea
 	Matching                    matching
 	MatchingDurationConstraint  matchingDurationConstraint
@@ -78,6 +80,7 @@ func (q *Query) clone(db *gorm.DB) *Query {
 	return &Query{
 		db:                          db,
 		CityTopics:                  q.CityTopics.clone(db),
+		DurationConstraint:          q.DurationConstraint.clone(db),
 		HotTopicsInArea:             q.HotTopicsInArea.clone(db),
 		Matching:                    q.Matching.clone(db),
 		MatchingDurationConstraint:  q.MatchingDurationConstraint.clone(db),
@@ -115,6 +118,7 @@ func (q *Query) ReplaceDB(db *gorm.DB) *Query {
 	return &Query{
 		db:                          db,
 		CityTopics:                  q.CityTopics.replaceDB(db),
+		DurationConstraint:          q.DurationConstraint.replaceDB(db),
 		HotTopicsInArea:             q.HotTopicsInArea.replaceDB(db),
 		Matching:                    q.Matching.replaceDB(db),
 		MatchingDurationConstraint:  q.MatchingDurationConstraint.replaceDB(db),
@@ -142,6 +146,7 @@ func (q *Query) ReplaceDB(db *gorm.DB) *Query {
 
 type queryCtx struct {
 	CityTopics                  ICityTopicsDo
+	DurationConstraint          IDurationConstraintDo
 	HotTopicsInArea             IHotTopicsInAreaDo
 	Matching                    IMatchingDo
 	MatchingDurationConstraint  IMatchingDurationConstraintDo
@@ -169,6 +174,7 @@ type queryCtx struct {
 func (q *Query) WithContext(ctx context.Context) *queryCtx {
 	return &queryCtx{
 		CityTopics:                  q.CityTopics.WithContext(ctx),
+		DurationConstraint:          q.DurationConstraint.WithContext(ctx),
 		HotTopicsInArea:             q.HotTopicsInArea.WithContext(ctx),
 		Matching:                    q.Matching.WithContext(ctx),
 		MatchingDurationConstraint:  q.MatchingDurationConstraint.WithContext(ctx),

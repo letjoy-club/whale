@@ -100,7 +100,11 @@ query GetBlacklistRelationship($ids: [String!]!) {
   }
 }
 
-query CreateMatchingCheck($topicId: String!, $cityId: AreaCode!, $userId: String!) {
+query CreateMatchingCheck(
+  $topicId: String!
+  $cityId: AreaCode!
+  $userId: String!
+) {
   topic(id: $topicId) {
     id
     enable
@@ -125,7 +129,11 @@ query CreateMatchingCheck($topicId: String!, $cityId: AreaCode!, $userId: String
   }
 }
 
-query CreateMatchingInvitationCheck($topicId: String!, $cityId: AreaCode!, $ids: [String!]!) {
+query CreateMatchingInvitationCheck(
+  $topicId: String!
+  $cityId: AreaCode!
+  $ids: [String!]!
+) {
   topic(id: $topicId) {
     id
     name

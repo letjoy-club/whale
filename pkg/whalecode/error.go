@@ -28,9 +28,12 @@ var (
 	ErrInviteeNotExist           = midacode.NewError("INVITEE_NOT_EXISTED", "您邀请的人不存在", midacode.LogLevelWarn)
 	ErrInviterBlocked            = midacode.NewError("INVITER_BLOCKED", "您已被封禁，无法发起邀请", midacode.LogLevelWarn)
 	ErrInviteeBlocked            = midacode.NewError("INVITEE_BLOCKED", "对方已被封禁，无法发起邀请", midacode.LogLevelWarn)
+	ErrUserInYourBlocklist       = midacode.NewError("USER_IN_YOUR_BLOCKLIST", "对方被您加入黑名单，无法邀约", midacode.LogLevelWarn)
+	ErrYouAreInUserBlocklist     = midacode.NewError("YOU_ARE_IN_USER_BLOCKLIST", "您被对方加入黑名单，无法邀约", midacode.LogLevelWarn)
 
 	ErrIsAlreadyHasActiveMotionOfTopic              = midacode.NewError("IS_ALREADY_HAS_ACTIVE_MOTION_OF_TOPIC", "已经有该话题的活动卡片", midacode.LogLevelWarn)
 	ErrMotionOfferQuotaNotEnough                    = midacode.NewError("MOTION_OFFER_QUOTA_NOT_ENOUGH", "邀约次数不足", midacode.LogLevelWarn)
+	ErrMotionQuotaNotEnough                         = midacode.NewError("MOTION_QUOTA_NOT_ENOUGH", "本周活动次数已用完", midacode.LogLevelWarn)
 	MotionOfferIsNotPending                         = midacode.NewError("MOTION_OFFER_IS_NOT_PENDING", "邀约不是待处理状态", midacode.LogLevelWarn)
 	ErrOnlyChatWhenNotAccepted                      = midacode.NewError("ONLY_CHAT_WHEN_NOT_ACCEPTED", "只有在未接受状态下才能发送该消息", midacode.LogLevelWarn)
 	ErrChatChanceNotEnough                          = midacode.NewError("CHAT_CHANCE_NOT_ENOUGH", "对方同意后才可以继续发送消息", midacode.LogLevelWarn)

@@ -43,6 +43,8 @@ func main() {
 		&models.MotionReview{},
 		&models.UserLikeMotion{},
 
+		&models.DurationConstraint{},
+
 		// 用户查看匹配
 		&models.UserViewMatching{},
 		&models.MatchingViewHistory{},
