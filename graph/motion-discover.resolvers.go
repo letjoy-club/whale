@@ -264,9 +264,7 @@ func (r *mutationResolver) CreateMotionOffer(ctx context.Context, myMotionID str
 	if err != nil {
 		return nil, err
 	}
-	return &models.CreateMotionOfferResult{
-		ChatGroupID: groupId,
-	}, nil
+	return &models.CreateMotionOfferResult{ChatGroupID: groupId}, nil
 }
 
 // CancelMotionOffer is the resolver for the cancelMotionOffer field.

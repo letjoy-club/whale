@@ -56,24 +56,24 @@ func CreateMotionOffer(ctx context.Context, myUserID, myMotionID, targetMotionID
 	// 对方是否被我拉黑
 	inMyBlocklist, err := hoopoe.IsInBlacklist(ctx, midacontext.GetServices(ctx).Hoopoe, myMotion.UserID, targetMotion.UserID)
 	if err != nil {
-		return err
+		return "", err
 	}
 	if inMyBlocklist.IsInBlacklist {
-		return whalecode.ErrUserInYourBlocklist
+		return "", whalecode.ErrUserInYourBlocklist
 	}
 
 	// 我是否被对方拉黑
 	inTargetBlocklist, err := hoopoe.IsInBlacklist(ctx, midacontext.GetServices(ctx).Hoopoe, myMotion.UserID, myMotion.UserID)
 	if err != nil {
-		return err
+		return "", err
 	}
 	if inTargetBlocklist.IsInBlacklist {
-		return whalecode.ErrYouAreInUserBlocklist
+		return "", whalecode.ErrYouAreInUserBlocklist
 	}
 
 	if myUserID != "" {
 		if myMotion.UserID != myUserID {
-			return midacode.ErrNotPermitted
+			return "", midacode.ErrNotPermitted
 		}
 	}
 
@@ -137,7 +137,10 @@ func CreateMotionOffer(ctx context.Context, myUserID, myMotionID, targetMotionID
 			return midacode.ErrUnknownError
 		}
 
-		rx, err = Motion.WithContext(ctx).Where(Motion.ID.Eq(targetMotion.ID)).UpdateSimple(Motion.InOfferNum.Add(1), Motion.PendingInNum.Add(1))
+		rx, err = Motion.WithContext(ctx).Where(Motion.ID.Eq(targetMotion.ID)).UpdateSimple(
+			Motion.InOfferNum.Add(1),
+			Motion.PendingInNum.Add(1),
+		)
 		if err != nil {
 			return err
 		}
@@ -399,7 +402,7 @@ func RejectMotionOffer(ctx context.Context, userID, myMotionID, targetMotionID s
 
 		Motion := tx.Motion
 		// 修改对方的 motion
-		fields := []field.AssignExpr{Motion.PendingInNum.Add(-1)}
+		fields := []field.AssignExpr{Motion.PendingOutNum.Add(-1)}
 		if !targetMotion.Discoverable {
 			// 没关闭，但是不可见
 			if targetMotion.PendingInNum+targetMotion.PendingOutNum == 1 {
@@ -416,7 +419,7 @@ func RejectMotionOffer(ctx context.Context, userID, myMotionID, targetMotionID s
 		}
 
 		// 修改我的 motion
-		fields = []field.AssignExpr{Motion.PendingOutNum.Add(-1)}
+		fields = []field.AssignExpr{Motion.PendingInNum.Add(-1)}
 		if !myMotion.Discoverable {
 			// 没关闭，但是不可见
 			if myMotion.PendingInNum+myMotion.PendingOutNum == 1 {
