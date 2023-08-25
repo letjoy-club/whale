@@ -24,6 +24,7 @@ func NewDurationConstraintLoader(db *gorm.DB) *dataloader.Loader[string, *models
 		weekEnd := carbon.Now().EndOfWeek().ToStdTime()
 		constraints := lo.Map(userIDs, func(userID string, i int) *models.DurationConstraint {
 			return &models.DurationConstraint{
+				UserID:            userID,
 				StartDate:         weekStart,
 				StopDate:          weekEnd,
 				TotalMotionQuota:  10,
