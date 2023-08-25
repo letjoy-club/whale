@@ -258,7 +258,11 @@ func (r *queryResolver) ActiveMotions(ctx context.Context, userID *string) ([]*m
 	db := dbutil.GetDB(ctx)
 	Motion := dbquery.Use(db).Motion
 	ids := []string{}
-	err := Motion.WithContext(ctx).Where(Motion.UserID.Eq(uid)).Where(Motion.Active.Is(true)).Order(Motion.ID.Desc()).Pluck(Motion.ID, &ids)
+	err := Motion.WithContext(ctx).
+		Where(Motion.UserID.Eq(uid)).
+		Where(Motion.Active.Is(true), Motion.Discoverable.Is(true)).
+		Order(Motion.ID.Desc()).
+		Pluck(Motion.ID, &ids)
 	if err != nil {
 		return nil, err
 	}
