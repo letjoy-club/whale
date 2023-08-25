@@ -34,7 +34,7 @@ func (r *mutationResolver) CreateMotion(ctx context.Context, userID *string, par
 	if uid == "" {
 		return nil, whalecode.ErrUserIDCannotBeEmpty
 	}
-	if param.Remark == nil || utf8.RuneCountInString(*param.Remark) < 3 {
+	if param.Remark == nil || utf8.RuneCountInString(*param.Remark) < 5 {
 		return nil, whalecode.ErrRemarkTooShort
 	}
 	if utf8.RuneCountInString(*param.Remark) > 250 {

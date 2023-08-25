@@ -589,7 +589,7 @@ func ClearOutDateMotionOffer(ctx context.Context) error {
 	db := dbutil.GetDB(ctx)
 	MotionOfferRecord := dbquery.Use(db).MotionOfferRecord
 	records, err := MotionOfferRecord.WithContext(ctx).Where(
-		MotionOfferRecord.ExpiredAt.Gt(time.Now()),
+		MotionOfferRecord.ExpiredAt.Lt(time.Now()),
 		MotionOfferRecord.State.Eq(string(models.MotionOfferStatePending)),
 	).Select(MotionOfferRecord.MotionID, MotionOfferRecord.ToMotionID).Find()
 	if err != nil {
