@@ -58,7 +58,7 @@ func (r *mutationResolver) LikeMotion(ctx context.Context, userID *string, motio
 		return motion.LikeCount, err
 	}
 	midacontext.GetLoader[loader.Loader](ctx).UserLikeMotion.Clear(ctx, uid)
-	midacontext.GetLoader[loader.Loader](ctx).Motion.Clear(ctx, uid)
+	midacontext.GetLoader[loader.Loader](ctx).Motion.Clear(ctx, motionID)
 	return motion.LikeCount, err
 }
 
@@ -102,7 +102,7 @@ func (r *mutationResolver) UnlikeMotion(ctx context.Context, userID *string, mot
 	}
 	motion.LikeCount -= 1
 	midacontext.GetLoader[loader.Loader](ctx).UserLikeMotion.Clear(ctx, uid)
-	midacontext.GetLoader[loader.Loader](ctx).Motion.Clear(ctx, uid)
+	midacontext.GetLoader[loader.Loader](ctx).Motion.Clear(ctx, motionID)
 	return motion.LikeCount, nil
 }
 
@@ -149,7 +149,7 @@ func (r *mutationResolver) ThumbsUpMotion(ctx context.Context, userID *string, m
 			return err
 		}
 		thumbsUp.DoThumbsUp(motionID)
-		midacontext.GetLoader[loader.Loader](ctx).Motion.Clear(ctx, uid)
+		midacontext.GetLoader[loader.Loader](ctx).Motion.Clear(ctx, motionID)
 		return nil
 	})
 	return nil, err
@@ -187,7 +187,7 @@ func (r *mutationResolver) CancelThumbsUpMotion(ctx context.Context, userID *str
 				return err
 			}
 			thumbsUp.UnThumbsUp(motionID)
-			midacontext.GetLoader[loader.Loader](ctx).Motion.Clear(ctx, uid)
+			midacontext.GetLoader[loader.Loader](ctx).Motion.Clear(ctx, motionID)
 		}
 		return nil
 	})
