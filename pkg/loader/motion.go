@@ -135,7 +135,15 @@ func (u UserLikeMotion) IsLike(motionID string) bool {
 func NewUserThumbsUpMotionLoader(db *gorm.DB) *dataloader.Loader[string, *UserThumbsUpMotions] {
 	UserThumbsUpMotion := dbquery.Use(db).UserThumbsUpMotion
 	return loaderutil.NewAggregatorLoader(db, func(ctx context.Context, keys []string) (items []*models.UserThumbsUpMotion, err error) {
-		return UserThumbsUpMotion.WithContext(ctx).Where(UserThumbsUpMotion.UserID.In(keys...)).Select(UserThumbsUpMotion.ToMotionID, UserThumbsUpMotion.UserID).Order(UserThumbsUpMotion.ToMotionID.Desc()).Find()
+		motions, err := UserThumbsUpMotion.WithContext(ctx).Where(UserThumbsUpMotion.UserID.In(keys...)).Select(UserThumbsUpMotion.ToMotionID, UserThumbsUpMotion.UserID).Find()
+		if err != nil {
+			return nil, err
+		}
+		// 按 motion id 排序，后面会用二分查找
+		sort.Slice(motions, func(i, j int) bool {
+			return motions[i].ToMotionID < motions[j].ToMotionID
+		})
+		return motions, nil
 	}, func(m map[string]*UserThumbsUpMotions, v *models.UserThumbsUpMotion) {
 		if _, ok := m[v.UserID]; !ok {
 			m[v.UserID] = &UserThumbsUpMotions{

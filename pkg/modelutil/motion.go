@@ -149,8 +149,9 @@ func CreateMotion(ctx context.Context, userID string, param *models.CreateMotion
 			return err
 		}
 
+		// todo: 临时下掉限制，后续重新测试上线
 		// tx.DurationConstraint.WithContext(ctx).Where(tx.DurationConstraint.ID.Eq(durationConstraint.ID)).UpdateSimple(tx.DurationConstraint.RemainMotionQuota.Value(durationConstraint.RemainMotionQuota - 1))
-		// midacontext.GetLoader[loader.Loader](ctx).DurationConstraint.Clear(ctx, userID)
+		//midacontext.GetLoader[loader.Loader](ctx).DurationConstraint.Clear(ctx, userID)
 		return nil
 	})
 
