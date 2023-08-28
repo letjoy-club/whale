@@ -264,12 +264,14 @@ func CloseMotion(ctx context.Context, userID, motionID string) error {
 			}
 			midacontext.GetLoader[loader.Loader](ctx).Matching.Clear(ctx, motion.RelatedMatchingID)
 		}
+
 		Motion := tx.Motion
 		latestMotion, err := Motion.WithContext(ctx).Where(Motion.ID.Eq(motionID)).Take()
 		if err != nil {
 			return err
 		}
-		if latestMotion.UpdatedAt != motion.UpdatedAt {
+
+		if latestMotion.UpdatedAt.Equal(motion.UpdatedAt) {
 			return midacode.ErrStateMayHaveChanged
 		}
 
