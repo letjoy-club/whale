@@ -358,6 +358,12 @@ func (r *queryResolver) DiscoverCategoryMotions(ctx context.Context, userID *str
 	return &models.DiscoverMotionResult{Motions: motions, NextToken: retNext}, nil
 }
 
+// GetDiscoverMotion is the resolver for the getDiscoverMotion field.
+func (r *queryResolver) GetDiscoverMotion(ctx context.Context, motionID string) (*models.Motion, error) {
+	thunk := midacontext.GetLoader[loader.Loader](ctx).Motion.Load(ctx, motionID)
+	return thunk()
+}
+
 // OutMotionOffers is the resolver for the outMotionOffers field.
 func (r *queryResolver) OutMotionOffers(ctx context.Context, motionID string) ([]*models.MotionOfferRecord, error) {
 	token := midacontext.GetClientToken(ctx)
