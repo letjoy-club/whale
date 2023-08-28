@@ -125,7 +125,7 @@ func (r *mutationResolver) CloseMotion(ctx context.Context, id string) (*string,
 		return nil, err
 	}
 	if !motion.Active {
-		return nil, whalecode.ErrMatchingOfferIsNotActive
+		return nil, nil
 	}
 	err = modelutil.CloseMotion(ctx, motion.UserID, id)
 	return nil, err

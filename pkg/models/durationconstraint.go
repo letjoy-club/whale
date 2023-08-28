@@ -6,7 +6,7 @@ type DurationConstraint struct {
 	ID     int    `gorm:"primaryKey"`
 	UserID string `gorm:"type:varchar(64);index"`
 
-	TotalMotionQuota int
+	TotalMotionQuota  int
 	RemainMotionQuota int
 
 	StartDate time.Time
@@ -15,4 +15,3 @@ type DurationConstraint struct {
 	UpdatedAt time.Time `gorm:"autoUpdateTime"`
 	CreatedAt time.Time `gorm:"autoCreateTime"`
 }
-

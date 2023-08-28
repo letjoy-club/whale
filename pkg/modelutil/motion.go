@@ -45,14 +45,14 @@ func CreateMotion(ctx context.Context, userID string, param *models.CreateMotion
 	// 	}
 	// }
 	//
-	durationConstraintThunk := midacontext.GetLoader[loader.Loader](ctx).DurationConstraint.Load(ctx, userID)
-	durationConstraint, err := durationConstraintThunk()
-	if err != nil {
-		return nil, err
-	}
-	if durationConstraint.RemainMotionQuota <= 0 {
-		return nil, whalecode.ErrMotionQuotaNotEnough
-	}
+	// durationConstraintThunk := midacontext.GetLoader[loader.Loader](ctx).DurationConstraint.Load(ctx, userID)
+	// durationConstraint, err := durationConstraintThunk()
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// if durationConstraint.RemainMotionQuota <= 0 {
+	// 	return nil, whalecode.ErrMotionQuotaNotEnough
+	// }
 
 	if err := checkMatchingParam(ctx, userID, param.TopicID, param.CityID, param.Gender); err != nil {
 		return nil, err
@@ -148,8 +148,8 @@ func CreateMotion(ctx context.Context, userID string, param *models.CreateMotion
 			return err
 		}
 
-		tx.DurationConstraint.WithContext(ctx).Where(tx.DurationConstraint.ID.Eq(durationConstraint.ID)).UpdateSimple(tx.DurationConstraint.RemainMotionQuota.Value(durationConstraint.RemainMotionQuota - 1))
-		midacontext.GetLoader[loader.Loader](ctx).DurationConstraint.Clear(ctx, userID)
+		// tx.DurationConstraint.WithContext(ctx).Where(tx.DurationConstraint.ID.Eq(durationConstraint.ID)).UpdateSimple(tx.DurationConstraint.RemainMotionQuota.Value(durationConstraint.RemainMotionQuota - 1))
+		// midacontext.GetLoader[loader.Loader](ctx).DurationConstraint.Clear(ctx, userID)
 		return nil
 	})
 
@@ -261,12 +261,14 @@ func CloseMotion(ctx context.Context, userID, motionID string) error {
 			}
 			midacontext.GetLoader[loader.Loader](ctx).Matching.Clear(ctx, motion.RelatedMatchingID)
 		}
+
 		Motion := tx.Motion
 		latestMotion, err := Motion.WithContext(ctx).Where(Motion.ID.Eq(motionID)).Take()
 		if err != nil {
 			return err
 		}
-		if latestMotion.UpdatedAt != motion.UpdatedAt {
+
+		if latestMotion.UpdatedAt.Equal(motion.UpdatedAt) {
 			return midacode.ErrStateMayHaveChanged
 		}
 
