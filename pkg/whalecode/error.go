@@ -18,6 +18,7 @@ var (
 	ErrMatchingQuotaNotEnough    = midacode.NewError("MATCHING_QUOTA_NOT_ENOUGH", "匹配次数不足，请结束现有聊天后再继续", midacode.LogLevelWarn)
 	ErrMotionReviewAlreadyExists = midacode.NewError("MOTION_REVIEW_ALREADY_EXISTS", "已经评价过该活动", midacode.LogLevelWarn)
 	ErrQueryDurationTooLong      = midacode.NewError("QUERY_DURATION_TOO_LONG", "查询时间段过长", midacode.LogLevelWarn)
+	ErrTopicIdShouldNotBeEmpty   = midacode.NewError("TOPIC_ID_SHOULD_NOT_BE_EMPTY", "话题不能为空", midacode.LogLevelWarn)
 	ErrTopicIsAlreadyInMatching  = midacode.NewError("TOPIC_IS_ALREADY_IN_MATCHING", "该话题已经在匹配中", midacode.LogLevelWarn)
 	ErrTopicNotExisted           = midacode.NewError("TOPIC_NOT_EXISTED", "话题不存在", midacode.LogLevelWarn)
 	ErrUserIDCannotBeEmpty       = midacode.NewError("USER_ID_CANNOT_BE_EMPTY", "用户 id 不能为空", midacode.LogLevelWarn)
