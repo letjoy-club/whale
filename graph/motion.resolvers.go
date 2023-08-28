@@ -34,7 +34,10 @@ func (r *mutationResolver) CreateMotion(ctx context.Context, userID *string, par
 	if uid == "" {
 		return nil, whalecode.ErrUserIDCannotBeEmpty
 	}
-	if param.Remark == nil || utf8.RuneCountInString(*param.Remark) < 3 {
+	if param.TopicID == "" {
+		return nil, whalecode.ErrTopicIdShouldNotBeEmpty
+	}
+	if param.Remark == nil || utf8.RuneCountInString(*param.Remark) < 5 {
 		return nil, whalecode.ErrRemarkTooShort
 	}
 	if utf8.RuneCountInString(*param.Remark) > 250 {
@@ -258,7 +261,11 @@ func (r *queryResolver) ActiveMotions(ctx context.Context, userID *string) ([]*m
 	db := dbutil.GetDB(ctx)
 	Motion := dbquery.Use(db).Motion
 	ids := []string{}
-	err := Motion.WithContext(ctx).Where(Motion.UserID.Eq(uid)).Where(Motion.Active.Is(true)).Order(Motion.ID.Desc()).Pluck(Motion.ID, &ids)
+	err := Motion.WithContext(ctx).
+		Where(Motion.UserID.Eq(uid)).
+		Where(Motion.Active.Is(true), Motion.Discoverable.Is(true)).
+		Order(Motion.ID.Desc()).
+		Pluck(Motion.ID, &ids)
 	if err != nil {
 		return nil, err
 	}

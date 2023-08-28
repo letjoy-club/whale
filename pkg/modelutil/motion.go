@@ -63,6 +63,7 @@ func CreateMotion(ctx context.Context, userID string, param *models.CreateMotion
 
 	count, err := Motion.WithContext(ctx).Where(
 		Motion.Active.Is(true),
+		Motion.Discoverable.Is(true),
 		Motion.TopicID.Eq(param.TopicID),
 		Motion.UserID.Eq(userID),
 	).Count()
