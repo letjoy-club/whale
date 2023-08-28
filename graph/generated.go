@@ -401,6 +401,7 @@ type ComplexityRoot struct {
 		CityDistribution            func(childComplexity int) int
 		CityTopics                  func(childComplexity int, cityID string) int
 		DiscoverCategoryMotions     func(childComplexity int, userID *string, filter *models.DiscoverTopicCategoryMotionFilter, topicCategoryID string, nextToken *string) int
+		GetDiscoverMotion           func(childComplexity int, motionID string) int
 		GetMotionOffer              func(childComplexity int, motionID string, toMotionID string) int
 		HotTopics                   func(childComplexity int, filter *models.HotTopicsFilter, paginator *graphqlutil.GraphQLPaginator) int
 		HotTopicsCount              func(childComplexity int, filter *models.HotTopicsFilter) int
@@ -718,6 +719,7 @@ type QueryResolver interface {
 	CityDistribution(ctx context.Context) ([]*models.CityToTopicMatching, error)
 	MatchingDurationConstraints(ctx context.Context, userID string) (*models.MatchingDurationConstraint, error)
 	DiscoverCategoryMotions(ctx context.Context, userID *string, filter *models.DiscoverTopicCategoryMotionFilter, topicCategoryID string, nextToken *string) (*models.DiscoverMotionResult, error)
+	GetDiscoverMotion(ctx context.Context, motionID string) (*models.Motion, error)
 	OutMotionOffers(ctx context.Context, motionID string) ([]*models.MotionOfferRecord, error)
 	InMotionOffers(ctx context.Context, motionID string) ([]*models.MotionOfferRecord, error)
 	GetMotionOffer(ctx context.Context, motionID string, toMotionID string) (*models.MotionOfferRecord, error)
@@ -2792,6 +2794,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.DiscoverCategoryMotions(childComplexity, args["userId"].(*string), args["filter"].(*models.DiscoverTopicCategoryMotionFilter), args["topicCategoryId"].(string), args["nextToken"].(*string)), true
+
+	case "Query.getDiscoverMotion":
+		if e.complexity.Query.GetDiscoverMotion == nil {
+			break
+		}
+
+		args, err := ec.field_Query_getDiscoverMotion_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.GetDiscoverMotion(childComplexity, args["motionId"].(string)), true
 
 	case "Query.getMotionOffer":
 		if e.complexity.Query.GetMotionOffer == nil {
@@ -5184,6 +5198,21 @@ func (ec *executionContext) field_Query_discoverCategoryMotions_args(ctx context
 		}
 	}
 	args["nextToken"] = arg3
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_getDiscoverMotion_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["motionId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("motionId"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["motionId"] = arg0
 	return args, nil
 }
 
@@ -20916,6 +20945,105 @@ func (ec *executionContext) fieldContext_Query_discoverCategoryMotions(ctx conte
 	return fc, nil
 }
 
+func (ec *executionContext) _Query_getDiscoverMotion(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_getDiscoverMotion(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().GetDiscoverMotion(rctx, fc.Args["motionId"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*models.Motion)
+	fc.Result = res
+	return ec.marshalNDiscoverMotion2ᚖwhaleᚋpkgᚋmodelsᚐMotion(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_getDiscoverMotion(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_DiscoverMotion_id(ctx, field)
+			case "userId":
+				return ec.fieldContext_DiscoverMotion_userId(ctx, field)
+			case "topicId":
+				return ec.fieldContext_DiscoverMotion_topicId(ctx, field)
+			case "properties":
+				return ec.fieldContext_DiscoverMotion_properties(ctx, field)
+			case "cityId":
+				return ec.fieldContext_DiscoverMotion_cityId(ctx, field)
+			case "areaIds":
+				return ec.fieldContext_DiscoverMotion_areaIds(ctx, field)
+			case "gender":
+				return ec.fieldContext_DiscoverMotion_gender(ctx, field)
+			case "dayRange":
+				return ec.fieldContext_DiscoverMotion_dayRange(ctx, field)
+			case "preferredPeriods":
+				return ec.fieldContext_DiscoverMotion_preferredPeriods(ctx, field)
+			case "remark":
+				return ec.fieldContext_DiscoverMotion_remark(ctx, field)
+			case "likeCount":
+				return ec.fieldContext_DiscoverMotion_likeCount(ctx, field)
+			case "viewCount":
+				return ec.fieldContext_DiscoverMotion_viewCount(ctx, field)
+			case "thumbsUpCount":
+				return ec.fieldContext_DiscoverMotion_thumbsUpCount(ctx, field)
+			case "liked":
+				return ec.fieldContext_DiscoverMotion_liked(ctx, field)
+			case "submitted":
+				return ec.fieldContext_DiscoverMotion_submitted(ctx, field)
+			case "thumbsUp":
+				return ec.fieldContext_DiscoverMotion_thumbsUp(ctx, field)
+			case "topic":
+				return ec.fieldContext_DiscoverMotion_topic(ctx, field)
+			case "topicOptionConfig":
+				return ec.fieldContext_DiscoverMotion_topicOptionConfig(ctx, field)
+			case "user":
+				return ec.fieldContext_DiscoverMotion_user(ctx, field)
+			case "city":
+				return ec.fieldContext_DiscoverMotion_city(ctx, field)
+			case "areas":
+				return ec.fieldContext_DiscoverMotion_areas(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type DiscoverMotion", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_getDiscoverMotion_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_outMotionOffers(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_outMotionOffers(ctx, field)
 	if err != nil {
@@ -33545,6 +33673,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_discoverCategoryMotions(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "getDiscoverMotion":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_getDiscoverMotion(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}

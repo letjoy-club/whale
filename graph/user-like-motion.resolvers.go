@@ -32,6 +32,16 @@ func (r *mutationResolver) LikeMotion(ctx context.Context, userID *string, motio
 	if err != nil {
 		return 0, err
 	}
+
+	userLikeMotionThunk := midacontext.GetLoader[loader.Loader](ctx).UserLikeMotion.Load(ctx, uid)
+	likeMotion, err := userLikeMotionThunk()
+	if err != nil {
+		return 0, err
+	}
+	if likeMotion.IsLike(motionID) {
+		return motion.LikeCount, nil
+	}
+
 	db := dbutil.GetDB(ctx)
 	UserLikeMotion := dbquery.Use(db).UserLikeMotion
 	Motion := dbquery.Use(db).Motion
@@ -67,6 +77,16 @@ func (r *mutationResolver) UnlikeMotion(ctx context.Context, userID *string, mot
 	if err != nil {
 		return 0, err
 	}
+
+	userLikeMotionThunk := midacontext.GetLoader[loader.Loader](ctx).UserLikeMotion.Load(ctx, uid)
+	likeMotion, err := userLikeMotionThunk()
+	if err != nil {
+		return 0, err
+	}
+	if !likeMotion.IsLike(motionID) {
+		return motion.LikeCount, nil
+	}
+
 	db := dbutil.GetDB(ctx)
 	UserLikeMotion := dbquery.Use(db).UserLikeMotion
 	Motion := dbquery.Use(db).Motion
