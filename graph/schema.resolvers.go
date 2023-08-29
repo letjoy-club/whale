@@ -332,6 +332,16 @@ func (r *queryResolver) ChatGroupByResultID(ctx context.Context, resultID int) (
 	return &models.ChatGroup{ID: result.ChatGroupID}, nil
 }
 
+// GetDurationConstraint is the resolver for the getDurationConstraint field.
+func (r *queryResolver) UserDurationConstraint(ctx context.Context, userID string) (*models.DurationConstraint, error) {
+	token := midacontext.GetClientToken(ctx)
+	if !token.IsAdmin() {
+		return nil, midacode.ErrNotPermitted
+	}
+	thunk := midacontext.GetLoader[loader.Loader](ctx).DurationConstraint.Load(ctx, userID)
+	return thunk()
+}
+
 // RecentUsers is the resolver for the recentUsers field.
 func (r *topicResolver) RecentUsers(ctx context.Context, obj *models.Topic, cityID *string) ([]*models.SimpleAvatarUser, error) {
 	db := dbutil.GetDB(ctx)
@@ -435,12 +445,6 @@ func (r *userResolver) MatchingQuota(ctx context.Context, obj *models.User) (*mo
 		}
 	}
 	thunk := midacontext.GetLoader[loader.Loader](ctx).MatchingQuota.Load(ctx, obj.ID)
-	return thunk()
-}
-
-// DurationConstraint is the resolver for the durationConstraint field.
-func (r *userResolver) DurationConstraint(ctx context.Context, obj *models.User) (*models.DurationConstraint, error) {
-	thunk := midacontext.GetLoader[loader.Loader](ctx).DurationConstraint.Load(ctx, obj.ID)
 	return thunk()
 }
 

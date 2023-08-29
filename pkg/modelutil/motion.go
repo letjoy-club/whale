@@ -45,14 +45,15 @@ func CreateMotion(ctx context.Context, userID string, param *models.CreateMotion
 	// 	}
 	// }
 	//
-	// durationConstraintThunk := midacontext.GetLoader[loader.Loader](ctx).DurationConstraint.Load(ctx, userID)
-	// durationConstraint, err := durationConstraintThunk()
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// if durationConstraint.RemainMotionQuota <= 0 {
-	// 	return nil, whalecode.ErrMotionQuotaNotEnough
-	// }
+	durationConstraintThunk := midacontext.GetLoader[loader.Loader](ctx).DurationConstraint.Load(ctx, userID)
+	durationConstraint, err := durationConstraintThunk()
+	if err != nil {
+		return nil, err
+	}
+	if durationConstraint.RemainMotionQuota <= 0 {
+		// 限制每周可发起的 motion 次数
+		return nil, whalecode.ErrMotionQuotaNotEnough
+	}
 
 	if err := checkMatchingParam(ctx, userID, param.TopicID, param.CityID, param.Gender); err != nil {
 		return nil, err
@@ -74,7 +75,7 @@ func CreateMotion(ctx context.Context, userID string, param *models.CreateMotion
 		return nil, whalecode.ErrIsAlreadyHasActiveMotionOfTopic
 	}
 
-	matchingStartAt := time.Now().Add(time.Hour * 24 * 7)
+	matchingStartAt := time.Now().Add(time.Minute * 30)
 
 	matching := &models.Matching{
 		ID:               shortid.NewWithTime("m_", 4),
@@ -149,9 +150,9 @@ func CreateMotion(ctx context.Context, userID string, param *models.CreateMotion
 			return err
 		}
 
-		// todo: 临时下掉限制，后续重新测试上线
-		// tx.DurationConstraint.WithContext(ctx).Where(tx.DurationConstraint.ID.Eq(durationConstraint.ID)).UpdateSimple(tx.DurationConstraint.RemainMotionQuota.Value(durationConstraint.RemainMotionQuota - 1))
-		//midacontext.GetLoader[loader.Loader](ctx).DurationConstraint.Clear(ctx, userID)
+		// 更新用户的剩余匹配次数
+		tx.DurationConstraint.WithContext(ctx).Where(tx.DurationConstraint.ID.Eq(durationConstraint.ID)).UpdateSimple(tx.DurationConstraint.RemainMotionQuota.Value(durationConstraint.RemainMotionQuota - 1))
+		midacontext.GetLoader[loader.Loader](ctx).DurationConstraint.Clear(ctx, userID)
 		return nil
 	})
 

@@ -288,9 +288,8 @@ type UpdateUserJoinTopicParam struct {
 }
 
 type User struct {
-	ID                 string              `json:"id"`
-	MatchingQuota      *MatchingQuota      `json:"matchingQuota"`
-	DurationConstraint *DurationConstraint `json:"durationConstraint"`
+	ID            string         `json:"id"`
+	MatchingQuota *MatchingQuota `json:"matchingQuota"`
 }
 
 func (User) IsEntity() {}
