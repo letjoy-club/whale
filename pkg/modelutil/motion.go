@@ -270,7 +270,7 @@ func CloseMotion(ctx context.Context, userID, motionID string) error {
 			return err
 		}
 
-		if latestMotion.UpdatedAt.Equal(motion.UpdatedAt) {
+		if !latestMotion.UpdatedAt.Equal(motion.UpdatedAt) {
 			return midacode.ErrStateMayHaveChanged
 		}
 
