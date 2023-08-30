@@ -44,7 +44,9 @@ type CityTopicSummary struct {
 
 func GenMotionSummary(ctx context.Context) (*MotionSummary, error) {
 	loader := midacontext.GetLoader[loader.Loader](ctx).AllMotion
-	loader.Load(ctx)
+	if err := loader.Load(ctx); err != nil {
+		return nil, err
+	}
 	citiesToMotion := loader.GetCityToMotions()
 
 	topicIDToName := map[string]string{}

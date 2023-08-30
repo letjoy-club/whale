@@ -12,7 +12,7 @@ require (
 	github.com/goccy/go-yaml v1.11.0
 	github.com/golang-module/carbon v1.7.3
 	github.com/graph-gophers/dataloader/v7 v7.1.0
-	github.com/letjoy-club/mida-tool v0.3.20
+	github.com/letjoy-club/mida-tool v0.3.21-0.20230829090103-d3261fcbb101
 	github.com/redis/go-redis/v9 v9.0.3
 	github.com/samber/lo v1.38.1
 	github.com/stretchr/testify v1.8.3
@@ -34,6 +34,8 @@ require (
 	github.com/99designs/keyring v1.2.1 // indirect
 	github.com/AthenZ/athenz v1.10.39 // indirect
 	github.com/DataDog/zstd v1.5.0 // indirect
+	github.com/alexflint/go-arg v1.4.2 // indirect
+	github.com/alexflint/go-scalar v1.0.0 // indirect
 	github.com/ardielle/ardielle-go v1.5.2 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bits-and-blooms/bitset v1.4.0 // indirect
@@ -82,6 +84,7 @@ require (
 	google.golang.org/genproto v0.0.0-20230306155012-7f2fa6fef1f4 // indirect
 	google.golang.org/grpc v1.55.0 // indirect
 	google.golang.org/protobuf v1.30.0 // indirect
+	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
 
 require (

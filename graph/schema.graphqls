@@ -11,7 +11,6 @@ extend type TopicOptionConfig @key(fields: "topicId") {
 extend type User @key(fields: "id") {
   id: String! @external
   matchingQuota: MatchingQuota!
-  durationConstraint: DurationConstraint!
 }
 
 extend type Topic @key(fields: "id") {
@@ -386,6 +385,9 @@ type DurationConstraint {
 type Query {
   "【匹配系统】内部专有"
   chatGroupByResultId(resultId: Int!): ChatGroup!
+
+  "【匹配系统】获取用户的时间维度限制，内部专有"
+  userDurationConstraint(userId: String!): DurationConstraint!
 }
 
 input UserMatchingFilter {

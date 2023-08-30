@@ -27,8 +27,8 @@ func NewDurationConstraintLoader(db *gorm.DB) *dataloader.Loader[string, *models
 				UserID:            userID,
 				StartDate:         weekStart,
 				StopDate:          weekEnd,
-				TotalMotionQuota:  10,
-				RemainMotionQuota: 10,
+				TotalMotionQuota:  20,
+				RemainMotionQuota: 20,
 			}
 		})
 		err := DurationConstraint.WithContext(ctx).Create(constraints...)
