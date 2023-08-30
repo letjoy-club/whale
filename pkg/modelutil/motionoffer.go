@@ -61,9 +61,9 @@ func CreateMotionOffer(ctx context.Context, myUserID, myMotionID, targetMotionID
 	if resp.BlacklistRelationship != nil && len(resp.BlacklistRelationship) > 0 {
 		for _, pair := range resp.BlacklistRelationship {
 			if pair.A == myMotion.UserID {
-				return "", whalecode.ErrUserInYourBlocklist
+				return "", whalecode.ErrUserInYourBlacklist
 			} else {
-				return "", whalecode.ErrYouAreInUserBlocklist
+				return "", whalecode.ErrYouAreInUserBlacklist
 			}
 		}
 	}
@@ -206,22 +206,26 @@ func AcceptMotionOffer(ctx context.Context, myUserID, myMotionID, targetMotionID
 	}
 
 	db := dbutil.GetDB(ctx)
+	MotionOfferRecord := dbquery.Use(db).MotionOfferRecord
+	record, err := MotionOfferRecord.WithContext(ctx).Where(
+		MotionOfferRecord.MotionID.Eq(targetMotion.ID),
+		MotionOfferRecord.ToMotionID.Eq(myMotion.ID),
+	).Take()
+	if err != nil {
+		return err
+	}
+	if record.State != string(models.MotionOfferStatePending) {
+		return whalecode.ErrMotionOfferIsNotPending
+	}
+
 	now := time.Now()
 	matchingResultID := 0
 	err = dbquery.Use(db).Transaction(func(tx *dbquery.Query) error {
-		MotionOfferRecord := tx.MotionOfferRecord
-		record, err := MotionOfferRecord.WithContext(ctx).Where(
-			MotionOfferRecord.MotionID.Eq(targetMotion.ID),
-			MotionOfferRecord.ToMotionID.Eq(myMotion.ID),
-		).Take()
-		if err != nil {
-			return err
-		}
-
 		if _, err := smew.CreateTimGroup(ctx, midacontext.GetServices(ctx).Smew, record.ChatGroupID); err != nil {
 			return err
 		}
 
+		MotionOfferRecord := tx.MotionOfferRecord
 		rx, err := MotionOfferRecord.WithContext(ctx).Where(
 			MotionOfferRecord.MotionID.Eq(targetMotion.ID),
 			MotionOfferRecord.ToMotionID.Eq(myMotion.ID),
@@ -323,7 +327,7 @@ func RejectMotionOffer(ctx context.Context, userID, myMotionID, targetMotionID s
 	for _, offer := range motionOffer.Offers {
 		if offer.MotionID == targetMotionID {
 			if offer.State != string(models.MotionOfferStatePending) {
-				return whalecode.MotionOfferIsNotPending
+				return whalecode.ErrMotionOfferIsNotPending
 			}
 			found = true
 			break
@@ -471,7 +475,7 @@ func CancelMotionOffer(ctx context.Context, myUserID, myMotionID, targetMotionID
 			continue
 		}
 		if offer.State != string(models.MotionOfferStatePending) {
-			return whalecode.MotionOfferIsNotPending
+			return whalecode.ErrMotionOfferIsNotPending
 		}
 		found = true
 	}
