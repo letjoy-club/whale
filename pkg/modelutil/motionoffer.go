@@ -525,6 +525,7 @@ func CancelMotionOffer(ctx context.Context, myUserID, myMotionID, targetMotionID
 	return nil
 }
 
+// ClearOutDateMotionOffer 清理过期的MotionOffer
 func ClearOutDateMotionOffer(ctx context.Context) error {
 	db := dbutil.GetDB(ctx)
 	MotionOfferRecord := dbquery.Use(db).MotionOfferRecord
@@ -553,28 +554,11 @@ func ClearOutDateMotionOffer(ctx context.Context) error {
 			MotionOfferRecord := tx.MotionOfferRecord
 			Motion := tx.Motion
 			MatchingResult := tx.MatchingResult
-			_, err := MotionOfferRecord.WithContext(ctx).Where(
-				MotionOfferRecord.ID.Eq(record.ID),
-			).UpdateSimple(
-				MotionOfferRecord.State.Value(string(models.MatchingStateTimeout)),
-			)
-			if err != nil {
-				return err
-			}
 
-			matchingResult, err := MatchingResult.WithContext(ctx).Where(MatchingResult.ChatGroupID.Eq(record.ChatGroupID)).Take()
-			if err != nil {
-				return err
-			}
-			matchingResultID = matchingResult.ID
-			if rx, err := MatchingResult.WithContext(ctx).Where(MatchingResult.ID.Eq(matchingResultID)).UpdateSimple(
-				MatchingResult.Closed.Value(true),
-				MatchingResult.ChatGroupState.Value(models.ChatGroupStateClosed.String()),
-				MatchingResult.FinishedAt.Value(time.Now()),
+			if _, err := MotionOfferRecord.WithContext(ctx).Where(MotionOfferRecord.ID.Eq(record.ID)).UpdateSimple(
+				MotionOfferRecord.State.Value(string(models.MatchingStateTimeout)),
 			); err != nil {
 				return err
-			} else if rx.RowsAffected != 1 {
-				return midacode.ErrStateMayHaveChanged
 			}
 
 			// fromMotion
@@ -603,8 +587,22 @@ func ClearOutDateMotionOffer(ctx context.Context) error {
 			}
 
 			if record.ChatGroupID != "" {
-				_, err := smew.DestroyGroup(ctx, midacontext.GetServices(ctx).Smew, record.ChatGroupID)
+				matchingResult, err := MatchingResult.WithContext(ctx).Where(MatchingResult.ChatGroupID.Eq(record.ChatGroupID)).Take()
 				if err != nil {
+					return err
+				}
+				matchingResultID = matchingResult.ID
+				if rx, err := MatchingResult.WithContext(ctx).Where(MatchingResult.ID.Eq(matchingResultID)).UpdateSimple(
+					MatchingResult.Closed.Value(true),
+					MatchingResult.ChatGroupState.Value(models.ChatGroupStateClosed.String()),
+					MatchingResult.FinishedAt.Value(time.Now()),
+				); err != nil {
+					return err
+				} else if rx.RowsAffected != 1 {
+					return midacode.ErrStateMayHaveChanged
+				}
+
+				if _, err := smew.DestroyGroup(ctx, midacontext.GetServices(ctx).Smew, record.ChatGroupID); err != nil {
 					return err
 				}
 			}
@@ -619,21 +617,7 @@ func ClearOutDateMotionOffer(ctx context.Context) error {
 		loader.InMotionOfferRecord.Clear(ctx, record.ToMotionID)
 		loader.MatchingResult.Clear(ctx, matchingResultID)
 	}
-
-	motionIDs := map[string]struct{}{}
-	for _, record := range records {
-		motionIDs[record.MotionID] = struct{}{}
-		motionIDs[record.ToMotionID] = struct{}{}
-	}
-
-	Motion := queryer.Motion
-	_, err = queryer.Motion.WithContext(ctx).Where(
-		Motion.Active.Is(true),
-		Motion.Discoverable.Is(false),
-		Motion.PendingOutNum.Eq(0),
-		Motion.PendingInNum.Eq(0),
-	).UpdateSimple(Motion.Active.Value(false))
-	return err
+	return nil
 }
 
 func SendChatInOffer(ctx context.Context, myUserID, myMotionID, targetMotionID, sentence string) error {
