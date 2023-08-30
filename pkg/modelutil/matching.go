@@ -237,23 +237,23 @@ func checkMatchingParam(ctx context.Context, uid, topicID, cityID string, gender
 		}
 	}
 	// 额度检查
-	//thunk := midacontext.GetLoader[loader.Loader](ctx).MatchingQuota.Load(ctx, uid)
-	//quota, err := thunk()
-	//if err != nil {
-	//	return err
-	//}
-	//if quota.Remain <= 0 {
-	//	return whalecode.ErrMatchingQuotaNotEnough
-	//}
-	//
-	//constraintThunk := midacontext.GetLoader[loader.Loader](ctx).MatchingDurationConstraint.Load(ctx, uid)
-	//constraint, err := constraintThunk()
-	//if err != nil {
-	//	return err
-	//}
-	//if constraint.Remain <= 0 {
-	//	return whalecode.ErrMatchingDurationQuotaNotEnough
-	//}
+	thunk := midacontext.GetLoader[loader.Loader](ctx).MatchingQuota.Load(ctx, uid)
+	quota, err := thunk()
+	if err != nil {
+		return err
+	}
+	if quota.Remain <= 0 {
+		return whalecode.ErrMatchingQuotaNotEnough
+	}
+
+	constraintThunk := midacontext.GetLoader[loader.Loader](ctx).MatchingDurationConstraint.Load(ctx, uid)
+	constraint, err := constraintThunk()
+	if err != nil {
+		return err
+	}
+	if constraint.Remain <= 0 {
+		return whalecode.ErrMatchingDurationQuotaNotEnough
+	}
 	return nil
 }
 
