@@ -113,15 +113,8 @@ func (r *mutationResolver) CloseMotion(ctx context.Context, id string) (*string,
 	if !token.IsAdmin() && !token.IsUser() {
 		return nil, midacode.ErrNotPermitted
 	}
-	motionThunk := midacontext.GetLoader[loader.Loader](ctx).Motion.Load(ctx, id)
-	motion, err := motionThunk()
-	if err != nil {
-		return nil, err
-	}
-	if !motion.Active {
-		return nil, nil
-	}
-	err = modelutil.CloseMotion(ctx, motion.UserID, id)
+
+	err := modelutil.CloseMotion(ctx, token.UserID(), id)
 	return nil, err
 }
 
@@ -254,7 +247,7 @@ func (r *queryResolver) ActiveMotions(ctx context.Context, userID *string) ([]*m
 	ids := []string{}
 	err := Motion.WithContext(ctx).
 		Where(Motion.UserID.Eq(uid)).
-		Where(Motion.Active.Is(true), Motion.Discoverable.Is(true)).
+		Where(Motion.Active.Is(true)).
 		Order(Motion.ID.Desc()).
 		Pluck(Motion.ID, &ids)
 	if err != nil {

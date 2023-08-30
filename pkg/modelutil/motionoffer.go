@@ -36,20 +36,16 @@ func CreateMotionOffer(ctx context.Context, myUserID, myMotionID, targetMotionID
 			return "", midacode.ErrNotPermitted
 		}
 	}
-
 	if targetMotion.UserID == myUserID {
 		return "", whalecode.ErrCannotSendMatchingOfferToSelf
 	}
-
 	if myMotion.TopicID != targetMotion.TopicID {
 		return "", whalecode.ErrCannotSendMatchingOfferToDifferentTopic
 	}
-
-	if !myMotion.Active || !myMotion.Discoverable {
+	if !myMotion.Active {
 		return "", whalecode.ErrYourMotionIsNotActive
 	}
-
-	if !targetMotion.Active || !targetMotion.Discoverable {
+	if !targetMotion.Active {
 		return "", whalecode.ErrTheMotionIsNotActive
 	}
 
@@ -107,7 +103,7 @@ func CreateMotionOffer(ctx context.Context, myUserID, myMotionID, targetMotionID
 			MotionID:   myMotion.ID,
 			ToUserID:   targetMotion.UserID,
 			ToMotionID: targetMotion.ID,
-			ExpiredAt:  time.Now().Add(time.Hour * 24),
+			ExpiredAt:  time.Now().Add(time.Hour * 24 * 3),
 			ChatChance: 1,
 			State:      string(models.MotionOfferStatePending),
 		}
@@ -197,13 +193,11 @@ func AcceptMotionOffer(ctx context.Context, myUserID, myMotionID, targetMotionID
 		}
 	}
 
-	if !myMotion.Active || !myMotion.Discoverable {
-		return whalecode.ErrYourMotionIsNotActive
+	release, err := redisutil.LockAll(ctx, keyer.UserMotion(myMotion.UserID), keyer.UserMotion(targetMotion.UserID))
+	if err != nil {
+		return err
 	}
-
-	if !targetMotion.Active || !targetMotion.Discoverable {
-		return whalecode.ErrTheMotionIsNotActive
-	}
+	defer release(ctx)
 
 	db := dbutil.GetDB(ctx)
 	MotionOfferRecord := dbquery.Use(db).MotionOfferRecord
@@ -257,14 +251,11 @@ func AcceptMotionOffer(ctx context.Context, myUserID, myMotionID, targetMotionID
 		// 修改我的 motion
 		Motion := tx.Motion
 		fields := []field.AssignExpr{Motion.PendingInNum.Add(-1), Motion.ActiveNum.Add(1)}
-		if !myMotion.Discoverable {
-			// 没关闭，但是不可见
-			if myMotion.PendingInNum+myMotion.PendingOutNum == 1 {
-				// 设为关闭
-				fields = append(fields, Motion.Active.Value(false))
+		if !myMotion.Active {
+			if myMotion.PendingInNum+myMotion.PendingOutNum == 1 { // 设为不可见
+				fields = append(fields, Motion.Discoverable.Value(false))
 			}
 		}
-
 		rx, err = Motion.WithContext(ctx).Where(Motion.ID.Eq(myMotion.ID)).UpdateSimple(fields...)
 		if err != nil {
 			return err
@@ -274,11 +265,9 @@ func AcceptMotionOffer(ctx context.Context, myUserID, myMotionID, targetMotionID
 		}
 		// 修改对方的 motion
 		fields = []field.AssignExpr{Motion.PendingOutNum.Add(-1), Motion.ActiveNum.Add(1)}
-		if !targetMotion.Discoverable {
-			// 没关闭，但是不可见
-			if targetMotion.PendingInNum+targetMotion.PendingOutNum == 1 {
-				// 设为关闭
-				fields = append(fields, Motion.Active.Value(false))
+		if !targetMotion.Active {
+			if targetMotion.PendingInNum+targetMotion.PendingOutNum == 1 { // 设为不可见
+				fields = append(fields, Motion.Discoverable.Value(false))
 			}
 		}
 		rx, err = Motion.WithContext(ctx).Where(Motion.ID.Eq(targetMotion.ID)).UpdateSimple(fields...)
@@ -318,41 +307,29 @@ func RejectMotionOffer(ctx context.Context, userID, myMotionID, targetMotionID s
 		}
 	}
 
-	motionOfferThunk := midacontext.GetLoader[loader.Loader](ctx).InMotionOfferRecord.Load(ctx, myMotionID)
-	motionOffer, err := motionOfferThunk()
-	if err != nil {
-		return err
-	}
-	found := false
-	for _, offer := range motionOffer.Offers {
-		if offer.MotionID == targetMotionID {
-			if offer.State != string(models.MotionOfferStatePending) {
-				return whalecode.ErrMotionOfferIsNotPending
-			}
-			found = true
-			break
-		}
-	}
-	if !found {
-		return whalecode.ErrMatchingOfferNotFound
-	}
-
 	release, err := redisutil.LockAll(ctx, keyer.UserMotion(myMotion.UserID), keyer.UserMotion(targetMotion.UserID))
 	if err != nil {
 		return err
 	}
 	defer release(ctx)
 
+	db := dbutil.GetDB(ctx)
+	MotionOfferRecord := dbquery.Use(db).MotionOfferRecord
+	motionOffer, err := MotionOfferRecord.WithContext(ctx).Where(
+		MotionOfferRecord.MotionID.Eq(targetMotion.ID),
+		MotionOfferRecord.ToMotionID.Eq(myMotion.ID),
+	).Take()
+	if err != nil {
+		return err
+	}
+	if motionOffer.State != string(models.MotionOfferStatePending) {
+		return whalecode.ErrMotionOfferIsNotPending
+	}
+
 	matchingResultID := 0
 	now := time.Now()
-	db := dbutil.GetDB(ctx)
 	err = dbquery.Use(db).Transaction(func(tx *dbquery.Query) error {
 		MotionOfferRecord := tx.MotionOfferRecord
-		motionOffer, err := MotionOfferRecord.WithContext(ctx).Where(MotionOfferRecord.MotionID.Eq(targetMotionID), MotionOfferRecord.ToMotionID.Eq(myMotionID)).Take()
-		if err != nil {
-			return err
-		}
-
 		if motionOffer.ChatGroupID != "" {
 			_, err := smew.DestroyGroup(ctx, midacontext.GetServices(ctx).Smew, motionOffer.ChatGroupID)
 			if err != nil {
@@ -398,11 +375,9 @@ func RejectMotionOffer(ctx context.Context, userID, myMotionID, targetMotionID s
 		Motion := tx.Motion
 		// 修改对方的 motion
 		fields := []field.AssignExpr{Motion.PendingOutNum.Add(-1)}
-		if !targetMotion.Discoverable {
-			// 没关闭，但是不可见
-			if targetMotion.PendingInNum+targetMotion.PendingOutNum == 1 {
-				// 设为关闭
-				fields = append(fields, Motion.Active.Value(false))
+		if !targetMotion.Active {
+			if targetMotion.PendingInNum+targetMotion.PendingOutNum == 1 { // 设为不可见
+				fields = append(fields, Motion.Discoverable.Value(false))
 			}
 		}
 		rx, err = Motion.WithContext(ctx).Where(Motion.ID.Eq(targetMotionID)).UpdateSimple(fields...)
@@ -415,11 +390,9 @@ func RejectMotionOffer(ctx context.Context, userID, myMotionID, targetMotionID s
 
 		// 修改我的 motion
 		fields = []field.AssignExpr{Motion.PendingInNum.Add(-1)}
-		if !myMotion.Discoverable {
-			// 没关闭，但是不可见
-			if myMotion.PendingInNum+myMotion.PendingOutNum == 1 {
-				// 设为关闭
-				fields = append(fields, Motion.Active.Value(false))
+		if !myMotion.Active {
+			if myMotion.PendingInNum+myMotion.PendingOutNum == 1 { // 设为不可见
+				fields = append(fields, Motion.Discoverable.Value(false))
 			}
 		}
 		rx, err = Motion.WithContext(ctx).Where(Motion.ID.Eq(myMotionID)).UpdateSimple(fields...)
@@ -446,8 +419,7 @@ func RejectMotionOffer(ctx context.Context, userID, myMotionID, targetMotionID s
 	return nil
 }
 
-// todo: cancel使用场景
-
+// CancelMotionOffer 取消MotionOffer，暂时不可用
 func CancelMotionOffer(ctx context.Context, myUserID, myMotionID, targetMotionID string) error {
 	motionsThunk := midacontext.GetLoader[loader.Loader](ctx).Motion.LoadMany(ctx, []string{myMotionID, targetMotionID})
 	motions, err := utils.ReturnThunk(motionsThunk)
@@ -551,35 +523,6 @@ func CancelMotionOffer(ctx context.Context, myUserID, myMotionID, targetMotionID
 	return nil
 }
 
-func MarkMotionDiscoverable(ctx context.Context, userID, motionID string, discoverable bool) error {
-	motionThunk := midacontext.GetLoader[loader.Loader](ctx).Motion.Load(ctx, motionID)
-	motion, err := motionThunk()
-	if err != nil {
-		return err
-	}
-	if userID != "" {
-		if motion.UserID != userID {
-			return midacode.ErrNotPermitted
-		}
-	}
-	if !motion.Active {
-		return whalecode.ErrMatchingOfferIsNotActive
-	}
-	if motion.Discoverable == discoverable {
-		return nil
-	}
-	db := dbutil.GetDB(ctx)
-	Motion := dbquery.Use(db).Motion
-	_, err = Motion.WithContext(ctx).Where(Motion.ID.Eq(motionID)).UpdateSimple(
-		Motion.Discoverable.Value(discoverable),
-	)
-	if err != nil {
-		return err
-	}
-	midacontext.GetLoader[loader.Loader](ctx).Motion.Clear(ctx, motionID)
-	return nil
-}
-
 func ClearOutDateMotionOffer(ctx context.Context) error {
 	db := dbutil.GetDB(ctx)
 	MotionOfferRecord := dbquery.Use(db).MotionOfferRecord
@@ -593,10 +536,18 @@ func ClearOutDateMotionOffer(ctx context.Context) error {
 
 	queryer := dbquery.Use(db)
 	loader := midacontext.GetLoader[loader.Loader](ctx)
-
 	for _, record := range records {
+		motionThunk := loader.Motion.LoadMany(ctx, []string{record.MotionID, record.ToMotionID})
+		motions, err := utils.ReturnThunk(motionThunk)
+		if err != nil {
+			return err
+		}
+
+		fromMotion := motions[0]
+		toMotion := motions[1]
+
 		matchingResultID := 0
-		err := queryer.Transaction(func(tx *dbquery.Query) error {
+		if err := queryer.Transaction(func(tx *dbquery.Query) error {
 			MotionOfferRecord := tx.MotionOfferRecord
 			Motion := tx.Motion
 			MatchingResult := tx.MatchingResult
@@ -624,17 +575,29 @@ func ClearOutDateMotionOffer(ctx context.Context) error {
 				return midacode.ErrStateMayHaveChanged
 			}
 
-			_, err = Motion.WithContext(ctx).Where(Motion.ID.Eq(record.MotionID)).UpdateSimple(
-				Motion.PendingOutNum.Add(-1),
-			)
-			if err != nil {
-				return err
+			// fromMotion
+			fields := []field.AssignExpr{Motion.PendingOutNum.Add(-1)}
+			if !fromMotion.Active {
+				if fromMotion.PendingInNum+fromMotion.PendingOutNum == 1 { // 设为不可见
+					fields = append(fields, Motion.Discoverable.Value(false))
+				}
 			}
-			_, err = Motion.WithContext(ctx).Where(Motion.ID.Eq(record.ToMotionID)).UpdateSimple(
-				Motion.PendingInNum.Add(-1),
-			)
-			if err != nil {
+			if rx, err := Motion.WithContext(ctx).Where(Motion.ID.Eq(fromMotion.ID)).UpdateSimple(fields...); err != nil {
 				return err
+			} else if rx.RowsAffected != 1 {
+				return midacode.ErrStateMayHaveChanged
+			}
+			// toMotion
+			fields = []field.AssignExpr{Motion.PendingOutNum.Add(-1)}
+			if !toMotion.Active {
+				if toMotion.PendingInNum+toMotion.PendingOutNum == 1 { // 设为不可见
+					fields = append(fields, Motion.Discoverable.Value(false))
+				}
+			}
+			if rx, err := Motion.WithContext(ctx).Where(Motion.ID.Eq(toMotion.ID)).UpdateSimple(fields...); err != nil {
+				return err
+			} else if rx.RowsAffected != 1 {
+				return midacode.ErrStateMayHaveChanged
 			}
 
 			if record.ChatGroupID != "" {
@@ -644,8 +607,7 @@ func ClearOutDateMotionOffer(ctx context.Context) error {
 				}
 			}
 			return nil
-		})
-		if err != nil {
+		}); err != nil {
 			return err
 		}
 
@@ -703,7 +665,6 @@ func SendChatInOffer(ctx context.Context, myUserID, myMotionID, targetMotionID, 
 func FinishMotionOffer(ctx context.Context, myUserID, fromMatchingID, toMatchingID string) error {
 	db := dbutil.GetDB(ctx)
 	MotionOfferRecord := dbquery.Use(db).MotionOfferRecord
-	// todo: 有没有可能存在双向不同的Offer
 	record, err := MotionOfferRecord.WithContext(ctx).Where(
 		MotionOfferRecord.MotionID.Eq(fromMatchingID), MotionOfferRecord.ToMotionID.Eq(toMatchingID),
 	).Take()
@@ -719,6 +680,7 @@ func FinishMotionOffer(ctx context.Context, myUserID, fromMatchingID, toMatching
 			return midacode.ErrNotPermitted
 		}
 	}
+
 	matchingResultID := 0
 	if err = dbquery.Use(db).Transaction(func(tx *dbquery.Query) error {
 		if record.ChatGroupID != "" {
@@ -728,8 +690,8 @@ func FinishMotionOffer(ctx context.Context, myUserID, fromMatchingID, toMatching
 			}
 		}
 		MotionOfferRecord := tx.MotionOfferRecord
-		_, err = MotionOfferRecord.WithContext(ctx).Where(MotionOfferRecord.ID.Eq(record.ID)).UpdateSimple(MotionOfferRecord.State.Value(string(models.MotionOfferStateFinished)))
-		if err != nil {
+		if _, err = MotionOfferRecord.WithContext(ctx).Where(MotionOfferRecord.ID.Eq(record.ID)).
+			UpdateSimple(MotionOfferRecord.State.Value(string(models.MotionOfferStateFinished))); err != nil {
 			return err
 		}
 

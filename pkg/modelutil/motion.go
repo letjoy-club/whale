@@ -49,7 +49,6 @@ func CreateMotion(ctx context.Context, userID string, param *models.CreateMotion
 
 	count, err := Motion.WithContext(ctx).Where(
 		Motion.Active.Is(true),
-		Motion.Discoverable.Is(true),
 		Motion.TopicID.Eq(param.TopicID),
 		Motion.UserID.Eq(userID),
 	).Count()
@@ -186,6 +185,18 @@ func checkCreateMotionParam(ctx context.Context, userID string, param *models.Cr
 }
 
 func UpdateMotion(ctx context.Context, motionID string, param *models.UpdateMotionParam) error {
+	thunk := midacontext.GetLoader[loader.Loader](ctx).Motion.Load(ctx, motionID)
+	motion, err := thunk()
+	if err != nil {
+		return err
+	}
+	if motion == nil {
+		return midacode.ErrItemNotFound
+	}
+	if !motion.Active {
+		return whalecode.ErrYourMotionIsNotActive
+	}
+
 	db := dbutil.GetDB(ctx)
 	Motion := dbquery.Use(db).Motion
 
@@ -220,8 +231,7 @@ func UpdateMotion(ctx context.Context, motionID string, param *models.UpdateMoti
 		))
 	}
 
-	_, err := Motion.WithContext(ctx).Where(Motion.ID.Eq(motionID)).UpdateSimple(fields...)
-	if err != nil {
+	if _, err := Motion.WithContext(ctx).Where(Motion.ID.Eq(motionID)).UpdateSimple(fields...); err != nil {
 		return err
 	}
 	return nil
@@ -239,20 +249,8 @@ func CloseMotion(ctx context.Context, userID, motionID string) error {
 			return midacode.ErrNotPermitted
 		}
 	}
-
 	if !motion.Active {
 		return nil
-	}
-
-	inMotionOfferThunk := midacontext.GetLoader[loader.Loader](ctx).InMotionOfferRecord.Load(ctx, motionID)
-	inMotionOffer, err := inMotionOfferThunk()
-	if err != nil {
-		return err
-	}
-	outMotionOfferThunk := midacontext.GetLoader[loader.Loader](ctx).OutMotionOfferRecord.Load(ctx, motionID)
-	outMotionOffer, err := outMotionOfferThunk()
-	if err != nil {
-		return err
 	}
 
 	release, err := redisutil.LockAll(ctx, keyer.UserMotion(motion.UserID))
@@ -260,21 +258,6 @@ func CloseMotion(ctx context.Context, userID, motionID string) error {
 		return err
 	}
 	defer release(ctx)
-
-	myOutOfferIDs := []string{}
-	myInOfferIDs := []string{}
-
-	for _, offer := range inMotionOffer.Offers {
-		if offer.State == models.MotionOfferStatePending.String() {
-			myInOfferIDs = append(myInOfferIDs, offer.MotionID)
-		}
-	}
-
-	for _, offer := range outMotionOffer.Offers {
-		if offer.State == models.MotionOfferStatePending.String() {
-			myOutOfferIDs = append(myOutOfferIDs, offer.ToMotionID)
-		}
-	}
 
 	db := dbutil.GetDB(ctx)
 	err = dbquery.Use(db).Transaction(func(tx *dbquery.Query) error {
@@ -302,11 +285,10 @@ func CloseMotion(ctx context.Context, userID, motionID string) error {
 		}
 
 		fields := []field.AssignExpr{}
-		fields = append(fields, Motion.Discoverable.Value(false))
+		fields = append(fields, Motion.Active.Value(false))
 
-		if len(myInOfferIDs) > 0 || len(myOutOfferIDs) > 0 {
-			// 不关闭，但是不可见
-			fields = append(fields, Motion.Active.Value(false))
+		if motion.PendingInNum+motion.PendingOutNum == 0 { // 关联的Offer全部处理后，最终设置为不可见
+			fields = append(fields, Motion.Discoverable.Value(false))
 		}
 		rx, err := Motion.WithContext(ctx).Where(Motion.ID.Eq(motionID)).UpdateSimple(fields...)
 		if err != nil {
@@ -322,18 +304,6 @@ func CloseMotion(ctx context.Context, userID, motionID string) error {
 	}
 	// 清理缓存
 	loader := midacontext.GetLoader[loader.Loader](ctx)
-	if len(myInOfferIDs) > 0 {
-		for _, id := range myInOfferIDs {
-			loader.Motion.Clear(ctx, id)
-			loader.OutMotionOfferRecord.Clear(ctx, id)
-		}
-	}
-	if len(myOutOfferIDs) > 0 {
-		for _, id := range myOutOfferIDs {
-			loader.Motion.Clear(ctx, id)
-			loader.InMotionOfferRecord.Clear(ctx, id)
-		}
-	}
 	loader.InMotionOfferRecord.Clear(ctx, motionID)
 	loader.OutMotionOfferRecord.Clear(ctx, motionID)
 	loader.Motion.Clear(ctx, motionID)

@@ -12,6 +12,7 @@ import (
 	"whale/pkg/models"
 	"whale/pkg/modelutil"
 	"whale/pkg/utils"
+	"whale/pkg/whalecode"
 
 	"github.com/letjoy-club/mida-tool/dbutil"
 	"github.com/letjoy-club/mida-tool/graphqlutil"
@@ -236,12 +237,16 @@ func (r *mutationResolver) GetAvailableMotionOffer(ctx context.Context, userID *
 	if err != nil {
 		return nil, err
 	}
+	if !motion.Active {
+		return nil, whalecode.ErrTheMotionIsNotActive
+	}
+
 	uid := graphqlutil.GetID(token, userID)
 	db := dbutil.GetDB(ctx)
 	Motion := dbquery.Use(db).Motion
 	motion, err = Motion.WithContext(ctx).
 		Where(Motion.UserID.Eq(uid), Motion.TopicID.Eq(motion.TopicID)).
-		Where(Motion.Discoverable.Is(true), Motion.Active.Is(true)).
+		Where(Motion.Active.Is(true)).
 		Take()
 	if err != nil {
 		if midacode.ItemIsNotFound(err) == midacode.ErrItemNotFound {
@@ -273,7 +278,8 @@ func (r *mutationResolver) CancelMotionOffer(ctx context.Context, myMotionID str
 	if !token.IsUser() && !token.IsAdmin() {
 		return nil, midacode.ErrNotPermitted
 	}
-	return nil, modelutil.CancelMotionOffer(ctx, token.UserID(), myMotionID, targetMotionID)
+	panic("CancelMotionOffer not support now")
+	//return nil, modelutil.CancelMotionOffer(ctx, token.UserID(), myMotionID, targetMotionID)
 }
 
 // AcceptMotionOffer is the resolver for the acceptMotionOffer field.
