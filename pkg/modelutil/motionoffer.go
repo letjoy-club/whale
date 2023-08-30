@@ -3,6 +3,8 @@ package modelutil
 import (
 	"context"
 	"errors"
+	"github.com/letjoy-club/mida-tool/logger"
+	"go.uber.org/zap"
 	"time"
 	"whale/pkg/dbquery"
 	"whale/pkg/gqlient/hoopoe"
@@ -719,5 +721,85 @@ func FinishMotionOffer(ctx context.Context, myUserID, fromMatchingID, toMatching
 	midacontext.GetLoader[loader.Loader](ctx).InMotionOfferRecord.Clear(ctx, toMatchingID)
 	midacontext.GetLoader[loader.Loader](ctx).OutMotionOfferRecord.Clear(ctx, fromMatchingID)
 	midacontext.GetLoader[loader.Loader](ctx).MatchingResult.Clear(ctx, matchingResultID)
+	return nil
+}
+
+func RefreshMotionState(ctx context.Context) error {
+	db := dbutil.GetDB(ctx)
+	Motion := dbquery.Use(db).Motion
+	MotionOfferRecord := dbquery.Use(db).MotionOfferRecord
+
+	offset := 0
+	for {
+		motions, err := Motion.WithContext(ctx).Order(Motion.CreatedAt).Offset(offset).Limit(10).Find()
+		if err != nil {
+			return err
+		}
+		if motions == nil || len(motions) > 0 {
+			break
+		}
+
+		for _, motion := range motions {
+			// Motion是否Close
+			active := true
+			if !motion.Active || !motion.Discoverable {
+				active = false
+			}
+
+			inOffers, err := MotionOfferRecord.WithContext(ctx).Where(MotionOfferRecord.ToMotionID.Eq(motion.UserID)).Find()
+			if err != nil {
+				logger.L.Error("query inOffers error", zap.Error(err), zap.String("motionId", motion.ID))
+				return err
+			}
+			outOffers, err := MotionOfferRecord.WithContext(ctx).Where(MotionOfferRecord.MotionID.Eq(motion.UserID)).Find()
+			if err != nil {
+				logger.L.Error("query outOffers error", zap.Error(err), zap.String("motionId", motion.ID))
+				return err
+			}
+			inOfferNum := len(inOffers)
+			outOfferNum := len(outOffers)
+			pendingInNum := 0
+			pendingOutNum := 0
+			activeNum := 0
+
+			for _, offer := range inOffers {
+				if offer.State == string(models.MotionOfferStatePending) {
+					pendingInNum++
+				}
+				if offer.State == string(models.MotionOfferStateAccepted) ||
+					offer.State == string(models.MotionOfferStateFinished) {
+					activeNum++
+				}
+			}
+			for _, offer := range outOffers {
+				if offer.State == string(models.MotionOfferStatePending) {
+					pendingOutNum++
+				}
+				if offer.State == string(models.MotionOfferStateAccepted) ||
+					offer.State == string(models.MotionOfferStateFinished) {
+					activeNum++
+				}
+			}
+
+			discoverable := true
+			if !active && pendingInNum+pendingOutNum == 0 {
+				discoverable = false
+			}
+
+			if _, err := Motion.WithContext(ctx).Where(Motion.ID.Eq(motion.ID)).UpdateSimple(
+				Motion.Active.Value(active),
+				Motion.Discoverable.Value(discoverable),
+				Motion.InOfferNum.Value(inOfferNum),
+				Motion.OutOfferNum.Value(outOfferNum),
+				Motion.PendingInNum.Value(pendingInNum),
+				Motion.PendingOutNum.Value(pendingOutNum),
+				Motion.ActiveNum.Value(activeNum),
+			); err != nil {
+				logger.L.Error("update motion error", zap.Error(err), zap.String("motionId", motion.ID))
+				return err
+			}
+		}
+	}
+
 	return nil
 }

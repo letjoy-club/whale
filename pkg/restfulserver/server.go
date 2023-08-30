@@ -31,5 +31,12 @@ func Mount(r chi.Router) {
 			render.JSON(w, r, Resp{})
 		}
 	})
+	r.Post("/refresh-motion-state", func(w http.ResponseWriter, r *http.Request) {
+		if err := modelutil.RefreshMotionState(r.Context()); err != nil {
+			render.JSON(w, r, Resp{Error: err.Error()})
+		} else {
+			render.JSON(w, r, Resp{})
+		}
+	})
 	r.Handle("/ws", proxy.ProxyHandler())
 }
