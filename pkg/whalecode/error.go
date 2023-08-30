@@ -15,6 +15,7 @@ var (
 	ErrAreaNotSupport            = midacode.NewError("AREA_NOT_SUPPORT", "该地区非法或未上线", midacode.LogLevelWarn)
 	ErrCannotInviteSelf          = midacode.NewError("CANNOT_INVITE_SELF", "不能邀请自己", midacode.LogLevelWarn)
 	ErrCannotSelectGender        = midacode.NewError("CANNOT_SELECT_GENDER", "您暂时无法选择性别", midacode.LogLevelWarn)
+	ErrCityIdShouldNotBeEmpty    = midacode.NewError("CITY_ID_SHOULD_NOT_BE_EMPTY", "城市不能为空", midacode.LogLevelWarn)
 	ErrMatchingQuotaNotEnough    = midacode.NewError("MATCHING_QUOTA_NOT_ENOUGH", "匹配次数不足，请结束现有聊天后再继续", midacode.LogLevelWarn)
 	ErrMotionReviewAlreadyExists = midacode.NewError("MOTION_REVIEW_ALREADY_EXISTS", "已经评价过该活动", midacode.LogLevelWarn)
 	ErrQueryDurationTooLong      = midacode.NewError("QUERY_DURATION_TOO_LONG", "查询时间段过长", midacode.LogLevelWarn)

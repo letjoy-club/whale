@@ -155,3 +155,27 @@ query CreateMatchingInvitationCheck(
     b
   }
 }
+
+query CreateMotionCheck(
+  $topicId: String!
+  $cityId: AreaCode!
+  $userId: String!
+) {
+  topic(id: $topicId) {
+    id
+    enable
+  }
+  area(code: $cityId) {
+    code
+    enabled
+  }
+  user(id: $userId) {
+    blockInfo {
+      userBlocked
+      matchingBlocked
+    }
+  }
+  userInfoCompletenessCheck(userId: $userId) {
+    filled
+  }
+}
