@@ -35,7 +35,7 @@ var (
 
 	ErrIsAlreadyHasActiveMotionOfTopic              = midacode.NewError("IS_ALREADY_HAS_ACTIVE_MOTION_OF_TOPIC", "已经有该话题的活动卡片", midacode.LogLevelWarn)
 	ErrMotionOfferQuotaNotEnough                    = midacode.NewError("MOTION_OFFER_QUOTA_NOT_ENOUGH", "邀约次数不足", midacode.LogLevelWarn)
-	ErrMotionQuotaNotEnough                         = midacode.NewError("MOTION_QUOTA_NOT_ENOUGH", "本周活动次数已用完", midacode.LogLevelWarn)
+	ErrMotionQuotaNotEnough                         = midacode.NewError("MOTION_QUOTA_NOT_ENOUGH", "本周创建卡片次数已用完", midacode.LogLevelWarn)
 	MotionOfferIsNotPending                         = midacode.NewError("MOTION_OFFER_IS_NOT_PENDING", "邀约不是待处理状态", midacode.LogLevelWarn)
 	ErrOnlyChatWhenNotAccepted                      = midacode.NewError("ONLY_CHAT_WHEN_NOT_ACCEPTED", "只有在未接受状态下才能发送该消息", midacode.LogLevelWarn)
 	ErrChatChanceNotEnough                          = midacode.NewError("CHAT_CHANCE_NOT_ENOUGH", "对方同意后才可以继续发送消息", midacode.LogLevelWarn)
