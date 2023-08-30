@@ -332,7 +332,7 @@ func (r *queryResolver) ChatGroupByResultID(ctx context.Context, resultID int) (
 	return &models.ChatGroup{ID: result.ChatGroupID}, nil
 }
 
-// GetDurationConstraint is the resolver for the getDurationConstraint field.
+// UserDurationConstraint is the resolver for the userDurationConstraint field.
 func (r *queryResolver) UserDurationConstraint(ctx context.Context, userID string) (*models.DurationConstraint, error) {
 	token := midacontext.GetClientToken(ctx)
 	if !token.IsAdmin() {

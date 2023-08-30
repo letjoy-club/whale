@@ -239,6 +239,94 @@ func (v *CreateMatchingInvitationCheckTopic) GetName() string { return v.Name }
 // GetEnable returns CreateMatchingInvitationCheckTopic.Enable, and is useful for accessing the field via an interface.
 func (v *CreateMatchingInvitationCheckTopic) GetEnable() bool { return v.Enable }
 
+// CreateMotionCheckArea includes the requested fields of the GraphQL type Area.
+type CreateMotionCheckArea struct {
+	// 地区代码
+	Code string `json:"code"`
+	// 是否开通业务
+	Enabled bool `json:"enabled"`
+}
+
+// GetCode returns CreateMotionCheckArea.Code, and is useful for accessing the field via an interface.
+func (v *CreateMotionCheckArea) GetCode() string { return v.Code }
+
+// GetEnabled returns CreateMotionCheckArea.Enabled, and is useful for accessing the field via an interface.
+func (v *CreateMotionCheckArea) GetEnabled() bool { return v.Enabled }
+
+// CreateMotionCheckResponse is returned by CreateMotionCheck on success.
+type CreateMotionCheckResponse struct {
+	// 【话题】话题查询
+	Topic *CreateMotionCheckTopic `json:"topic"`
+	// 【地区】根据地区代码查询地区信息
+	Area *CreateMotionCheckArea `json:"area"`
+	// 【用户】获取用户信息
+	User *CreateMotionCheckUser `json:"user"`
+	// 【用户】 用户信息完整性检查
+	UserInfoCompletenessCheck *CreateMotionCheckUserInfoCompletenessCheckUserInfoCompleteness `json:"userInfoCompletenessCheck"`
+}
+
+// GetTopic returns CreateMotionCheckResponse.Topic, and is useful for accessing the field via an interface.
+func (v *CreateMotionCheckResponse) GetTopic() *CreateMotionCheckTopic { return v.Topic }
+
+// GetArea returns CreateMotionCheckResponse.Area, and is useful for accessing the field via an interface.
+func (v *CreateMotionCheckResponse) GetArea() *CreateMotionCheckArea { return v.Area }
+
+// GetUser returns CreateMotionCheckResponse.User, and is useful for accessing the field via an interface.
+func (v *CreateMotionCheckResponse) GetUser() *CreateMotionCheckUser { return v.User }
+
+// GetUserInfoCompletenessCheck returns CreateMotionCheckResponse.UserInfoCompletenessCheck, and is useful for accessing the field via an interface.
+func (v *CreateMotionCheckResponse) GetUserInfoCompletenessCheck() *CreateMotionCheckUserInfoCompletenessCheckUserInfoCompleteness {
+	return v.UserInfoCompletenessCheck
+}
+
+// CreateMotionCheckTopic includes the requested fields of the GraphQL type Topic.
+type CreateMotionCheckTopic struct {
+	// 话题ID
+	Id string `json:"id"`
+	// 是否可用
+	Enable bool `json:"enable"`
+}
+
+// GetId returns CreateMotionCheckTopic.Id, and is useful for accessing the field via an interface.
+func (v *CreateMotionCheckTopic) GetId() string { return v.Id }
+
+// GetEnable returns CreateMotionCheckTopic.Enable, and is useful for accessing the field via an interface.
+func (v *CreateMotionCheckTopic) GetEnable() bool { return v.Enable }
+
+// CreateMotionCheckUser includes the requested fields of the GraphQL type User.
+type CreateMotionCheckUser struct {
+	// 用户封禁信息
+	BlockInfo *CreateMotionCheckUserBlockInfo `json:"blockInfo"`
+}
+
+// GetBlockInfo returns CreateMotionCheckUser.BlockInfo, and is useful for accessing the field via an interface.
+func (v *CreateMotionCheckUser) GetBlockInfo() *CreateMotionCheckUserBlockInfo { return v.BlockInfo }
+
+// CreateMotionCheckUserBlockInfo includes the requested fields of the GraphQL type UserBlockInfo.
+type CreateMotionCheckUserBlockInfo struct {
+	// 是否用户封禁，封禁则整个APP无法使用
+	UserBlocked bool `json:"userBlocked"`
+	// 是否匹配封禁，封禁则无法加入新的匹配
+	MatchingBlocked bool `json:"matchingBlocked"`
+}
+
+// GetUserBlocked returns CreateMotionCheckUserBlockInfo.UserBlocked, and is useful for accessing the field via an interface.
+func (v *CreateMotionCheckUserBlockInfo) GetUserBlocked() bool { return v.UserBlocked }
+
+// GetMatchingBlocked returns CreateMotionCheckUserBlockInfo.MatchingBlocked, and is useful for accessing the field via an interface.
+func (v *CreateMotionCheckUserBlockInfo) GetMatchingBlocked() bool { return v.MatchingBlocked }
+
+// CreateMotionCheckUserInfoCompletenessCheckUserInfoCompleteness includes the requested fields of the GraphQL type UserInfoCompleteness.
+type CreateMotionCheckUserInfoCompletenessCheckUserInfoCompleteness struct {
+	// 信息是否全部填写
+	Filled bool `json:"filled"`
+}
+
+// GetFilled returns CreateMotionCheckUserInfoCompletenessCheckUserInfoCompleteness.Filled, and is useful for accessing the field via an interface.
+func (v *CreateMotionCheckUserInfoCompletenessCheckUserInfoCompleteness) GetFilled() bool {
+	return v.Filled
+}
+
 type ExtraOptionKey string
 
 const (
@@ -730,15 +818,6 @@ func (v *GraphQLPaginator) GetPage() int { return v.Page }
 // GetSize returns GraphQLPaginator.Size, and is useful for accessing the field via an interface.
 func (v *GraphQLPaginator) GetSize() int { return v.Size }
 
-// IsInBlacklistResponse is returned by IsInBlacklist on success.
-type IsInBlacklistResponse struct {
-	// 【黑名单】判断是否在黑名单中
-	IsInBlacklist bool `json:"isInBlacklist"`
-}
-
-// GetIsInBlacklist returns IsInBlacklistResponse.IsInBlacklist, and is useful for accessing the field via an interface.
-func (v *IsInBlacklistResponse) GetIsInBlacklist() bool { return v.IsInBlacklist }
-
 // TopicOptionConfigFields includes the GraphQL fields of TopicOptionConfig requested by the fragment TopicOptionConfigFields.
 type TopicOptionConfigFields struct {
 	TopicId    string `json:"topicId"`
@@ -880,6 +959,22 @@ func (v *__CreateMatchingInvitationCheckInput) GetCityId() string { return v.Cit
 // GetIds returns __CreateMatchingInvitationCheckInput.Ids, and is useful for accessing the field via an interface.
 func (v *__CreateMatchingInvitationCheckInput) GetIds() []string { return v.Ids }
 
+// __CreateMotionCheckInput is used internally by genqlient
+type __CreateMotionCheckInput struct {
+	TopicId string `json:"topicId"`
+	CityId  string `json:"cityId"`
+	UserId  string `json:"userId"`
+}
+
+// GetTopicId returns __CreateMotionCheckInput.TopicId, and is useful for accessing the field via an interface.
+func (v *__CreateMotionCheckInput) GetTopicId() string { return v.TopicId }
+
+// GetCityId returns __CreateMotionCheckInput.CityId, and is useful for accessing the field via an interface.
+func (v *__CreateMotionCheckInput) GetCityId() string { return v.CityId }
+
+// GetUserId returns __CreateMotionCheckInput.UserId, and is useful for accessing the field via an interface.
+func (v *__CreateMotionCheckInput) GetUserId() string { return v.UserId }
+
 // __GetAllTopicAndCategoryAndTopicNameInput is used internally by genqlient
 type __GetAllTopicAndCategoryAndTopicNameInput struct {
 	Paginator *GraphQLPaginator `json:"paginator,omitempty"`
@@ -961,18 +1056,6 @@ type __GetUserByIDsInput struct {
 
 // GetIds returns __GetUserByIDsInput.Ids, and is useful for accessing the field via an interface.
 func (v *__GetUserByIDsInput) GetIds() []string { return v.Ids }
-
-// __IsInBlacklistInput is used internally by genqlient
-type __IsInBlacklistInput struct {
-	UserId  string `json:"userId"`
-	BlockId string `json:"blockId"`
-}
-
-// GetUserId returns __IsInBlacklistInput.UserId, and is useful for accessing the field via an interface.
-func (v *__IsInBlacklistInput) GetUserId() string { return v.UserId }
-
-// GetBlockId returns __IsInBlacklistInput.BlockId, and is useful for accessing the field via an interface.
-func (v *__IsInBlacklistInput) GetBlockId() string { return v.BlockId }
 
 // The query or mutation executed by CreateMatchingCheck.
 const CreateMatchingCheck_Operation = `
@@ -1077,6 +1160,59 @@ func CreateMatchingInvitationCheck(
 	var err error
 
 	var data CreateMatchingInvitationCheckResponse
+	resp := &graphql.Response{Data: &data}
+
+	err = client.MakeRequest(
+		ctx,
+		req,
+		resp,
+	)
+
+	return &data, err
+}
+
+// The query or mutation executed by CreateMotionCheck.
+const CreateMotionCheck_Operation = `
+query CreateMotionCheck ($topicId: String!, $cityId: AreaCode!, $userId: String!) {
+	topic(id: $topicId) {
+		id
+		enable
+	}
+	area(code: $cityId) {
+		code
+		enabled
+	}
+	user(id: $userId) {
+		blockInfo {
+			userBlocked
+			matchingBlocked
+		}
+	}
+	userInfoCompletenessCheck(userId: $userId) {
+		filled
+	}
+}
+`
+
+func CreateMotionCheck(
+	ctx context.Context,
+	client graphql.Client,
+	topicId string,
+	cityId string,
+	userId string,
+) (*CreateMotionCheckResponse, error) {
+	req := &graphql.Request{
+		OpName: "CreateMotionCheck",
+		Query:  CreateMotionCheck_Operation,
+		Variables: &__CreateMotionCheckInput{
+			TopicId: topicId,
+			CityId:  cityId,
+			UserId:  userId,
+		},
+	}
+	var err error
+
+	var data CreateMotionCheckResponse
 	resp := &graphql.Response{Data: &data}
 
 	err = client.MakeRequest(
@@ -1491,41 +1627,6 @@ func GetUserByIDs(
 	var err error
 
 	var data GetUserByIDsResponse
-	resp := &graphql.Response{Data: &data}
-
-	err = client.MakeRequest(
-		ctx,
-		req,
-		resp,
-	)
-
-	return &data, err
-}
-
-// The query or mutation executed by IsInBlacklist.
-const IsInBlacklist_Operation = `
-query IsInBlacklist ($userId: String!, $blockId: String!) {
-	isInBlacklist(userId: $userId, blockId: $blockId)
-}
-`
-
-func IsInBlacklist(
-	ctx context.Context,
-	client graphql.Client,
-	userId string,
-	blockId string,
-) (*IsInBlacklistResponse, error) {
-	req := &graphql.Request{
-		OpName: "IsInBlacklist",
-		Query:  IsInBlacklist_Operation,
-		Variables: &__IsInBlacklistInput{
-			UserId:  userId,
-			BlockId: blockId,
-		},
-	}
-	var err error
-
-	var data IsInBlacklistResponse
 	resp := &graphql.Response{Data: &data}
 
 	err = client.MakeRequest(

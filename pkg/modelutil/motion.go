@@ -3,7 +3,9 @@ package modelutil
 import (
 	"context"
 	"time"
+	"unicode/utf8"
 	"whale/pkg/dbquery"
+	"whale/pkg/gqlient/hoopoe"
 	"whale/pkg/loader"
 	"whale/pkg/models"
 	"whale/pkg/whalecode"
@@ -22,40 +24,23 @@ import (
 )
 
 func CreateMotion(ctx context.Context, userID string, param *models.CreateMotionParam) (*models.Motion, error) {
-	profileThunk := midacontext.GetLoader[loader.Loader](ctx).UserProfile.Load(ctx, userID)
-	profile, err := profileThunk()
-	if err != nil {
+	// 创建前检查
+	if err := checkCreateMotionParam(ctx, userID, param); err != nil {
 		return nil, err
 	}
-
-	// allAreas := areaTable
-	// if len(allAreas) == 0 {
-	// 	return nil, whalecode.ErrAreaNotSupport
-	// }
-	//
-	// if len(param.AreaIds) > 0 {
-	// 	param.AreaIds = lo.Uniq(param.AreaIds)
-	// 	for _, selectedAreaID := range param.AreaIds {
-	// 		index := lo.IndexOf(allAreas, func(areaID string, i int) bool {
-	// 			return areaID == selectedAreaID
-	// 		})
-	// 		if index == -1 {
-	// 			return nil, whalecode.ErrAreaNotSupport
-	// 		}
-	// 	}
-	// }
-	//
+	// 额度检查
 	durationConstraintThunk := midacontext.GetLoader[loader.Loader](ctx).DurationConstraint.Load(ctx, userID)
 	durationConstraint, err := durationConstraintThunk()
 	if err != nil {
 		return nil, err
 	}
-	if durationConstraint.RemainMotionQuota <= 0 {
-		// 限制每周可发起的 motion 次数
+	if durationConstraint.RemainMotionQuota <= 0 { // 限制每周可发起的 motion 次数
 		return nil, whalecode.ErrMotionQuotaNotEnough
 	}
 
-	if err := checkMatchingParam(ctx, userID, param.TopicID, param.CityID, param.Gender); err != nil {
+	profileThunk := midacontext.GetLoader[loader.Loader](ctx).UserProfile.Load(ctx, userID)
+	profile, err := profileThunk()
+	if err != nil {
 		return nil, err
 	}
 
@@ -151,12 +136,53 @@ func CreateMotion(ctx context.Context, userID string, param *models.CreateMotion
 		}
 
 		// 更新用户的剩余匹配次数
-		tx.DurationConstraint.WithContext(ctx).Where(tx.DurationConstraint.ID.Eq(durationConstraint.ID)).UpdateSimple(tx.DurationConstraint.RemainMotionQuota.Value(durationConstraint.RemainMotionQuota - 1))
+		tx.DurationConstraint.WithContext(ctx).Where(tx.DurationConstraint.ID.Eq(durationConstraint.ID)).
+			UpdateSimple(tx.DurationConstraint.RemainMotionQuota.Add(-1))
 		midacontext.GetLoader[loader.Loader](ctx).DurationConstraint.Clear(ctx, userID)
 		return nil
 	})
 
 	return motion, err
+}
+
+// checkCreateMotionParam 创建动议前检查
+func checkCreateMotionParam(ctx context.Context, userID string, param *models.CreateMotionParam) error {
+	// 字段检查
+	if userID == "" {
+		return whalecode.ErrUserIDCannotBeEmpty
+	}
+	if param.TopicID == "" {
+		return whalecode.ErrTopicIdShouldNotBeEmpty
+	}
+	if param.CityID == "" {
+		return whalecode.ErrCityIdShouldNotBeEmpty
+	}
+	if param.Remark == nil || utf8.RuneCountInString(*param.Remark) < 5 {
+		return whalecode.ErrRemarkTooShort
+	}
+	if utf8.RuneCountInString(*param.Remark) > 250 {
+		return whalecode.ErrRemarkTooLong
+	}
+
+	// 基础检查
+	res, err := hoopoe.CreateMotionCheck(ctx, midacontext.GetServices(ctx).Hoopoe, param.TopicID, param.CityID, userID)
+	if err != nil {
+		return err
+	}
+	if res.Topic == nil || !res.Topic.Enable {
+		return whalecode.ErrTopicNotExisted
+	}
+	if res.Area == nil || !res.Area.Enabled {
+		return whalecode.ErrAreaNotSupport
+	}
+	if !res.GetUserInfoCompletenessCheck().Filled {
+		return whalecode.ErrUserInfoNotComplete
+	}
+	if res.User.BlockInfo.UserBlocked || res.User.BlockInfo.MatchingBlocked {
+		return whalecode.ErrUserBlocked
+	}
+
+	return nil
 }
 
 func UpdateMotion(ctx context.Context, motionID string, param *models.UpdateMotionParam) error {
