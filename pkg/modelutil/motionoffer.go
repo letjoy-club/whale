@@ -53,27 +53,18 @@ func CreateMotionOffer(ctx context.Context, myUserID, myMotionID, targetMotionID
 		return "", whalecode.ErrTheMotionIsNotActive
 	}
 
-	// 对方是否被我拉黑
-	inMyBlocklist, err := hoopoe.IsInBlacklist(ctx, midacontext.GetServices(ctx).Hoopoe, myMotion.UserID, targetMotion.UserID)
+	// 拉黑检查
+	resp, err := hoopoe.GetBlacklistRelationship(ctx, midacontext.GetServices(ctx).Hoopoe, []string{myMotion.UserID, targetMotion.UserID})
 	if err != nil {
 		return "", err
 	}
-	if inMyBlocklist.IsInBlacklist {
-		return "", whalecode.ErrUserInYourBlocklist
-	}
-
-	// 我是否被对方拉黑
-	inTargetBlocklist, err := hoopoe.IsInBlacklist(ctx, midacontext.GetServices(ctx).Hoopoe, myMotion.UserID, myMotion.UserID)
-	if err != nil {
-		return "", err
-	}
-	if inTargetBlocklist.IsInBlacklist {
-		return "", whalecode.ErrYouAreInUserBlocklist
-	}
-
-	if myUserID != "" {
-		if myMotion.UserID != myUserID {
-			return "", midacode.ErrNotPermitted
+	if resp.BlacklistRelationship != nil && len(resp.BlacklistRelationship) > 0 {
+		for _, pair := range resp.BlacklistRelationship {
+			if pair.A == myMotion.UserID {
+				return "", whalecode.ErrUserInYourBlocklist
+			} else {
+				return "", whalecode.ErrYouAreInUserBlocklist
+			}
 		}
 	}
 
