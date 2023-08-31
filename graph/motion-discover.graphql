@@ -90,6 +90,7 @@ type DiscoverMotion {
   likeCount: Int!
   viewCount: Int!
   thumbsUpCount: Int!
+  createdAt: Time!
 
   # query
   "是否标记为喜欢"

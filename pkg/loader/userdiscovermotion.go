@@ -83,7 +83,7 @@ func (u *UserDiscoverMotion) LoadMotionIDs(
 	}
 
 	next = shortid.New("", 4)
-	u.nextToken[next] = nextIndex + 1
+	u.nextToken[next] = nextIndex
 
 	// 记录已经看过的
 	for _, id := range motionIDs {
@@ -221,8 +221,8 @@ func (l *AllMotionLoader) GenUserDiscoverMotion(ctx context.Context, userID stri
 			motionMap:       map[CategoryID][]*models.Motion{},
 			nextToken:       map[string]int{},
 		}
-		l.cache.SetDefault(userID, userDiscoverMotion)
 	}
+	l.cache.SetDefault(userID, userDiscoverMotion)
 	return userDiscoverMotion.(*UserDiscoverMotion)
 }
 
@@ -290,7 +290,7 @@ func (l *AllMotionLoader) Load(ctx context.Context) error {
 		Motion := dbquery.Use(l.db).Motion
 		motions, err := Motion.WithContext(ctx).Select(
 			Motion.ID, Motion.UserID, Motion.CityID, Motion.Gender, Motion.MyGender, Motion.TopicID,
-		).Where(Motion.Active.Is(true), Motion.Discoverable.Is(true)).Find()
+		).Where(Motion.Active.Is(true)).Find()
 		if err != nil {
 			logger.L.Error("load motions failed", zap.Error(err))
 			return nil

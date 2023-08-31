@@ -115,6 +115,7 @@ type ComplexityRoot struct {
 		Areas             func(childComplexity int) int
 		City              func(childComplexity int) int
 		CityID            func(childComplexity int) int
+		CreatedAt         func(childComplexity int) int
 		DayRange          func(childComplexity int) int
 		Gender            func(childComplexity int) int
 		ID                func(childComplexity int) int
@@ -932,6 +933,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.DiscoverMotion.CityID(childComplexity), true
+
+	case "DiscoverMotion.createdAt":
+		if e.complexity.DiscoverMotion.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.DiscoverMotion.CreatedAt(childComplexity), true
 
 	case "DiscoverMotion.dayRange":
 		if e.complexity.DiscoverMotion.DayRange == nil {
@@ -7511,6 +7519,50 @@ func (ec *executionContext) fieldContext_DiscoverMotion_thumbsUpCount(ctx contex
 	return fc, nil
 }
 
+func (ec *executionContext) _DiscoverMotion_createdAt(ctx context.Context, field graphql.CollectedField, obj *models.Motion) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DiscoverMotion_createdAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CreatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DiscoverMotion_createdAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DiscoverMotion",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _DiscoverMotion_liked(ctx context.Context, field graphql.CollectedField, obj *models.Motion) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DiscoverMotion_liked(ctx, field)
 	if err != nil {
@@ -7986,6 +8038,8 @@ func (ec *executionContext) fieldContext_DiscoverMotionResult_motions(ctx contex
 				return ec.fieldContext_DiscoverMotion_viewCount(ctx, field)
 			case "thumbsUpCount":
 				return ec.fieldContext_DiscoverMotion_thumbsUpCount(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_DiscoverMotion_createdAt(ctx, field)
 			case "liked":
 				return ec.fieldContext_DiscoverMotion_liked(ctx, field)
 			case "submitted":
@@ -13523,6 +13577,8 @@ func (ec *executionContext) fieldContext_MatchingResult_discoverMotion(ctx conte
 				return ec.fieldContext_DiscoverMotion_viewCount(ctx, field)
 			case "thumbsUpCount":
 				return ec.fieldContext_DiscoverMotion_thumbsUpCount(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_DiscoverMotion_createdAt(ctx, field)
 			case "liked":
 				return ec.fieldContext_DiscoverMotion_liked(ctx, field)
 			case "submitted":
@@ -15589,6 +15645,8 @@ func (ec *executionContext) fieldContext_MotionOfferRecord_toMotion(ctx context.
 				return ec.fieldContext_DiscoverMotion_viewCount(ctx, field)
 			case "thumbsUpCount":
 				return ec.fieldContext_DiscoverMotion_thumbsUpCount(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_DiscoverMotion_createdAt(ctx, field)
 			case "liked":
 				return ec.fieldContext_DiscoverMotion_liked(ctx, field)
 			case "submitted":
@@ -15677,6 +15735,8 @@ func (ec *executionContext) fieldContext_MotionOfferRecord_motion(ctx context.Co
 				return ec.fieldContext_DiscoverMotion_viewCount(ctx, field)
 			case "thumbsUpCount":
 				return ec.fieldContext_DiscoverMotion_thumbsUpCount(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_DiscoverMotion_createdAt(ctx, field)
 			case "liked":
 				return ec.fieldContext_DiscoverMotion_liked(ctx, field)
 			case "submitted":
@@ -21081,6 +21141,8 @@ func (ec *executionContext) fieldContext_Query_getDiscoverMotion(ctx context.Con
 				return ec.fieldContext_DiscoverMotion_viewCount(ctx, field)
 			case "thumbsUpCount":
 				return ec.fieldContext_DiscoverMotion_thumbsUpCount(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_DiscoverMotion_createdAt(ctx, field)
 			case "liked":
 				return ec.fieldContext_DiscoverMotion_liked(ctx, field)
 			case "submitted":
@@ -25061,6 +25123,8 @@ func (ec *executionContext) fieldContext_UserLikeMotion_motion(ctx context.Conte
 				return ec.fieldContext_DiscoverMotion_viewCount(ctx, field)
 			case "thumbsUpCount":
 				return ec.fieldContext_DiscoverMotion_thumbsUpCount(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_DiscoverMotion_createdAt(ctx, field)
 			case "liked":
 				return ec.fieldContext_DiscoverMotion_liked(ctx, field)
 			case "submitted":
@@ -29443,6 +29507,11 @@ func (ec *executionContext) _DiscoverMotion(ctx context.Context, sel ast.Selecti
 			}
 		case "thumbsUpCount":
 			out.Values[i] = ec._DiscoverMotion_thumbsUpCount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "createdAt":
+			out.Values[i] = ec._DiscoverMotion_createdAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
 			}
