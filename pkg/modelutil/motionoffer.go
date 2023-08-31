@@ -657,7 +657,7 @@ func FinishMotionOffer(ctx context.Context, myUserID, fromMatchingID, toMatching
 	if err != nil {
 		return midacode.ItemMayNotFound(err)
 	}
-	if record.State != string(models.MotionOfferStateAccepted) {
+	if record.State != string(models.MotionOfferStateAccepted) && record.State != string(models.MotionOfferStateFinished) {
 		return whalecode.ErrMotionCanOnlyFinishedWhenAccepted
 	}
 	if myUserID != "" {
@@ -670,31 +670,39 @@ func FinishMotionOffer(ctx context.Context, myUserID, fromMatchingID, toMatching
 	matchingResultID := 0
 	if err = dbquery.Use(db).Transaction(func(tx *dbquery.Query) error {
 		if record.ChatGroupID != "" {
-			_, err := smew.DestroyGroup(ctx, midacontext.GetServices(ctx).Smew, record.ChatGroupID)
+			smewClient := midacontext.GetServices(ctx).Smew
+			if myUserID == "" { // 管理端关闭
+				if _, err := smew.DestroyGroup(ctx, smewClient, record.ChatGroupID); err != nil {
+					return err
+				}
+			} else { // 用户关闭
+				if _, err := smew.GroupMemberLeave(ctx, smewClient, record.ChatGroupID, myUserID); err != nil {
+					return err
+				}
+			}
+		}
+		if record.State == string(models.MotionOfferStateAccepted) {
+			MotionOfferRecord := tx.MotionOfferRecord
+			if _, err = MotionOfferRecord.WithContext(ctx).Where(MotionOfferRecord.ID.Eq(record.ID)).
+				UpdateSimple(MotionOfferRecord.State.Value(string(models.MotionOfferStateFinished))); err != nil {
+				return err
+			}
+
+			MatchingResult := tx.MatchingResult
+			matchingResult, err := MatchingResult.WithContext(ctx).Where(MatchingResult.ChatGroupID.Eq(record.ChatGroupID)).Take()
 			if err != nil {
 				return err
 			}
-		}
-		MotionOfferRecord := tx.MotionOfferRecord
-		if _, err = MotionOfferRecord.WithContext(ctx).Where(MotionOfferRecord.ID.Eq(record.ID)).
-			UpdateSimple(MotionOfferRecord.State.Value(string(models.MotionOfferStateFinished))); err != nil {
-			return err
-		}
-
-		MatchingResult := tx.MatchingResult
-		matchingResult, err := MatchingResult.WithContext(ctx).Where(MatchingResult.ChatGroupID.Eq(record.ChatGroupID)).Take()
-		if err != nil {
-			return err
-		}
-		matchingResultID = matchingResult.ID
-		if rx, err := MatchingResult.WithContext(ctx).Where(MatchingResult.ID.Eq(matchingResultID)).UpdateSimple(
-			MatchingResult.Closed.Value(true),
-			MatchingResult.ChatGroupState.Value(models.ChatGroupStateClosed.String()),
-			MatchingResult.FinishedAt.Value(time.Now()),
-		); err != nil {
-			return err
-		} else if rx.RowsAffected != 1 {
-			return midacode.ErrStateMayHaveChanged
+			matchingResultID = matchingResult.ID
+			if rx, err := MatchingResult.WithContext(ctx).Where(MatchingResult.ID.Eq(matchingResultID)).UpdateSimple(
+				MatchingResult.Closed.Value(true),
+				MatchingResult.ChatGroupState.Value(models.ChatGroupStateClosed.String()),
+				MatchingResult.FinishedAt.Value(time.Now()),
+			); err != nil {
+				return err
+			} else if rx.RowsAffected != 1 {
+				return midacode.ErrStateMayHaveChanged
+			}
 		}
 
 		return nil
