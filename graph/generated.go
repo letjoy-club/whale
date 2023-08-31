@@ -307,6 +307,7 @@ type ComplexityRoot struct {
 		Areas             func(childComplexity int) int
 		City              func(childComplexity int) int
 		CityID            func(childComplexity int) int
+		CreatedAt         func(childComplexity int) int
 		DayRange          func(childComplexity int) int
 		Discoverable      func(childComplexity int) int
 		Gender            func(childComplexity int) int
@@ -627,6 +628,7 @@ type MatchingResultResolver interface {
 type MotionResolver interface {
 	PreferredPeriods(ctx context.Context, obj *models.Motion) ([]models.DatePeriod, error)
 	Gender(ctx context.Context, obj *models.Motion) (models.Gender, error)
+
 	Liked(ctx context.Context, obj *models.Motion) (bool, error)
 
 	ThumbsUp(ctx context.Context, obj *models.Motion) (bool, error)
@@ -1981,6 +1983,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Motion.CityID(childComplexity), true
+
+	case "Motion.createdAt":
+		if e.complexity.Motion.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.Motion.CreatedAt(childComplexity), true
 
 	case "Motion.dayRange":
 		if e.complexity.Motion.DayRange == nil {
@@ -6234,6 +6243,8 @@ func (ec *executionContext) fieldContext_AvailableMotionOffer_motion(ctx context
 				return ec.fieldContext_Motion_preferredPeriods(ctx, field)
 			case "gender":
 				return ec.fieldContext_Motion_gender(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Motion_createdAt(ctx, field)
 			case "liked":
 				return ec.fieldContext_Motion_liked(ctx, field)
 			case "viewCount":
@@ -14735,6 +14746,50 @@ func (ec *executionContext) fieldContext_Motion_gender(ctx context.Context, fiel
 	return fc, nil
 }
 
+func (ec *executionContext) _Motion_createdAt(ctx context.Context, field graphql.CollectedField, obj *models.Motion) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Motion_createdAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CreatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Motion_createdAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Motion",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Motion_liked(ctx context.Context, field graphql.CollectedField, obj *models.Motion) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Motion_liked(ctx, field)
 	if err != nil {
@@ -17621,6 +17676,8 @@ func (ec *executionContext) fieldContext_Mutation_createMotion(ctx context.Conte
 				return ec.fieldContext_Motion_preferredPeriods(ctx, field)
 			case "gender":
 				return ec.fieldContext_Motion_gender(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Motion_createdAt(ctx, field)
 			case "liked":
 				return ec.fieldContext_Motion_liked(ctx, field)
 			case "viewCount":
@@ -17730,6 +17787,8 @@ func (ec *executionContext) fieldContext_Mutation_updateMotion(ctx context.Conte
 				return ec.fieldContext_Motion_preferredPeriods(ctx, field)
 			case "gender":
 				return ec.fieldContext_Motion_gender(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Motion_createdAt(ctx, field)
 			case "liked":
 				return ec.fieldContext_Motion_liked(ctx, field)
 			case "viewCount":
@@ -17839,6 +17898,8 @@ func (ec *executionContext) fieldContext_Mutation_userUpdateMotion(ctx context.C
 				return ec.fieldContext_Motion_preferredPeriods(ctx, field)
 			case "gender":
 				return ec.fieldContext_Motion_gender(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Motion_createdAt(ctx, field)
 			case "liked":
 				return ec.fieldContext_Motion_liked(ctx, field)
 			case "viewCount":
@@ -21479,6 +21540,8 @@ func (ec *executionContext) fieldContext_Query_motion(ctx context.Context, field
 				return ec.fieldContext_Motion_preferredPeriods(ctx, field)
 			case "gender":
 				return ec.fieldContext_Motion_gender(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Motion_createdAt(ctx, field)
 			case "liked":
 				return ec.fieldContext_Motion_liked(ctx, field)
 			case "viewCount":
@@ -21588,6 +21651,8 @@ func (ec *executionContext) fieldContext_Query_userMotions(ctx context.Context, 
 				return ec.fieldContext_Motion_preferredPeriods(ctx, field)
 			case "gender":
 				return ec.fieldContext_Motion_gender(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Motion_createdAt(ctx, field)
 			case "liked":
 				return ec.fieldContext_Motion_liked(ctx, field)
 			case "viewCount":
@@ -21756,6 +21821,8 @@ func (ec *executionContext) fieldContext_Query_activeMotions(ctx context.Context
 				return ec.fieldContext_Motion_preferredPeriods(ctx, field)
 			case "gender":
 				return ec.fieldContext_Motion_gender(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Motion_createdAt(ctx, field)
 			case "liked":
 				return ec.fieldContext_Motion_liked(ctx, field)
 			case "viewCount":
@@ -21865,6 +21932,8 @@ func (ec *executionContext) fieldContext_Query_motions(ctx context.Context, fiel
 				return ec.fieldContext_Motion_preferredPeriods(ctx, field)
 			case "gender":
 				return ec.fieldContext_Motion_gender(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Motion_createdAt(ctx, field)
 			case "liked":
 				return ec.fieldContext_Motion_liked(ctx, field)
 			case "viewCount":
@@ -32248,6 +32317,11 @@ func (ec *executionContext) _Motion(ctx context.Context, sel ast.SelectionSet, o
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "createdAt":
+			out.Values[i] = ec._Motion_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
 		case "liked":
 			field := field
 

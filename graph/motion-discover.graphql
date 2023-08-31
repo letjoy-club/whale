@@ -36,6 +36,7 @@ type Motion {
   dayRange: [String!]!
   preferredPeriods: [DatePeriod!]!
   gender: Gender!
+  createdAt: Time!
 
   # query
   liked: Boolean!
