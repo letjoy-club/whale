@@ -72,6 +72,64 @@ func (v *MatchingGroupCreatedResponse) GetMatchingGroupCreated() string {
 	return v.MatchingGroupCreated
 }
 
+type MotionOfferAcceptedParam struct {
+	// 收到通知的用户 id
+	UserId string `json:"userId"`
+	// 对方的用户 id
+	PartnerId   string `json:"partnerId"`
+	TopicId     string `json:"topicId"`
+	ChatGroupId string `json:"chatGroupId"`
+}
+
+// GetUserId returns MotionOfferAcceptedParam.UserId, and is useful for accessing the field via an interface.
+func (v *MotionOfferAcceptedParam) GetUserId() string { return v.UserId }
+
+// GetPartnerId returns MotionOfferAcceptedParam.PartnerId, and is useful for accessing the field via an interface.
+func (v *MotionOfferAcceptedParam) GetPartnerId() string { return v.PartnerId }
+
+// GetTopicId returns MotionOfferAcceptedParam.TopicId, and is useful for accessing the field via an interface.
+func (v *MotionOfferAcceptedParam) GetTopicId() string { return v.TopicId }
+
+// GetChatGroupId returns MotionOfferAcceptedParam.ChatGroupId, and is useful for accessing the field via an interface.
+func (v *MotionOfferAcceptedParam) GetChatGroupId() string { return v.ChatGroupId }
+
+type MotionOfferRecievedParam struct {
+	UserId      string   `json:"userId"`
+	TopicIds    []string `json:"topicIds"`
+	RecievedNum int      `json:"recievedNum"`
+}
+
+// GetUserId returns MotionOfferRecievedParam.UserId, and is useful for accessing the field via an interface.
+func (v *MotionOfferRecievedParam) GetUserId() string { return v.UserId }
+
+// GetTopicIds returns MotionOfferRecievedParam.TopicIds, and is useful for accessing the field via an interface.
+func (v *MotionOfferRecievedParam) GetTopicIds() []string { return v.TopicIds }
+
+// GetRecievedNum returns MotionOfferRecievedParam.RecievedNum, and is useful for accessing the field via an interface.
+func (v *MotionOfferRecievedParam) GetRecievedNum() int { return v.RecievedNum }
+
+// SendMotionOfferAcceptedResponse is returned by SendMotionOfferAccepted on success.
+type SendMotionOfferAcceptedResponse struct {
+	// 【通知】卡片配对申请被通过
+	MotionOfferAccepted string `json:"motionOfferAccepted"`
+}
+
+// GetMotionOfferAccepted returns SendMotionOfferAcceptedResponse.MotionOfferAccepted, and is useful for accessing the field via an interface.
+func (v *SendMotionOfferAcceptedResponse) GetMotionOfferAccepted() string {
+	return v.MotionOfferAccepted
+}
+
+// SendMotionOfferRecievedResponse is returned by SendMotionOfferRecieved on success.
+type SendMotionOfferRecievedResponse struct {
+	// 【通知】收到卡片配对申请
+	MotionOfferRecieved string `json:"motionOfferRecieved"`
+}
+
+// GetMotionOfferRecieved returns SendMotionOfferRecievedResponse.MotionOfferRecieved, and is useful for accessing the field via an interface.
+func (v *SendMotionOfferRecievedResponse) GetMotionOfferRecieved() string {
+	return v.MotionOfferRecieved
+}
+
 // SendUserNotificationResponse is returned by SendUserNotification on success.
 type SendUserNotificationResponse struct {
 	// 【通知】内部调用
@@ -135,6 +193,22 @@ type __MatchingGroupCreatedInput struct {
 
 // GetParam returns __MatchingGroupCreatedInput.Param, and is useful for accessing the field via an interface.
 func (v *__MatchingGroupCreatedInput) GetParam() MatchingGroupCreatedParam { return v.Param }
+
+// __SendMotionOfferAcceptedInput is used internally by genqlient
+type __SendMotionOfferAcceptedInput struct {
+	Param MotionOfferAcceptedParam `json:"param"`
+}
+
+// GetParam returns __SendMotionOfferAcceptedInput.Param, and is useful for accessing the field via an interface.
+func (v *__SendMotionOfferAcceptedInput) GetParam() MotionOfferAcceptedParam { return v.Param }
+
+// __SendMotionOfferRecievedInput is used internally by genqlient
+type __SendMotionOfferRecievedInput struct {
+	Param MotionOfferRecievedParam `json:"param"`
+}
+
+// GetParam returns __SendMotionOfferRecievedInput.Param, and is useful for accessing the field via an interface.
+func (v *__SendMotionOfferRecievedInput) GetParam() MotionOfferRecievedParam { return v.Param }
 
 // __SendUserNotificationInput is used internally by genqlient
 type __SendUserNotificationInput struct {
@@ -207,6 +281,72 @@ func MatchingGroupCreated(
 	var err error
 
 	var data MatchingGroupCreatedResponse
+	resp := &graphql.Response{Data: &data}
+
+	err = client.MakeRequest(
+		ctx,
+		req,
+		resp,
+	)
+
+	return &data, err
+}
+
+// The query or mutation executed by SendMotionOfferAccepted.
+const SendMotionOfferAccepted_Operation = `
+mutation SendMotionOfferAccepted ($param: MotionOfferAcceptedParam!) {
+	motionOfferAccepted(param: $param)
+}
+`
+
+func SendMotionOfferAccepted(
+	ctx context.Context,
+	client graphql.Client,
+	param MotionOfferAcceptedParam,
+) (*SendMotionOfferAcceptedResponse, error) {
+	req := &graphql.Request{
+		OpName: "SendMotionOfferAccepted",
+		Query:  SendMotionOfferAccepted_Operation,
+		Variables: &__SendMotionOfferAcceptedInput{
+			Param: param,
+		},
+	}
+	var err error
+
+	var data SendMotionOfferAcceptedResponse
+	resp := &graphql.Response{Data: &data}
+
+	err = client.MakeRequest(
+		ctx,
+		req,
+		resp,
+	)
+
+	return &data, err
+}
+
+// The query or mutation executed by SendMotionOfferRecieved.
+const SendMotionOfferRecieved_Operation = `
+mutation SendMotionOfferRecieved ($param: MotionOfferRecievedParam!) {
+	motionOfferRecieved(param: $param)
+}
+`
+
+func SendMotionOfferRecieved(
+	ctx context.Context,
+	client graphql.Client,
+	param MotionOfferRecievedParam,
+) (*SendMotionOfferRecievedResponse, error) {
+	req := &graphql.Request{
+		OpName: "SendMotionOfferRecieved",
+		Query:  SendMotionOfferRecieved_Operation,
+		Variables: &__SendMotionOfferRecievedInput{
+			Param: param,
+		},
+	}
+	var err error
+
+	var data SendMotionOfferRecievedResponse
 	resp := &graphql.Response{Data: &data}
 
 	err = client.MakeRequest(

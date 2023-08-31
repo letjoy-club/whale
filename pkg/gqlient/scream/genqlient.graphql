@@ -9,3 +9,11 @@ mutation InvitationCreated($param: InvitationCreatedParam!) {
 mutation SendUserNotification($kind: UserNotificationKind!, $recipentId: String!, $param: Map!) {
   sendUserNotification(kind: $kind, recipentId: $recipentId, param: $param)
 }
+
+mutation SendMotionOfferRecieved($param: MotionOfferRecievedParam!) {
+  motionOfferRecieved(param: $param)
+}
+
+mutation SendMotionOfferAccepted($param: MotionOfferAcceptedParam!) {
+  motionOfferAccepted(param: $param)
+}

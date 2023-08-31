@@ -13,6 +13,7 @@ import (
 	"whale/pkg/modelutil"
 	"whale/pkg/utils"
 
+	"github.com/golang-module/carbon"
 	"github.com/letjoy-club/mida-tool/dbutil"
 	"github.com/letjoy-club/mida-tool/graphqlutil"
 	"github.com/letjoy-club/mida-tool/midacode"
@@ -310,6 +311,46 @@ func (r *mutationResolver) FinishMotionOffer(ctx context.Context, fromMotionID s
 		return nil, midacode.ErrNotPermitted
 	}
 	return nil, modelutil.FinishMotionOffer(ctx, token.UserID(), fromMotionID, toMotionID)
+}
+
+// SendMotionOfferMessage is the resolver for the sendMotionOfferMessage field.
+func (r *mutationResolver) NotifyNewMotionOffer(ctx context.Context, param *models.NotifyNewMotionOfferMessageParam) (*string, error) {
+	token := midacontext.GetClientToken(ctx)
+	if !token.IsAdmin() {
+		return nil, midacode.ErrNotPermitted
+	}
+
+	if param == nil {
+		startTime := carbon.Now().StartOfHour().SubHour()
+		endTime := startTime.AddHour()
+		return nil, modelutil.NotifyNewMotionOffer(ctx, startTime.ToStdTime(), endTime.ToStdTime())
+	}
+	return nil, modelutil.NotifyNewMotionOffer(ctx, param.Begin, param.End)
+}
+
+// SendMotionOfferAcceptMessage is the resolver for the sendMotionOfferAcceptMessage field.
+func (r *mutationResolver) SendMotionOfferAcceptMessage(ctx context.Context, id int) (*string, error) {
+	token := midacontext.GetClientToken(ctx)
+	if !token.IsAdmin() {
+		return nil, midacode.ErrNotPermitted
+	}
+	db := dbutil.GetDB(ctx)
+	MotionOfferRecord := dbquery.Use(db).MotionOfferRecord
+	offer, err := MotionOfferRecord.WithContext(ctx).
+		Where(MotionOfferRecord.ID.Eq(id)).
+		Select(MotionOfferRecord.MotionID, MotionOfferRecord.UserID, MotionOfferRecord.ToUserID, MotionOfferRecord.ChatGroupID).
+		Take()
+	if err != nil {
+		return nil, err
+	}
+
+	Motion := dbquery.Use(db).Motion
+	motion, err := Motion.WithContext(ctx).Where(Motion.ID.Eq(offer.MotionID)).Select(Motion.TopicID).Take()
+	if err != nil {
+		return nil, err
+	}
+
+	return nil, modelutil.SendMotionOfferAcceptedMessage(ctx, motion.TopicID, offer)
 }
 
 // DiscoverCategoryMotions is the resolver for the discoverCategoryMotions field.

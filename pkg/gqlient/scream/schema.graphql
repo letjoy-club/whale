@@ -117,11 +117,36 @@ type MatchingNotificationHistory {
   createdAt: Time!
 }
 
+input MotionOfferAcceptedParam {
+  """收到通知的用户 id"""
+  userId: String!
+
+  """对方的用户 id"""
+  partnerId: String!
+  topicId: String!
+  chatGroupId: String!
+}
+
+input MotionOfferRecievedParam {
+  userId: String!
+  topicIds: [String!]!
+  recievedNum: Int!
+}
+
 type Mutation {
   matchingGroupCreated(param: MatchingGroupCreatedParam!): String
   matchingGroupCanceled(matchingIds: [String!]!): String
   invitationCreated(param: InvitationCreatedParam!): String
   invitationCanceled(invitationIds: [String!]!): String
+
+  """【通知】收到卡片配对申请"""
+  motionOfferRecieved(param: MotionOfferRecievedParam!): String
+
+  """【通知】卡片配对申请被通过"""
+  motionOfferAccepted(param: MotionOfferAcceptedParam!): String
+
+  """【通知】用户有未读消息"""
+  userHasUnreadMessages(param: UserHasUnreadMessagesParam!): String
   startMatchingGroupCreatedNotification(id: Int!): String
   startInvitationNotification(id: Int!): String
   startNotification: String
@@ -217,6 +242,11 @@ type TemplateKeyValue {
 }
 
 scalar Time
+
+input UserHasUnreadMessagesParam {
+  userId: String!
+  partnerNum: Int!
+}
 
 type UserNotification {
   id: String!

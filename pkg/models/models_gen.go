@@ -164,6 +164,11 @@ type MotionPropertyParam struct {
 	Values []string `json:"values"`
 }
 
+type NotifyNewMotionOfferMessageParam struct {
+	Begin time.Time `json:"begin"`
+	End   time.Time `json:"end"`
+}
+
 type RecentMatchingFilter struct {
 	CityID *string `json:"cityId,omitempty"`
 }
