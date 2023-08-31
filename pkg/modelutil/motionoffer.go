@@ -532,7 +532,12 @@ func ClearOutDateMotionOffer(ctx context.Context) error {
 	records, err := MotionOfferRecord.WithContext(ctx).Where(
 		MotionOfferRecord.ExpiredAt.Lt(time.Now()),
 		MotionOfferRecord.State.Eq(string(models.MotionOfferStatePending)),
-	).Select(MotionOfferRecord.MotionID, MotionOfferRecord.ToMotionID).Find()
+	).Select(
+		MotionOfferRecord.ID,
+		MotionOfferRecord.MotionID,
+		MotionOfferRecord.ToMotionID,
+		MotionOfferRecord.ChatGroupID,
+	).Find()
 	if err != nil {
 		return err
 	}
