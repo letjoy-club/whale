@@ -11,33 +11,33 @@ import (
 	"gorm.io/gorm"
 )
 
-// 该对象实现的是以用户视角，查询自己的 motion 是否发出过评价（而不是用来查询是否被评价），已 review 的 motion offer 以 motion id 为维度进行聚合
+// 该对象实现的是以用户视角，查询自己在 motion offer 是否发出过评价（而不是用来查询是否被评价）
 type MotionReviewed struct {
-	MotionID          string
-	ReviewedMotionIDs []string
+	MotionOfferID  int
+	ReviewedUserID []string
 }
 
-func (m *MotionReviewed) IsReviewed(motionID string) bool {
-	for _, id := range m.ReviewedMotionIDs {
-		if id == motionID {
+func (m *MotionReviewed) IsReviewed(userID string) bool {
+	for _, id := range m.ReviewedUserID {
+		if id == userID {
 			return true
 		}
 	}
 	return false
 }
 
-func NewMotionReviewedLoader(db *gorm.DB) *dataloader.Loader[string, *MotionReviewed] {
+func NewMotionReviewedLoader(db *gorm.DB) *dataloader.Loader[int, *MotionReviewed] {
 	MotionReview := dbquery.Use(db).MotionReview
-	return loaderutil.NewAggregatorLoader(db, func(ctx context.Context, keys []string) ([]*models.MotionReview, error) {
-		reviews, err := MotionReview.WithContext(ctx).Where(MotionReview.MotionID.In(keys...)).Find()
+	return loaderutil.NewAggregatorLoader(db, func(ctx context.Context, keys []int) ([]*models.MotionReview, error) {
+		reviews, err := MotionReview.WithContext(ctx).Where(MotionReview.MotionOfferID.In(keys...)).Find()
 		return reviews, err
-	}, func(k map[string]*MotionReviewed, v *models.MotionReview) {
-		if _, ok := k[v.MotionID]; !ok {
-			k[v.MotionID] = &MotionReviewed{MotionID: v.MotionID, ReviewedMotionIDs: []string{}}
+	}, func(k map[int]*MotionReviewed, v *models.MotionReview) {
+		if _, ok := k[v.MotionOfferID]; !ok {
+			k[v.MotionOfferID] = &MotionReviewed{MotionOfferID: v.MotionOfferID, ReviewedUserID: []string{}}
 		} else {
-			k[v.MotionID].ReviewedMotionIDs = append(k[v.MotionID].ReviewedMotionIDs, v.MotionID)
+			k[v.MotionOfferID].ReviewedUserID = append(k[v.MotionOfferID].ReviewedUserID, v.ReviewerID)
 		}
-	}, time.Minute*5, loaderutil.Placeholder(func(ctx context.Context, id string) (*MotionReviewed, error) {
-		return &MotionReviewed{MotionID: id, ReviewedMotionIDs: []string{}}, nil
+	}, time.Minute*5, loaderutil.Placeholder(func(ctx context.Context, id int) (*MotionReviewed, error) {
+		return &MotionReviewed{MotionOfferID: id, ReviewedUserID: []string{}}, nil
 	}))
 }

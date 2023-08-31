@@ -196,22 +196,15 @@ func (r *motionOfferRecordResolver) Reviewed(ctx context.Context, obj *models.Mo
 	uid := graphqlutil.GetID(token, userID)
 	if obj.UserID != uid && obj.ToUserID != uid {
 		// id 不一致则无法查看
-		return false, nil
+		return false, midacode.ErrNotPermitted
 	}
-	var myMotionID, targetMotionID string
-	if obj.UserID == uid {
-		myMotionID = obj.MotionID
-		targetMotionID = obj.ToMotionID
-	} else {
-		myMotionID = obj.ToMotionID
-		targetMotionID = obj.MotionID
-	}
-	thunk := midacontext.GetLoader[loader.Loader](ctx).MotionReviewed.Load(ctx, myMotionID)
-	u, err := thunk()
+
+	thunk := midacontext.GetLoader[loader.Loader](ctx).MotionReviewed.Load(ctx, obj.ID)
+	motionReviewed, err := thunk()
 	if err != nil {
 		return false, err
 	}
-	return u.IsReviewed(targetMotionID), nil
+	return motionReviewed.IsReviewed(uid), nil
 }
 
 // ToMotion is the resolver for the toMotion field.

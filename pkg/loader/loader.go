@@ -33,7 +33,7 @@ type Loader struct {
 	UserSubmitMotion     *dataloader.Loader[string, *UserSubmitMotion]
 	InMotionOfferRecord  *dataloader.Loader[string, *MotionOffers]
 	OutMotionOfferRecord *dataloader.Loader[string, *MotionOffers]
-	MotionReviewed       *dataloader.Loader[string, *MotionReviewed]
+	MotionReviewed       *dataloader.Loader[int, *MotionReviewed]
 
 	DurationConstraint *dataloader.Loader[string, *models.DurationConstraint]
 
@@ -77,8 +77,8 @@ func NewLoader(db *gorm.DB) *Loader {
 
 		InMotionOfferRecord:  NewInMotionOfferLoader(db),
 		OutMotionOfferRecord: NewOutMotionOfferLoader(db),
-		Motion:               NewMotionLoader(db),
 		MotionReviewed:       NewMotionReviewedLoader(db),
+		Motion:               NewMotionLoader(db),
 		UserLikeMotion:       NewUserLikeMotionLoader(db),
 		UserSubmitMotion:     NewUserSubmitMotionLoader(db),
 

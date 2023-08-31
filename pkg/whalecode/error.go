@@ -18,6 +18,7 @@ var (
 	ErrCityIdShouldNotBeEmpty    = midacode.NewError("CITY_ID_SHOULD_NOT_BE_EMPTY", "城市不能为空", midacode.LogLevelWarn)
 	ErrMatchingQuotaNotEnough    = midacode.NewError("MATCHING_QUOTA_NOT_ENOUGH", "匹配次数不足，请结束现有聊天后再继续", midacode.LogLevelWarn)
 	ErrMotionReviewAlreadyExists = midacode.NewError("MOTION_REVIEW_ALREADY_EXISTS", "已经评价过该活动", midacode.LogLevelWarn)
+	ErrMotionStateCannotReview   = midacode.NewError("MOTION_STATE_CANNOT_REVIEW", "活动当前状态无法评价", midacode.LogLevelWarn)
 	ErrQueryDurationTooLong      = midacode.NewError("QUERY_DURATION_TOO_LONG", "查询时间段过长", midacode.LogLevelWarn)
 	ErrTopicIdShouldNotBeEmpty   = midacode.NewError("TOPIC_ID_SHOULD_NOT_BE_EMPTY", "话题不能为空", midacode.LogLevelWarn)
 	ErrTopicIsAlreadyInMatching  = midacode.NewError("TOPIC_IS_ALREADY_IN_MATCHING", "该话题已经在匹配中", midacode.LogLevelWarn)

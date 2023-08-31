@@ -27,10 +27,8 @@ func newMotionReview(db *gorm.DB, opts ...gen.DOOption) motionReview {
 	tableName := _motionReview.motionReviewDo.TableName()
 	_motionReview.ALL = field.NewAsterisk(tableName)
 	_motionReview.ID = field.NewInt(tableName, "id")
-	_motionReview.MatchingResultID = field.NewInt(tableName, "matching_result_id")
-	_motionReview.MotionID = field.NewString(tableName, "motion_id")
-	_motionReview.UserID = field.NewString(tableName, "user_id")
-	_motionReview.ToMotionID = field.NewString(tableName, "to_motion_id")
+	_motionReview.MotionOfferID = field.NewInt(tableName, "motion_offer_id")
+	_motionReview.ReviewerID = field.NewString(tableName, "reviewer_id")
 	_motionReview.ToUserID = field.NewString(tableName, "to_user_id")
 	_motionReview.TopicID = field.NewString(tableName, "topic_id")
 	_motionReview.Score = field.NewInt(tableName, "score")
@@ -45,17 +43,15 @@ func newMotionReview(db *gorm.DB, opts ...gen.DOOption) motionReview {
 type motionReview struct {
 	motionReviewDo motionReviewDo
 
-	ALL              field.Asterisk
-	ID               field.Int
-	MatchingResultID field.Int
-	MotionID         field.String
-	UserID           field.String
-	ToMotionID       field.String
-	ToUserID         field.String
-	TopicID          field.String
-	Score            field.Int
-	Comment          field.String
-	CreatedAt        field.Time
+	ALL           field.Asterisk
+	ID            field.Int
+	MotionOfferID field.Int
+	ReviewerID    field.String
+	ToUserID      field.String
+	TopicID       field.String
+	Score         field.Int
+	Comment       field.String
+	CreatedAt     field.Time
 
 	fieldMap map[string]field.Expr
 }
@@ -73,10 +69,8 @@ func (m motionReview) As(alias string) *motionReview {
 func (m *motionReview) updateTableName(table string) *motionReview {
 	m.ALL = field.NewAsterisk(table)
 	m.ID = field.NewInt(table, "id")
-	m.MatchingResultID = field.NewInt(table, "matching_result_id")
-	m.MotionID = field.NewString(table, "motion_id")
-	m.UserID = field.NewString(table, "user_id")
-	m.ToMotionID = field.NewString(table, "to_motion_id")
+	m.MotionOfferID = field.NewInt(table, "motion_offer_id")
+	m.ReviewerID = field.NewString(table, "reviewer_id")
 	m.ToUserID = field.NewString(table, "to_user_id")
 	m.TopicID = field.NewString(table, "topic_id")
 	m.Score = field.NewInt(table, "score")
@@ -106,12 +100,10 @@ func (m *motionReview) GetFieldByName(fieldName string) (field.OrderExpr, bool) 
 }
 
 func (m *motionReview) fillFieldMap() {
-	m.fieldMap = make(map[string]field.Expr, 10)
+	m.fieldMap = make(map[string]field.Expr, 8)
 	m.fieldMap["id"] = m.ID
-	m.fieldMap["matching_result_id"] = m.MatchingResultID
-	m.fieldMap["motion_id"] = m.MotionID
-	m.fieldMap["user_id"] = m.UserID
-	m.fieldMap["to_motion_id"] = m.ToMotionID
+	m.fieldMap["motion_offer_id"] = m.MotionOfferID
+	m.fieldMap["reviewer_id"] = m.ReviewerID
 	m.fieldMap["to_user_id"] = m.ToUserID
 	m.fieldMap["topic_id"] = m.TopicID
 	m.fieldMap["score"] = m.Score

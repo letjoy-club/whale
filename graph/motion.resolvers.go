@@ -124,49 +124,60 @@ func (r *mutationResolver) ReviewMotionOffer(ctx context.Context, userID *string
 	if !token.IsAdmin() && !token.IsUser() {
 		return nil, midacode.ErrNotPermitted
 	}
-	uid := ""
+	uid := graphqlutil.GetID(token, userID)
+	// 校验Motion
 	motionThunk := midacontext.GetLoader[loader.Loader](ctx).Motion.LoadMany(ctx, []string{fromMotionID, toMotionID})
 	motions, errors := motionThunk()
 	if errors != nil {
 		return nil, multierr.Combine(errors...)
 	}
-
 	fromMotion, toMotion := motions[0], motions[1]
-	if token.IsUser() {
-		// 必须要邀约参与方才能评价
-		if fromMotion.UserID != token.String() && toMotion.UserID != token.String() {
-			return nil, midacode.ErrNotPermitted
-		}
+
+	// 必须要邀约参与方才能评价
+	if fromMotion.UserID != uid && toMotion.UserID != uid {
+		return nil, midacode.ErrNotPermitted
 	}
 
 	db := dbutil.GetDB(ctx)
-	MotionReview := dbquery.Use(db).MotionReview
-	_, err := MotionReview.WithContext(ctx).Where(MotionReview.MotionID.Eq(fromMotionID), MotionReview.ToMotionID.Eq(toMotionID)).Take()
-	if err == nil {
+	// 校验MotionOfferRecord
+	MotionOfferRecord := dbquery.Use(db).MotionOfferRecord
+	record, err := MotionOfferRecord.WithContext(ctx).Where(
+		MotionOfferRecord.MotionID.Eq(fromMotionID),
+		MotionOfferRecord.ToMotionID.Eq(toMotionID),
+	).Take()
+	if err != nil {
+		return nil, err
+	}
+	if record.State != string(models.MotionOfferStateAccepted) && record.State != string(models.MotionOfferStateFinished) {
+		return nil, whalecode.ErrMotionStateCannotReview
+	}
+	// 重复评价判断
+	thunk := midacontext.GetLoader[loader.Loader](ctx).MotionReviewed.Load(ctx, record.ID)
+	motionReviewed, err := thunk()
+	if err != nil {
+		return nil, err
+	}
+	if motionReviewed.IsReviewed(uid) {
 		return nil, whalecode.ErrMotionReviewAlreadyExists
 	}
 
-	var myMotion, targetMotion *models.Motion
+	// 被评价者ID
+	toUserId := fromMotion.UserID
 	if fromMotion.UserID == uid {
-		myMotion, targetMotion = fromMotion, toMotion
-	} else {
-		myMotion, targetMotion = toMotion, fromMotion
+		toUserId = toMotion.UserID
 	}
 
+	MotionReview := dbquery.Use(db).MotionReview
 	err = MotionReview.WithContext(ctx).Create(&models.MotionReview{
-		MotionID:   myMotion.ID,
-		ToMotionID: targetMotion.ID,
-		Score:      param.Score,
-		TopicID:    myMotion.TopicID,
-		Comment:    param.Comment,
-
-		// 评价者
-		UserID: uid,
-		// 被评价者
-		ToUserID: targetMotion.UserID,
+		MotionOfferID: record.ID,
+		ReviewerID:    uid,
+		ToUserID:      toUserId,
+		TopicID:       fromMotion.TopicID,
+		Score:         param.Score,
+		Comment:       param.Comment,
 	})
 	if err == nil {
-		midacontext.GetLoader[loader.Loader](ctx).MotionReviewed.Clear(ctx, fromMotionID)
+		midacontext.GetLoader[loader.Loader](ctx).MotionReviewed.Clear(ctx, record.ID)
 	}
 	return nil, err
 }
