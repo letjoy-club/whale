@@ -715,11 +715,11 @@ func RefreshMotionState(ctx context.Context) error {
 
 	offset := 0
 	for {
-		motions, err := Motion.WithContext(ctx).Order(Motion.CreatedAt).Offset(offset).Limit(10).Find()
+		motions, err := Motion.WithContext(ctx).Offset(offset).Limit(10).Find()
 		if err != nil {
 			return err
 		}
-		if motions == nil || len(motions) > 0 {
+		if motions == nil || len(motions) == 0 {
 			break
 		}
 
@@ -730,12 +730,12 @@ func RefreshMotionState(ctx context.Context) error {
 				active = false
 			}
 
-			inOffers, err := MotionOfferRecord.WithContext(ctx).Where(MotionOfferRecord.ToMotionID.Eq(motion.UserID)).Find()
+			inOffers, err := MotionOfferRecord.WithContext(ctx).Where(MotionOfferRecord.ToMotionID.Eq(motion.ID)).Find()
 			if err != nil {
 				logger.L.Error("query inOffers error", zap.Error(err), zap.String("motionId", motion.ID))
 				return err
 			}
-			outOffers, err := MotionOfferRecord.WithContext(ctx).Where(MotionOfferRecord.MotionID.Eq(motion.UserID)).Find()
+			outOffers, err := MotionOfferRecord.WithContext(ctx).Where(MotionOfferRecord.MotionID.Eq(motion.ID)).Find()
 			if err != nil {
 				logger.L.Error("query outOffers error", zap.Error(err), zap.String("motionId", motion.ID))
 				return err
@@ -782,8 +782,15 @@ func RefreshMotionState(ctx context.Context) error {
 				logger.L.Error("update motion error", zap.Error(err), zap.String("motionId", motion.ID))
 				return err
 			}
+
 		}
+		offset += 10
 	}
+
+	loader := midacontext.GetLoader[loader.Loader](ctx)
+	loader.Motion.ClearAll()
+	loader.InMotionOfferRecord.ClearAll()
+	loader.OutMotionOfferRecord.ClearAll()
 
 	return nil
 }
