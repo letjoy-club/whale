@@ -32,6 +32,8 @@ type Motion struct {
 	PendingOutNum int `gorm:"default:0"`
 	ActiveNum     int `gorm:"default:0"`
 
+	Level int `gorm:"default:0"`
+
 	Discoverable bool
 
 	RelatedMatchingID string `gorm:"type:varchar(32)"`
