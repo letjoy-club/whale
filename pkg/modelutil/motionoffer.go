@@ -3,8 +3,9 @@ package modelutil
 import (
 	"context"
 	"errors"
-	"github.com/letjoy-club/mida-tool/logger"
 	"go.uber.org/zap"
+	"gorm.io/gen/field"
+	"gorm.io/gorm"
 	"time"
 	"whale/pkg/dbquery"
 	"whale/pkg/gqlient/hoopoe"
@@ -14,16 +15,12 @@ import (
 	"whale/pkg/utils"
 	"whale/pkg/whalecode"
 
-	"go.uber.org/zap"
-	"gorm.io/gorm"
-
 	"github.com/letjoy-club/mida-tool/dbutil"
 	"github.com/letjoy-club/mida-tool/keyer"
 	"github.com/letjoy-club/mida-tool/logger"
 	"github.com/letjoy-club/mida-tool/midacode"
 	"github.com/letjoy-club/mida-tool/midacontext"
 	"github.com/letjoy-club/mida-tool/redisutil"
-	"gorm.io/gen/field"
 )
 
 func CreateMotionOffer(ctx context.Context, myUserID, myMotionID, targetMotionID string) (string, error) {
