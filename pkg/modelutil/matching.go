@@ -205,9 +205,6 @@ func CreateMatching(ctx context.Context, uid string, param models.CreateMatching
 	if err == nil {
 		midacontext.GetLoader[loader.Loader](ctx).MatchingQuota.Clear(ctx, uid)
 		midacontext.GetLoader[loader.Loader](ctx).MatchingDurationConstraint.Clear(ctx, uid)
-		if err := PublishMatchingCreatedEvent(ctx, matching); err != nil {
-			fmt.Println("publishMatchingCreatedEvent err:", err)
-		}
 	}
 	RecordUserJoinTopic(ctx, matching.TopicID, matching.CityID, matching.UserID, matching.ID)
 	return matching, err
@@ -366,9 +363,6 @@ func CreateMatchingV2(ctx context.Context, uid string, param models.CreateMatchi
 	if err == nil {
 		midacontext.GetLoader[loader.Loader](ctx).MatchingQuota.Clear(ctx, uid)
 		midacontext.GetLoader[loader.Loader](ctx).MatchingDurationConstraint.Clear(ctx, uid)
-		if err := PublishMatchingCreatedEvent(ctx, matching); err != nil {
-			fmt.Println("publishMatchingCreatedEvent err:", err)
-		}
 	}
 	RecordUserJoinTopic(ctx, matching.TopicID, matching.CityID, matching.UserID, matching.ID)
 	return matching, err
@@ -577,6 +571,5 @@ func FinishMatching(ctx context.Context, matchingID string, uid string) error {
 	}
 	midacontext.GetLoader[loader.Loader](ctx).MatchingResult.Clear(ctx, matching.ResultID)
 	midacontext.GetLoader[loader.Loader](ctx).MatchingQuota.Clear(ctx, matching.UserID)
-	PublishMatchingFinishedEvent(ctx, matching, matchingResult.CreatedBy)
 	return err
 }

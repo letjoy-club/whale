@@ -101,7 +101,7 @@ func CreateMotion(ctx context.Context, userID string, param *models.CreateMotion
 	matching.RelatedMotionID = motion.ID
 	motion.RelatedMatchingID = matching.ID
 
-	err = dbquery.Use(db).Transaction(func(tx *dbquery.Query) error {
+	if err = dbquery.Use(db).Transaction(func(tx *dbquery.Query) error {
 		Matching := tx.Matching
 		if existMatching, err := Matching.WithContext(ctx).Where(
 			Matching.TopicID.Eq(motion.TopicID), Matching.UserID.Eq(motion.UserID), Matching.State.Eq(string(models.MatchingStateMatching)),
@@ -139,9 +139,16 @@ func CreateMotion(ctx context.Context, userID string, param *models.CreateMotion
 			UpdateSimple(tx.DurationConstraint.RemainMotionQuota.Add(-1))
 		midacontext.GetLoader[loader.Loader](ctx).DurationConstraint.Clear(ctx, userID)
 		return nil
-	})
+	}); err != nil {
+		return nil, err
+	}
 
-	return motion, err
+	// 发送事件消息
+	if err := PublishMotionCreatedEvent(ctx, motion); err != nil {
+		logger.L.Error("CreateMotion - PublishMotionCreatedEvent error", zap.Error(err), zap.Any("motion", motion))
+	}
+
+	return motion, nil
 }
 
 // checkCreateMotionParam 创建动议前检查
@@ -260,7 +267,7 @@ func CloseMotion(ctx context.Context, userID, motionID string) error {
 	defer release(ctx)
 
 	db := dbutil.GetDB(ctx)
-	err = dbquery.Use(db).Transaction(func(tx *dbquery.Query) error {
+	if err = dbquery.Use(db).Transaction(func(tx *dbquery.Query) error {
 		if motion.RelatedMatchingID != "" {
 			// 关闭没有结束的匹配
 			Matching := tx.Matching
@@ -298,9 +305,13 @@ func CloseMotion(ctx context.Context, userID, motionID string) error {
 			return midacode.ErrStateMayHaveChanged
 		}
 		return nil
-	})
-	if err != nil {
+	}); err != nil {
 		return err
+	}
+
+	// 发送事件消息
+	if err := PublishMotionClosedEvent(ctx, motion); err != nil {
+		logger.L.Error("CloseMotion - PublishMotionClosedEvent error", zap.Error(err), zap.Any("motionId", motionID))
 	}
 	// 清理缓存
 	loader := midacontext.GetLoader[loader.Loader](ctx)

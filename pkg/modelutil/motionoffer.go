@@ -86,7 +86,7 @@ func CreateMotionOffer(ctx context.Context, myUserID, myMotionID, targetMotionID
 	defer release(ctx)
 
 	var groupId string
-	err = dbquery.Use(db).Transaction(func(tx *dbquery.Query) error {
+	if err = dbquery.Use(db).Transaction(func(tx *dbquery.Query) error {
 		MatchingResult := tx.MatchingResult
 		matchingResult := &models.MatchingResult{
 			UserIDs:        []string{myMotion.UserID, targetMotion.UserID},
@@ -168,14 +168,19 @@ func CreateMotionOffer(ctx context.Context, myUserID, myMotionID, targetMotionID
 		}
 
 		return nil
-	})
-
-	if err == nil {
-		midacontext.GetLoader[loader.Loader](ctx).Motion.Clear(ctx, myMotionID)
-		midacontext.GetLoader[loader.Loader](ctx).Motion.Clear(ctx, targetMotionID)
-		midacontext.GetLoader[loader.Loader](ctx).InMotionOfferRecord.Clear(ctx, myMotionID)
-		midacontext.GetLoader[loader.Loader](ctx).OutMotionOfferRecord.Clear(ctx, targetMotionID)
+	}); err != nil {
+		return "", err
 	}
+
+	if err := PublishMotionOfferCreatedEvent(ctx, record); err != nil {
+		logger.L.Error("CreateMotionOffer - PublishMotionOfferCreatedEvent error",
+			zap.Error(err), zap.Any("motionOfferId", record.ID))
+	}
+	midacontext.GetLoader[loader.Loader](ctx).Motion.Clear(ctx, myMotionID)
+	midacontext.GetLoader[loader.Loader](ctx).Motion.Clear(ctx, targetMotionID)
+	midacontext.GetLoader[loader.Loader](ctx).InMotionOfferRecord.Clear(ctx, myMotionID)
+	midacontext.GetLoader[loader.Loader](ctx).OutMotionOfferRecord.Clear(ctx, targetMotionID)
+
 	return groupId, err
 }
 
@@ -216,7 +221,7 @@ func AcceptMotionOffer(ctx context.Context, myUserID, myMotionID, targetMotionID
 
 	now := time.Now()
 	matchingResultID := 0
-	err = dbquery.Use(db).Transaction(func(tx *dbquery.Query) error {
+	if err = dbquery.Use(db).Transaction(func(tx *dbquery.Query) error {
 		if _, err := smew.CreateTimGroup(ctx, midacontext.GetServices(ctx).Smew, record.ChatGroupID); err != nil {
 			return err
 		}
@@ -280,10 +285,13 @@ func AcceptMotionOffer(ctx context.Context, myUserID, myMotionID, targetMotionID
 			return midacode.ErrStateMayHaveChanged
 		}
 		return nil
-	})
-
-	if err != nil {
+	}); err != nil {
 		return err
+	}
+
+	if err := PublishMotionOfferAcceptedEvent(ctx, record); err != nil {
+		logger.L.Error("AcceptMotionOffer - PublishMotionOfferAcceptedEvent error",
+			zap.Error(err), zap.Any("motionOfferId", record.ID))
 	}
 	midacontext.GetLoader[loader.Loader](ctx).Motion.Clear(ctx, myMotionID)
 	midacontext.GetLoader[loader.Loader](ctx).Motion.Clear(ctx, targetMotionID)
@@ -317,23 +325,23 @@ func RejectMotionOffer(ctx context.Context, userID, myMotionID, targetMotionID s
 
 	db := dbutil.GetDB(ctx)
 	MotionOfferRecord := dbquery.Use(db).MotionOfferRecord
-	motionOffer, err := MotionOfferRecord.WithContext(ctx).Where(
+	record, err := MotionOfferRecord.WithContext(ctx).Where(
 		MotionOfferRecord.MotionID.Eq(targetMotion.ID),
 		MotionOfferRecord.ToMotionID.Eq(myMotion.ID),
 	).Take()
 	if err != nil {
 		return err
 	}
-	if motionOffer.State != string(models.MotionOfferStatePending) {
+	if record.State != string(models.MotionOfferStatePending) {
 		return whalecode.ErrMotionOfferIsNotPending
 	}
 
 	matchingResultID := 0
 	now := time.Now()
-	err = dbquery.Use(db).Transaction(func(tx *dbquery.Query) error {
+	if err = dbquery.Use(db).Transaction(func(tx *dbquery.Query) error {
 		MotionOfferRecord := tx.MotionOfferRecord
-		if motionOffer.ChatGroupID != "" {
-			_, err := smew.DestroyGroup(ctx, midacontext.GetServices(ctx).Smew, motionOffer.ChatGroupID)
+		if record.ChatGroupID != "" {
+			_, err := smew.DestroyGroup(ctx, midacontext.GetServices(ctx).Smew, record.ChatGroupID)
 			if err != nil {
 				return err
 			}
@@ -356,7 +364,7 @@ func RejectMotionOffer(ctx context.Context, userID, myMotionID, targetMotionID s
 
 		// 修改matchingResult
 		MatchingResult := tx.MatchingResult
-		matchingResult, err := MatchingResult.WithContext(ctx).Where(MatchingResult.ChatGroupID.Eq(motionOffer.ChatGroupID)).Take()
+		matchingResult, err := MatchingResult.WithContext(ctx).Where(MatchingResult.ChatGroupID.Eq(record.ChatGroupID)).Take()
 		if err != nil {
 			return err
 		}
@@ -406,12 +414,14 @@ func RejectMotionOffer(ctx context.Context, userID, myMotionID, targetMotionID s
 		}
 
 		return nil
-	})
-
-	if err != nil {
+	}); err != nil {
 		return err
 	}
 
+	if err := PublishMotionOfferRejectedEvent(ctx, record); err != nil {
+		logger.L.Error("AcceptMotionOffer - PublishMotionOfferRejectedEvent error",
+			zap.Error(err), zap.Any("motionOfferId", record.ID))
+	}
 	loader := midacontext.GetLoader[loader.Loader](ctx)
 	loader.Motion.Clear(ctx, myMotionID)
 	loader.Motion.Clear(ctx, targetMotionID)
@@ -616,6 +626,10 @@ func ClearOutDateMotionOffer(ctx context.Context) error {
 			return err
 		}
 
+		if err := PublishMotionOfferTimeoutEvent(ctx, record); err != nil {
+			logger.L.Error("ClearOutDateMotionOffer - PublishMotionOfferTimeoutEvent error",
+				zap.Error(err), zap.Any("motionOfferId", record.ID))
+		}
 		loader.Motion.Clear(ctx, record.MotionID)
 		loader.Motion.Clear(ctx, record.ToMotionID)
 		loader.OutMotionOfferRecord.Clear(ctx, record.MotionID)
@@ -715,6 +729,10 @@ func FinishMotionOffer(ctx context.Context, myUserID, fromMatchingID, toMatching
 		return err
 	}
 
+	if err := PublishMotionOfferFinishedEvent(ctx, record, myUserID); err != nil {
+		logger.L.Error("FinishMotionOffer - PublishMotionOfferFinishedEvent error",
+			zap.Error(err), zap.Any("motionOfferId", record.ID))
+	}
 	midacontext.GetLoader[loader.Loader](ctx).InMotionOfferRecord.Clear(ctx, toMatchingID)
 	midacontext.GetLoader[loader.Loader](ctx).OutMotionOfferRecord.Clear(ctx, fromMatchingID)
 	midacontext.GetLoader[loader.Loader](ctx).MatchingResult.Clear(ctx, matchingResultID)

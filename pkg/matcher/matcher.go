@@ -32,12 +32,6 @@ func (m *Matcher) Match(ctx context.Context) error {
 		if err != nil {
 			return err
 		}
-		for _, matching := range matchings {
-			err := modelutil.PublishMatchingTimeoutEvent(ctx, matching)
-			if err != nil {
-				fmt.Println("failed to publish matching timeout event", err)
-			}
-		}
 		if len(matchings) > 0 {
 			rx, err := Matching.WithContext(ctx).
 				Where(
@@ -319,13 +313,6 @@ func NewMatchingResult(ctx context.Context, matchings []*models.Matching, score 
 
 	if err != nil {
 		return nil, err
-	}
-
-	for _, matching := range matchings {
-		err := modelutil.PublishMatchedEvent(ctx, matching)
-		if err != nil {
-			fmt.Println("failed to publish matched event", err)
-		}
 	}
 
 	err = modelutil.CheckMatchingResultAndCreateChatGroup(ctx, matchingResult)
