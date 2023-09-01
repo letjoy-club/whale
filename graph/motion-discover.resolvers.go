@@ -313,7 +313,7 @@ func (r *mutationResolver) FinishMotionOffer(ctx context.Context, fromMotionID s
 	return nil, modelutil.FinishMotionOffer(ctx, token.UserID(), fromMotionID, toMotionID)
 }
 
-// SendMotionOfferMessage is the resolver for the sendMotionOfferMessage field.
+// NotifyNewMotionOffer is the resolver for the notifyNewMotionOffer field.
 func (r *mutationResolver) NotifyNewMotionOffer(ctx context.Context, param *models.NotifyNewMotionOfferMessageParam) (*string, error) {
 	token := midacontext.GetClientToken(ctx)
 	if !token.IsAdmin() {

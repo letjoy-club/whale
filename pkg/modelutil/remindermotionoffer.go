@@ -14,7 +14,7 @@ import (
 	"go.uber.org/zap"
 )
 
-// ReminderMotionOffer is a function that sends a reminder to the user that they have a motion offer
+// NotifyNewMotionOffer is a function that sends a reminder to the user that they have a motion offer
 func NotifyNewMotionOffer(ctx context.Context, beginTime, endTime time.Time) error {
 	db := dbutil.GetDB(ctx)
 
@@ -27,23 +27,23 @@ func NotifyNewMotionOffer(ctx context.Context, beginTime, endTime time.Time) err
 		return err
 	}
 
-	userRecieveOffer := map[string][]*models.MotionOfferRecord{}
+	userReceiveOffer := map[string][]*models.MotionOfferRecord{}
 
 	for _, motionOfferRecord := range motionOfferRecords {
-		userRecieveOffer[motionOfferRecord.UserID] = append(userRecieveOffer[motionOfferRecord.UserID], motionOfferRecord)
+		userReceiveOffer[motionOfferRecord.UserID] = append(userReceiveOffer[motionOfferRecord.UserID], motionOfferRecord)
 	}
 
-	for userID, motionOfferRecords := range userRecieveOffer {
-		err := SendMotionOfferRecievedMessage(ctx, userID, motionOfferRecords)
+	for userID, motionOfferRecords := range userReceiveOffer {
+		err := SendMotionOfferReceivedMessage(ctx, userID, motionOfferRecords)
 		if err != nil {
-			logger.L.Error("send motion offer recieved message error", zap.Error(err))
+			logger.L.Error("send motion offer received message error", zap.Error(err))
 		}
 	}
 
 	return nil
 }
 
-func SendMotionOfferRecievedMessage(ctx context.Context, userID string, motionOfferRecords []*models.MotionOfferRecord) error {
+func SendMotionOfferReceivedMessage(ctx context.Context, userID string, motionOfferRecords []*models.MotionOfferRecord) error {
 	motionThunk := midacontext.GetLoader[loader.Loader](ctx).Motion.Load(ctx, motionOfferRecords[0].MotionID)
 	motion, err := motionThunk()
 	if err != nil {
