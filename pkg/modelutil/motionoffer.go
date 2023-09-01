@@ -14,10 +14,12 @@ import (
 	"whale/pkg/utils"
 	"whale/pkg/whalecode"
 
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 
 	"github.com/letjoy-club/mida-tool/dbutil"
 	"github.com/letjoy-club/mida-tool/keyer"
+	"github.com/letjoy-club/mida-tool/logger"
 	"github.com/letjoy-club/mida-tool/midacode"
 	"github.com/letjoy-club/mida-tool/midacontext"
 	"github.com/letjoy-club/mida-tool/redisutil"
@@ -278,6 +280,9 @@ func AcceptMotionOffer(ctx context.Context, myUserID, myMotionID, targetMotionID
 		}
 		if rx.RowsAffected != 1 {
 			return midacode.ErrStateMayHaveChanged
+		}
+		if err = SendMotionOfferAcceptedMessage(ctx, myMotion.TopicID, record); err != nil {
+			logger.L.Error("failed to send motion offer accepted message", zap.Error(err))
 		}
 		return nil
 	})

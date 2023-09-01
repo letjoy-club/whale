@@ -53,6 +53,8 @@ type Motion {
 }
 
 type MotionOfferRecord {
+  id: Int! @adminOnly
+
   toMotionId: String!
   motionId: String!
   state: MotionOfferState!
@@ -156,6 +158,11 @@ extend type Query {
   getMotionOffer(motionId: String!, toMotionId: String!): MotionOfferRecord!
 }
 
+input NotifyNewMotionOfferMessageParam {
+  begin: Time!
+  end: Time!
+}
+
 extend type Mutation {
   "【广场】获取可以发起响应的意向 id"
   getAvailableMotionOffer(
@@ -190,4 +197,10 @@ extend type Mutation {
     "被邀约的 motion id"
     toMotionId: String!
   ): String
+
+  "【广场】配对提醒，管理员"
+  notifyNewMotionOffer(param: NotifyNewMotionOfferMessageParam): String
+
+  "【广场】发送确认消息，测试接口，管理员"
+  sendMotionOfferAcceptMessage(id: Int!): String
 }
