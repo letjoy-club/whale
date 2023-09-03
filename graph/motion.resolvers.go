@@ -7,8 +7,6 @@ package graph
 import (
 	"context"
 	"fmt"
-	"github.com/letjoy-club/mida-tool/logger"
-	"go.uber.org/zap"
 	"whale/pkg/dbquery"
 	"whale/pkg/loader"
 	"whale/pkg/models"
@@ -19,10 +17,12 @@ import (
 	"github.com/letjoy-club/mida-tool/dbutil"
 	"github.com/letjoy-club/mida-tool/graphqlutil"
 	"github.com/letjoy-club/mida-tool/keyer"
+	"github.com/letjoy-club/mida-tool/logger"
 	"github.com/letjoy-club/mida-tool/midacode"
 	"github.com/letjoy-club/mida-tool/midacontext"
 	"github.com/letjoy-club/mida-tool/redisutil"
 	"go.uber.org/multierr"
+	"go.uber.org/zap"
 	"gorm.io/gen/field"
 )
 

@@ -30,6 +30,8 @@ func newDurationConstraint(db *gorm.DB, opts ...gen.DOOption) durationConstraint
 	_durationConstraint.UserID = field.NewString(tableName, "user_id")
 	_durationConstraint.TotalMotionQuota = field.NewInt(tableName, "total_motion_quota")
 	_durationConstraint.RemainMotionQuota = field.NewInt(tableName, "remain_motion_quota")
+	_durationConstraint.TotalOfferQuota = field.NewInt(tableName, "total_offer_quota")
+	_durationConstraint.RemainOfferQuota = field.NewInt(tableName, "remain_offer_quota")
 	_durationConstraint.StartDate = field.NewTime(tableName, "start_date")
 	_durationConstraint.StopDate = field.NewTime(tableName, "stop_date")
 	_durationConstraint.UpdatedAt = field.NewTime(tableName, "updated_at")
@@ -48,6 +50,8 @@ type durationConstraint struct {
 	UserID            field.String
 	TotalMotionQuota  field.Int
 	RemainMotionQuota field.Int
+	TotalOfferQuota   field.Int
+	RemainOfferQuota  field.Int
 	StartDate         field.Time
 	StopDate          field.Time
 	UpdatedAt         field.Time
@@ -72,6 +76,8 @@ func (d *durationConstraint) updateTableName(table string) *durationConstraint {
 	d.UserID = field.NewString(table, "user_id")
 	d.TotalMotionQuota = field.NewInt(table, "total_motion_quota")
 	d.RemainMotionQuota = field.NewInt(table, "remain_motion_quota")
+	d.TotalOfferQuota = field.NewInt(table, "total_offer_quota")
+	d.RemainOfferQuota = field.NewInt(table, "remain_offer_quota")
 	d.StartDate = field.NewTime(table, "start_date")
 	d.StopDate = field.NewTime(table, "stop_date")
 	d.UpdatedAt = field.NewTime(table, "updated_at")
@@ -100,11 +106,13 @@ func (d *durationConstraint) GetFieldByName(fieldName string) (field.OrderExpr, 
 }
 
 func (d *durationConstraint) fillFieldMap() {
-	d.fieldMap = make(map[string]field.Expr, 8)
+	d.fieldMap = make(map[string]field.Expr, 10)
 	d.fieldMap["id"] = d.ID
 	d.fieldMap["user_id"] = d.UserID
 	d.fieldMap["total_motion_quota"] = d.TotalMotionQuota
 	d.fieldMap["remain_motion_quota"] = d.RemainMotionQuota
+	d.fieldMap["total_offer_quota"] = d.TotalOfferQuota
+	d.fieldMap["remain_offer_quota"] = d.RemainOfferQuota
 	d.fieldMap["start_date"] = d.StartDate
 	d.fieldMap["stop_date"] = d.StopDate
 	d.fieldMap["updated_at"] = d.UpdatedAt

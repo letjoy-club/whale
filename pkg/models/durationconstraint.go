@@ -8,6 +8,8 @@ type DurationConstraint struct {
 
 	TotalMotionQuota  int
 	RemainMotionQuota int
+	TotalOfferQuota   int
+	RemainOfferQuota  int
 
 	StartDate time.Time
 	StopDate  time.Time

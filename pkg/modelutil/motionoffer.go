@@ -24,6 +24,7 @@ import (
 	"gorm.io/gen/field"
 )
 
+// todo: 邀约对手方额度如何处理，是在邀约方就进行校验，还是等到对手方同意时再进行校验？
 func CreateMotionOffer(ctx context.Context, myUserID, myMotionID, targetMotionID string) (string, error) {
 	motionsThunk := midacontext.GetLoader[loader.Loader](ctx).Motion.LoadMany(ctx, []string{myMotionID, targetMotionID})
 	motions, err := utils.ReturnThunk(motionsThunk)
@@ -49,6 +50,15 @@ func CreateMotionOffer(ctx context.Context, myUserID, myMotionID, targetMotionID
 	}
 	if !targetMotion.Active {
 		return "", whalecode.ErrTheMotionIsNotActive
+	}
+	// 额度检查
+	durationConstraintThunk := midacontext.GetLoader[loader.Loader](ctx).DurationConstraint.Load(ctx, myUserID)
+	durationConstraint, err := durationConstraintThunk()
+	if err != nil {
+		return "", err
+	}
+	if durationConstraint.RemainOfferQuota <= 0 { // 限制每周可发起的 motionOffer 次数
+		return "", whalecode.ErrMotionOfferQuotaNotEnough
 	}
 
 	// 拉黑检查
@@ -167,6 +177,9 @@ func CreateMotionOffer(ctx context.Context, myUserID, myMotionID, targetMotionID
 			return midacode.ErrStateMayHaveChanged
 		}
 
+		// 更新用户的剩余邀约次数
+		tx.DurationConstraint.WithContext(ctx).Where(tx.DurationConstraint.ID.Eq(durationConstraint.ID)).
+			UpdateSimple(tx.DurationConstraint.RemainOfferQuota.Add(-1))
 		return nil
 	}); err != nil {
 		return "", err
@@ -176,6 +189,7 @@ func CreateMotionOffer(ctx context.Context, myUserID, myMotionID, targetMotionID
 		logger.L.Error("CreateMotionOffer - PublishMotionOfferCreatedEvent error",
 			zap.Error(err), zap.Any("motionOfferId", record.ID))
 	}
+	midacontext.GetLoader[loader.Loader](ctx).DurationConstraint.Clear(ctx, myUserID)
 	midacontext.GetLoader[loader.Loader](ctx).Motion.Clear(ctx, myMotionID)
 	midacontext.GetLoader[loader.Loader](ctx).Motion.Clear(ctx, targetMotionID)
 	midacontext.GetLoader[loader.Loader](ctx).InMotionOfferRecord.Clear(ctx, myMotionID)

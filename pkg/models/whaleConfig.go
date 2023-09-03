@@ -31,6 +31,8 @@ type UserLevelConfig struct {
 
 type LevelRights struct {
 	Level                      int `json:"level"`
+	MotionQuota                int `json:"motionQuota"`
+	OfferQuota                 int `json:"offerQuota"`
 	MatchingQuota              int `json:"matchingQuota"`
 	MatchingDurationConstraint int `json:"matchingDurationConstraint"`
 }

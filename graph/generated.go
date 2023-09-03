@@ -175,6 +175,8 @@ type ComplexityRoot struct {
 		Level                      func(childComplexity int) int
 		MatchingDurationConstraint func(childComplexity int) int
 		MatchingQuota              func(childComplexity int) int
+		MotionQuota                func(childComplexity int) int
+		OfferQuota                 func(childComplexity int) int
 	}
 
 	Matching struct {
@@ -1269,6 +1271,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.LevelRights.MatchingQuota(childComplexity), true
+
+	case "LevelRights.motionQuota":
+		if e.complexity.LevelRights.MotionQuota == nil {
+			break
+		}
+
+		return e.complexity.LevelRights.MotionQuota(childComplexity), true
+
+	case "LevelRights.offerQuota":
+		if e.complexity.LevelRights.OfferQuota == nil {
+			break
+		}
+
+		return e.complexity.LevelRights.OfferQuota(childComplexity), true
 
 	case "Matching.areaIds":
 		if e.complexity.Matching.AreaIDs == nil {
@@ -8443,6 +8459,10 @@ func (ec *executionContext) fieldContext_Entity_findLevelRightsByLevel(ctx conte
 			switch field.Name {
 			case "level":
 				return ec.fieldContext_LevelRights_level(ctx, field)
+			case "motionQuota":
+				return ec.fieldContext_LevelRights_motionQuota(ctx, field)
+			case "offerQuota":
+				return ec.fieldContext_LevelRights_offerQuota(ctx, field)
 			case "matchingQuota":
 				return ec.fieldContext_LevelRights_matchingQuota(ctx, field)
 			case "matchingDurationConstraint":
@@ -9163,6 +9183,94 @@ func (ec *executionContext) _LevelRights_level(ctx context.Context, field graphq
 }
 
 func (ec *executionContext) fieldContext_LevelRights_level(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LevelRights",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LevelRights_motionQuota(ctx context.Context, field graphql.CollectedField, obj *models.LevelRights) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LevelRights_motionQuota(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MotionQuota, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LevelRights_motionQuota(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LevelRights",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LevelRights_offerQuota(ctx context.Context, field graphql.CollectedField, obj *models.LevelRights) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LevelRights_offerQuota(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.OfferQuota, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LevelRights_offerQuota(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "LevelRights",
 		Field:      field,
@@ -30335,6 +30443,16 @@ func (ec *executionContext) _LevelRights(ctx context.Context, sel ast.SelectionS
 			out.Values[i] = graphql.MarshalString("LevelRights")
 		case "level":
 			out.Values[i] = ec._LevelRights_level(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "motionQuota":
+			out.Values[i] = ec._LevelRights_motionQuota(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "offerQuota":
+			out.Values[i] = ec._LevelRights_offerQuota(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}

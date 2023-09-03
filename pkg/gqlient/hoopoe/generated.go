@@ -253,6 +253,28 @@ func (v *CreateMotionCheckArea) GetCode() string { return v.Code }
 // GetEnabled returns CreateMotionCheckArea.Enabled, and is useful for accessing the field via an interface.
 func (v *CreateMotionCheckArea) GetEnabled() bool { return v.Enabled }
 
+// CreateMotionCheckLevelDetail includes the requested fields of the GraphQL type LevelDetail.
+type CreateMotionCheckLevelDetail struct {
+	// 当前等级的权益
+	Rights *CreateMotionCheckLevelDetailRightsLevelRights `json:"rights"`
+}
+
+// GetRights returns CreateMotionCheckLevelDetail.Rights, and is useful for accessing the field via an interface.
+func (v *CreateMotionCheckLevelDetail) GetRights() *CreateMotionCheckLevelDetailRightsLevelRights {
+	return v.Rights
+}
+
+// CreateMotionCheckLevelDetailRightsLevelRights includes the requested fields of the GraphQL type LevelRights.
+type CreateMotionCheckLevelDetailRightsLevelRights struct {
+	// 性别选择
+	GenderSelection bool `json:"genderSelection"`
+}
+
+// GetGenderSelection returns CreateMotionCheckLevelDetailRightsLevelRights.GenderSelection, and is useful for accessing the field via an interface.
+func (v *CreateMotionCheckLevelDetailRightsLevelRights) GetGenderSelection() bool {
+	return v.GenderSelection
+}
+
 // CreateMotionCheckResponse is returned by CreateMotionCheck on success.
 type CreateMotionCheckResponse struct {
 	// 【话题】话题查询
@@ -263,6 +285,8 @@ type CreateMotionCheckResponse struct {
 	User *CreateMotionCheckUser `json:"user"`
 	// 【用户】 用户信息完整性检查
 	UserInfoCompletenessCheck *CreateMotionCheckUserInfoCompletenessCheckUserInfoCompleteness `json:"userInfoCompletenessCheck"`
+	// 【用户】等级详情
+	LevelDetail *CreateMotionCheckLevelDetail `json:"levelDetail"`
 }
 
 // GetTopic returns CreateMotionCheckResponse.Topic, and is useful for accessing the field via an interface.
@@ -277,6 +301,11 @@ func (v *CreateMotionCheckResponse) GetUser() *CreateMotionCheckUser { return v.
 // GetUserInfoCompletenessCheck returns CreateMotionCheckResponse.UserInfoCompletenessCheck, and is useful for accessing the field via an interface.
 func (v *CreateMotionCheckResponse) GetUserInfoCompletenessCheck() *CreateMotionCheckUserInfoCompletenessCheckUserInfoCompleteness {
 	return v.UserInfoCompletenessCheck
+}
+
+// GetLevelDetail returns CreateMotionCheckResponse.LevelDetail, and is useful for accessing the field via an interface.
+func (v *CreateMotionCheckResponse) GetLevelDetail() *CreateMotionCheckLevelDetail {
+	return v.LevelDetail
 }
 
 // CreateMotionCheckTopic includes the requested fields of the GraphQL type Topic.
@@ -1190,6 +1219,11 @@ query CreateMotionCheck ($topicId: String!, $cityId: AreaCode!, $userId: String!
 	}
 	userInfoCompletenessCheck(userId: $userId) {
 		filled
+	}
+	levelDetail(userId: $userId) {
+		rights {
+			genderSelection(userId: $userId)
+		}
 	}
 }
 `

@@ -178,4 +178,9 @@ query CreateMotionCheck(
   userInfoCompletenessCheck(userId: $userId) {
     filled
   }
+  levelDetail(userId: $userId) {
+    rights {
+      genderSelection(userId: $userId)
+    }
+  }
 }
