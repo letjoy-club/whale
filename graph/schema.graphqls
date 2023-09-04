@@ -36,8 +36,10 @@ extend type ChatGroup @key(fields: "id") {
 
 extend type LevelRights @key(fields: "level") {
   level: Int! @external
-  matchingQuota: Int!
-  matchingDurationConstraint: Int!
+  motionQuota: Int!
+  offerQuota: Int!
+  matchingQuota: Int! @deprecated(reason: "no longer use")
+  matchingDurationConstraint: Int! @deprecated(reason: "no longer use")
 }
 
 type EvaluatorResult {

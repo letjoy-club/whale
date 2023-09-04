@@ -19,11 +19,13 @@ import (
 	"github.com/letjoy-club/mida-tool/dbutil"
 	"github.com/letjoy-club/mida-tool/graphqlutil"
 	"github.com/letjoy-club/mida-tool/keyer"
+	"github.com/letjoy-club/mida-tool/logger"
 	"github.com/letjoy-club/mida-tool/midacode"
 	"github.com/letjoy-club/mida-tool/midacontext"
 	"github.com/letjoy-club/mida-tool/redisutil"
 	"github.com/samber/lo"
 	"go.uber.org/multierr"
+	"go.uber.org/zap"
 	"gorm.io/gen/field"
 	"gorm.io/gorm"
 )
@@ -284,11 +286,6 @@ func (r *mutationResolver) CancelMatching(ctx context.Context, matchingID string
 			UpdateSimple(MatchingQuota.Remain.Add(1))
 		return err
 	})
-	{
-		if err := modelutil.PublishMatchingCanceledEvent(ctx, matching); err != nil {
-			fmt.Println("failed to publish matching canceled event", err)
-		}
-	}
 	loader := midacontext.GetLoader[loader.Loader](ctx)
 	loader.Matching.Clear(ctx, matchingID)
 	loader.MatchingQuota.Clear(ctx, matching.UserID)
@@ -361,18 +358,31 @@ func (r *mutationResolver) ReviewMatching(ctx context.Context, matchingID string
 			break
 		}
 	}
-	err = MatchingReview.WithContext(ctx).Create(&models.MatchingReview{
+	peerUserID := ""
+	for _, id := range result.UserIDs {
+		if id != matching.UserID {
+			peerUserID = id
+			break
+		}
+	}
+	if err := MatchingReview.WithContext(ctx).Create(&models.MatchingReview{
 		MatchingResultID: matching.ResultID,
 		UserID:           matching.UserID,
-		ToUserID:         param.ToUserID,
+		ToUserID:         peerUserID,
 		TopicID:          matching.TopicID,
 		Score:            param.Score,
 		MatchingID:       matchingID,
 		ToMatchingID:     peerMatchingID,
 		Comment:          param.Comment,
-	})
+	}); err != nil {
+		return nil, err
+	}
+
+	if err := modelutil.PublishUserReviewEvent(ctx, matching.UserID, param.ToUserID, result.CreatedBy, fmt.Sprintf("%d", result.ID)); err != nil {
+		logger.L.Error("ReviewMatching - PublishUserReviewEvent error", zap.Error(err), zap.Any("resultId", result.ID))
+	}
 	midacontext.GetLoader[loader.Loader](ctx).MatchingReviewed.Clear(ctx, matchingID)
-	return nil, err
+	return nil, nil
 }
 
 // UpdateRecentMatching is the resolver for the updateRecentMatching field.

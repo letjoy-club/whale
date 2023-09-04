@@ -6,6 +6,7 @@ package graph
 
 import (
 	"context"
+	"fmt"
 	"whale/pkg/dbquery"
 	"whale/pkg/loader"
 	"whale/pkg/models"
@@ -16,10 +17,12 @@ import (
 	"github.com/letjoy-club/mida-tool/dbutil"
 	"github.com/letjoy-club/mida-tool/graphqlutil"
 	"github.com/letjoy-club/mida-tool/keyer"
+	"github.com/letjoy-club/mida-tool/logger"
 	"github.com/letjoy-club/mida-tool/midacode"
 	"github.com/letjoy-club/mida-tool/midacontext"
 	"github.com/letjoy-club/mida-tool/redisutil"
 	"go.uber.org/multierr"
+	"go.uber.org/zap"
 	"gorm.io/gen/field"
 )
 
@@ -168,17 +171,23 @@ func (r *mutationResolver) ReviewMotionOffer(ctx context.Context, userID *string
 	}
 
 	MotionReview := dbquery.Use(db).MotionReview
-	err = MotionReview.WithContext(ctx).Create(&models.MotionReview{
+	if err = MotionReview.WithContext(ctx).Create(&models.MotionReview{
 		MotionOfferID: record.ID,
 		ReviewerID:    uid,
 		ToUserID:      toUserId,
 		TopicID:       fromMotion.TopicID,
 		Score:         param.Score,
 		Comment:       param.Comment,
-	})
-	if err == nil {
-		midacontext.GetLoader[loader.Loader](ctx).MotionReviewed.Clear(ctx, record.ID)
+	}); err != nil {
+		return nil, err
 	}
+
+	if err := modelutil.PublishUserReviewEvent(ctx, uid, toUserId, string(models.ResultCreatedByOffer), fmt.Sprintf("%d", record.ID)); err != nil {
+		logger.L.Error("ReviewMotionOffer - PublishUserReviewEvent error",
+			zap.Error(err), zap.Any("motionOfferId", record.ID))
+	}
+	midacontext.GetLoader[loader.Loader](ctx).MotionReviewed.Clear(ctx, record.ID)
+
 	return nil, err
 }
 
