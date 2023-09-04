@@ -189,7 +189,7 @@ func (l *AllMotionLoader) GetOrderedMotions(ctx context.Context, categoryID stri
 
 	if opt.LastID != "" {
 		index, exist = slices.BinarySearchFunc(latestMotions, opt.LastID, func(m *models.Motion, olderThanID string) int {
-			if m.ID > olderThanID {
+			if m.ID < olderThanID {
 				return -1
 			}
 			if m.ID == olderThanID {
@@ -403,7 +403,7 @@ func (l *AllMotionLoader) Load(ctx context.Context) error {
 			).
 			Where(Motion.Active.Is(true)).
 			// 默认按创建时间倒序
-			Order(Motion.ID.Desc()).Find()
+			Order(Motion.ID).Find()
 		if err != nil {
 			logger.L.Error("load motions failed", zap.Error(err))
 			return nil
@@ -431,4 +431,10 @@ func (l *AllMotionLoader) Load(ctx context.Context) error {
 		l.latestMotions = motions
 	}
 	return nil
+}
+
+func (l *AllMotionLoader) AppendNewMotion(ctx context.Context, motion *models.Motion) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	l.latestMotions = append(l.latestMotions, motion)
 }
