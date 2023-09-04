@@ -266,6 +266,7 @@ input GraphQLPaginator {
   page: Int
 }
 
+
 input MatchingFilter {
   before: Time
   after: Time

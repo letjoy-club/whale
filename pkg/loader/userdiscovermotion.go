@@ -2,6 +2,7 @@ package loader
 
 import (
 	"context"
+	"math/rand"
 	"sync"
 	"time"
 	"whale/pkg/dbquery"
@@ -13,6 +14,7 @@ import (
 	"github.com/patrickmn/go-cache"
 	"github.com/samber/lo"
 	"go.uber.org/zap"
+	"golang.org/x/exp/slices"
 	"gorm.io/gorm"
 )
 
@@ -25,13 +27,7 @@ type UserDiscoverMotion struct {
 	motionMap     GroupedMotions
 	cityMotionMap map[CityID]CityMotions
 
-	priorityMotion *PriorityMotion
-	nextToken      map[string]int
-}
-
-type PriorityMotion struct {
-	motion     *models.Motion
-	categoryID string
+	nextToken map[string]int
 }
 
 type UserDiscoverMotionOpt struct {
@@ -42,6 +38,22 @@ type UserDiscoverMotionOpt struct {
 	N int
 
 	NextToken string
+	LastID    string
+}
+
+var sessionMaxViewed = 300
+
+func (u *UserDiscoverMotion) Viewed(motionIDs []string) int {
+	u.mu.Lock()
+	defer u.mu.Unlock()
+	// 如果查看的数量多于 300，就不再返回
+	if len(u.viewedMotionIDs) > sessionMaxViewed {
+		return 0
+	}
+	for _, id := range motionIDs {
+		u.viewedMotionIDs[id] = struct{}{}
+	}
+	return len(u.viewedMotionIDs)
 }
 
 func (u *UserDiscoverMotion) LoadMotionIDs(
@@ -54,7 +66,7 @@ func (u *UserDiscoverMotion) LoadMotionIDs(
 	defer u.mu.Unlock()
 
 	// 如果查看的数量多于 300，就不再返回
-	if len(u.viewedMotionIDs) > 300 {
+	if len(u.viewedMotionIDs) > sessionMaxViewed {
 		return []string{}, ""
 	}
 
@@ -163,6 +175,74 @@ type AllMotionLoader struct {
 	cache *cache.Cache
 
 	userMu sync.Mutex
+
+	// 当有新的 motion 时，需要更新这个字段
+	latestMotions []*models.Motion
+}
+
+// GetOrderedMotions 获取按照时间排序的 motion id
+func (l *AllMotionLoader) GetOrderedMotions(ctx context.Context, categoryID string, opt UserDiscoverMotionOpt) []string {
+	latestMotions := l.latestMotions
+
+	index := len(latestMotions)
+	var exist bool
+
+	if opt.LastID != "" {
+		index, exist = slices.BinarySearchFunc(latestMotions, opt.LastID, func(m *models.Motion, olderThanID string) int {
+			if m.ID > olderThanID {
+				return -1
+			}
+			if m.ID == olderThanID {
+				return 0
+			}
+			return 1
+		})
+
+		if !exist {
+			return []string{}
+		}
+	}
+
+	topicCategory := midacontext.GetLoader[Loader](ctx).TopicCategory
+	topicCategory.Load(ctx)
+
+	topicIDs := opt.TopicIDs
+	var topicMap map[string]struct{}
+	if len(topicIDs) > 0 {
+		topicMap = map[string]struct{}{}
+		for _, topicID := range topicIDs {
+			topicMap[topicID] = struct{}{}
+		}
+	}
+
+	ret := make([]string, 0, opt.N)
+	retN := opt.N
+	for i := index - 1; i >= 0; i-- {
+		motion := latestMotions[i]
+		if opt.CityID != motion.CityID {
+			continue
+		}
+		category := topicCategory.Category(motion.TopicID)
+		if categoryID != category {
+			continue
+		}
+		if topicIDs != nil {
+			// 指定了 topicIDs，进行过滤
+			if _, ok := topicMap[motion.TopicID]; !ok {
+				continue
+			}
+		}
+		if opt.Gender != models.GenderN && opt.Gender.String() != motion.MyGender {
+			// 根据用户期望性别进行过滤
+			continue
+		}
+		ret = append(ret, motion.ID)
+		retN--
+		if retN <= 0 {
+			break
+		}
+	}
+	return ret
 }
 
 func (l *AllMotionLoader) GetCategoryToMotions() GroupedMotions {
@@ -187,7 +267,7 @@ func (l *AllMotionLoader) LoadForAnoumynous(ctx context.Context, categoryID stri
 
 func (l *AllMotionLoader) LoadForUser(ctx context.Context, userID string, categoryID string, opt UserDiscoverMotionOpt) (retIDs []string, next string) {
 	userDiscoverMotion := l.GenUserDiscoverMotion(ctx, userID)
-	matchingLoader := func(categoryID, cityID string) []*models.Motion {
+	motionLoader := func(categoryID, cityID string) []*models.Motion {
 		var motions []*models.Motion
 		if cityID == "" {
 			motions = l.categoryMap[categoryID]
@@ -201,12 +281,37 @@ func (l *AllMotionLoader) LoadForUser(ctx context.Context, userID string, catego
 			}
 			motions = cityMotions[categoryID]
 		}
-		ret := make([]*models.Motion, len(motions))
+		length := len(motions)
+		ret := make([]*models.Motion, length)
 		copy(ret, motions)
 		lo.Shuffle(ret)
+
+		rand.Seed(time.Now().UnixNano())
+
+		// 按照一定优先级排序，排序两次，让最近创建的，点赞数高的尽量靠前（排序次数越多，这个趋势越明显）
+		PrioritySort(ret)
+		PrioritySort(ret)
 		return ret
 	}
-	return userDiscoverMotion.LoadMotionIDs(ctx, matchingLoader, categoryID, opt)
+	return userDiscoverMotion.LoadMotionIDs(ctx, motionLoader, categoryID, opt)
+}
+
+// 按照创建时间，点赞量，以一定概率排序
+func PrioritySort(motions []*models.Motion) {
+	length := len(motions)
+	for i := 0; i < length; i++ {
+		curr := motions[i]
+		targetIndex := i + rand.Intn(length-i)
+		target := motions[targetIndex]
+		if curr.CreatedAt.Before(target.CreatedAt) {
+			// 如果当前的创建时间比后面的某一个 motion 的创建时间早，那么交换（让最近创建的尽量靠前）
+			motions[i], motions[targetIndex] = motions[targetIndex], motions[i]
+		} else if curr.ThumbsUpCount < target.ThumbsUpCount {
+			// 相比时间，点赞数据重要性排第二
+			// 如果当前的点赞量比后面的某一个 motion 的点赞量少，那么交换（让点赞量多的尽量靠前）
+			motions[i], motions[targetIndex] = motions[targetIndex], motions[i]
+		}
+	}
 }
 
 func (l *AllMotionLoader) GenUserDiscoverMotion(ctx context.Context, userID string) *UserDiscoverMotion {
@@ -288,9 +393,17 @@ func (l *AllMotionLoader) Load(ctx context.Context) error {
 	if time.Since(l.lastLoad) > matchingReloadInterval {
 		l.lastLoad = time.Now()
 		Motion := dbquery.Use(l.db).Motion
-		motions, err := Motion.WithContext(ctx).Select(
-			Motion.ID, Motion.UserID, Motion.CityID, Motion.Gender, Motion.MyGender, Motion.TopicID,
-		).Where(Motion.Active.Is(true)).Find()
+		motions, err := Motion.WithContext(ctx).
+			Select(
+				Motion.ID, Motion.UserID,
+				// 用于筛选
+				Motion.CityID, Motion.Gender, Motion.MyGender, Motion.TopicID,
+				// 点赞数，时间用于排序
+				Motion.ThumbsUpCount, Motion.CreatedAt,
+			).
+			Where(Motion.Active.Is(true)).
+			// 默认按创建时间倒序
+			Order(Motion.ID.Desc()).Find()
 		if err != nil {
 			logger.L.Error("load motions failed", zap.Error(err))
 			return nil
@@ -315,9 +428,7 @@ func (l *AllMotionLoader) Load(ctx context.Context) error {
 
 		l.categoryMap = categoryMap
 		l.cityMotionMap = citiesMotionMap
+		l.latestMotions = motions
 	}
 	return nil
-}
-
-func insertIfNotExist() {
 }

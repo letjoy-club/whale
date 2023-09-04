@@ -398,6 +398,52 @@ func (r *queryResolver) DiscoverCategoryMotions(ctx context.Context, userID *str
 	return &models.DiscoverMotionResult{Motions: motions, NextToken: retNext}, nil
 }
 
+// DiscoverLatestCategoryMotions is the resolver for the discoverLatestCategoryMotions field.
+func (r *queryResolver) DiscoverLatestCategoryMotions(ctx context.Context, filter models.DiscoverTopicCategoryMotionFilter, topicCategoryID string, lastID *string) ([]*models.Motion, error) {
+	err := midacontext.GetLoader[loader.Loader](ctx).AllMotion.Load(ctx)
+	if err != nil {
+		return nil, err
+	}
+	opt := loader.UserDiscoverMotionOpt{
+		N:      6,
+		Gender: models.GenderN,
+	}
+	if lastID != nil {
+		opt.LastID = *lastID
+	}
+	if filter.CityID != nil {
+		opt.CityID = *filter.CityID
+	}
+	if filter.Gender != nil {
+		opt.Gender = *filter.Gender
+	}
+	if len(filter.TopicIds) > 0 {
+		opt.TopicIDs = filter.TopicIds
+	}
+
+	var ids []string
+	ids = midacontext.GetLoader[loader.Loader](ctx).AllMotion.GetOrderedMotions(ctx, topicCategoryID, opt)
+
+	thunk := midacontext.GetLoader[loader.Loader](ctx).Motion.LoadMany(ctx, ids)
+	motions, err := utils.ReturnThunk(thunk)
+	if err != nil {
+		return nil, err
+	}
+
+	token := midacontext.GetClientToken(ctx)
+
+	if token.IsUser() {
+		userDiscover := midacontext.GetLoader[loader.Loader](ctx).AllMotion.GenUserDiscoverMotion(ctx, token.String())
+		viewedNum := userDiscover.Viewed(ids)
+
+		// 如果查看的数量多于 300，就不再返回
+		if viewedNum == 0 {
+			return []*models.Motion{}, nil
+		}
+	}
+	return motions, nil
+}
+
 // GetDiscoverMotion is the resolver for the getDiscoverMotion field.
 func (r *queryResolver) GetDiscoverMotion(ctx context.Context, motionID string) (*models.Motion, error) {
 	thunk := midacontext.GetLoader[loader.Loader](ctx).Motion.Load(ctx, motionID)
