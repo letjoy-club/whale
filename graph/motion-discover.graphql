@@ -145,6 +145,14 @@ extend type Query {
     nextToken: String
   ): DiscoverMotionResult!
 
+  "【广场】发现 V2，按时间排序"
+  discoverLatestCategoryMotions(
+    filter: DiscoverTopicCategoryMotionFilter!
+    topicCategoryId: String!
+    "返回比该 motion 创建更早的"
+    lastId: String
+  ): [DiscoverMotion!]!
+
   "【广场】用 id 获取 discover motion （简化版 motion）"
   getDiscoverMotion(motionId: String!): DiscoverMotion!
 

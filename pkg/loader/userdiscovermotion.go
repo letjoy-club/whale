@@ -27,13 +27,7 @@ type UserDiscoverMotion struct {
 	motionMap     GroupedMotions
 	cityMotionMap map[CityID]CityMotions
 
-	priorityMotion *PriorityMotion
-	nextToken      map[string]int
-}
-
-type PriorityMotion struct {
-	motion     *models.Motion
-	categoryID string
+	nextToken map[string]int
 }
 
 type UserDiscoverMotionOpt struct {
@@ -44,6 +38,22 @@ type UserDiscoverMotionOpt struct {
 	N int
 
 	NextToken string
+	LastID    string
+}
+
+var sessionMaxViewed = 300
+
+func (u *UserDiscoverMotion) Viewed(motionIDs []string) int {
+	u.mu.Lock()
+	defer u.mu.Unlock()
+	// 如果查看的数量多于 300，就不再返回
+	if len(u.viewedMotionIDs) > sessionMaxViewed {
+		return 0
+	}
+	for _, id := range motionIDs {
+		u.viewedMotionIDs[id] = struct{}{}
+	}
+	return len(u.viewedMotionIDs)
 }
 
 func (u *UserDiscoverMotion) LoadMotionIDs(
@@ -56,7 +66,7 @@ func (u *UserDiscoverMotion) LoadMotionIDs(
 	defer u.mu.Unlock()
 
 	// 如果查看的数量多于 300，就不再返回
-	if len(u.viewedMotionIDs) > 300 {
+	if len(u.viewedMotionIDs) > sessionMaxViewed {
 		return []string{}, ""
 	}
 
@@ -171,14 +181,26 @@ type AllMotionLoader struct {
 }
 
 // GetOrderedMotions 获取按照时间排序的 motion id
-func (l *AllMotionLoader) GetOrderedMotions(olderThanID string, n int, categoryID string, opt UserDiscoverMotionOpt) []string {
+func (l *AllMotionLoader) GetOrderedMotions(ctx context.Context, categoryID string, opt UserDiscoverMotionOpt) []string {
 	latestMotions := l.latestMotions
 
-	index, exist := slices.BinarySearchFunc(l.latestMotions, func(i int) bool {
-		return l.latestMotions[i].ID > olderThanID
-	})
-	if !exist {
-		return []string{}
+	index := len(latestMotions)
+	var exist bool
+
+	if opt.LastID != "" {
+		index, exist = slices.BinarySearchFunc(latestMotions, opt.LastID, func(m *models.Motion, olderThanID string) int {
+			if m.ID > olderThanID {
+				return -1
+			}
+			if m.ID == olderThanID {
+				return 0
+			}
+			return 1
+		})
+
+		if !exist {
+			return []string{}
+		}
 	}
 
 	topicCategory := midacontext.GetLoader[Loader](ctx).TopicCategory
@@ -193,12 +215,32 @@ func (l *AllMotionLoader) GetOrderedMotions(olderThanID string, n int, categoryI
 		}
 	}
 
-	rawMotions := lo.Slice(l.latestMotions, index-n, index)
-	ret := make([]string, len(rawMotions))
-
-	// 逆序取 id
-	for i := range rawMotions {
-		ret[i] = rawMotions[n-i-1].ID
+	ret := make([]string, 0, opt.N)
+	retN := opt.N
+	for i := index - 1; i >= 0; i-- {
+		motion := latestMotions[i]
+		if opt.CityID != motion.CityID {
+			continue
+		}
+		category := topicCategory.Category(motion.TopicID)
+		if categoryID != category {
+			continue
+		}
+		if topicIDs != nil {
+			// 指定了 topicIDs，进行过滤
+			if _, ok := topicMap[motion.TopicID]; !ok {
+				continue
+			}
+		}
+		if opt.Gender != models.GenderN && opt.Gender.String() != motion.MyGender {
+			// 根据用户期望性别进行过滤
+			continue
+		}
+		ret = append(ret, motion.ID)
+		retN--
+		if retN <= 0 {
+			break
+		}
 	}
 	return ret
 }
@@ -386,6 +428,7 @@ func (l *AllMotionLoader) Load(ctx context.Context) error {
 
 		l.categoryMap = categoryMap
 		l.cityMotionMap = citiesMotionMap
+		l.latestMotions = motions
 	}
 	return nil
 }
