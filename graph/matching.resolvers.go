@@ -358,10 +358,17 @@ func (r *mutationResolver) ReviewMatching(ctx context.Context, matchingID string
 			break
 		}
 	}
+	peerUserID := ""
+	for _, id := range result.UserIDs {
+		if id != matching.UserID {
+			peerUserID = id
+			break
+		}
+	}
 	if err := MatchingReview.WithContext(ctx).Create(&models.MatchingReview{
 		MatchingResultID: matching.ResultID,
 		UserID:           matching.UserID,
-		ToUserID:         param.ToUserID,
+		ToUserID:         peerUserID,
 		TopicID:          matching.TopicID,
 		Score:            param.Score,
 		MatchingID:       matchingID,
