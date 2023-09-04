@@ -134,6 +134,7 @@ func CreateMotion(ctx context.Context, userID string, param *models.CreateMotion
 			return err
 		}
 
+		midacontext.GetLoader[loader.Loader](ctx).AllMotion.AppendNewMotion(ctx, motion)
 		// 更新用户的剩余匹配次数
 		tx.DurationConstraint.WithContext(ctx).Where(tx.DurationConstraint.ID.Eq(durationConstraint.ID)).
 			UpdateSimple(tx.DurationConstraint.RemainMotionQuota.Add(-1))
