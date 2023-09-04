@@ -3,6 +3,7 @@ package modelutil
 import (
 	"context"
 	"errors"
+	"github.com/samber/lo"
 	"go.uber.org/zap"
 	"gorm.io/gen/field"
 	"gorm.io/gorm"
@@ -755,89 +756,70 @@ func FinishMotionOffer(ctx context.Context, myUserID, fromMatchingID, toMatching
 	return nil
 }
 
-func RefreshMotionState(ctx context.Context) error {
+func RefreshDurationConstraint(ctx context.Context) error {
 	db := dbutil.GetDB(ctx)
-	Motion := dbquery.Use(db).Motion
-	MotionOfferRecord := dbquery.Use(db).MotionOfferRecord
+	DurationConstraint := dbquery.Use(db).DurationConstraint
+
+	// 查询用户等级权益配置
+	thunk := midacontext.GetLoader[loader.Loader](ctx).WhaleConfig.Load(ctx, models.ConfigLevelRights)
+	conf, _ := thunk()
+	levelConfig := &models.UserLevelConfig{}
+	if conf != nil {
+		levelConfig.Parse(conf)
+	}
+	rightsMap := make(map[int]*models.LevelRights)
+	if levelConfig != nil {
+		for _, levelRight := range levelConfig.Rights {
+			rightsMap[levelRight.Level] = levelRight
+		}
+	}
 
 	offset := 0
 	for {
-		motions, err := Motion.WithContext(ctx).Offset(offset).Limit(10).Find()
+		constraints, err := DurationConstraint.WithContext(ctx).
+			Where(DurationConstraint.StopDate.Gt(time.Now())).
+			Offset(offset).Limit(10).Find()
 		if err != nil {
 			return err
 		}
-		if motions == nil || len(motions) == 0 {
+		if constraints == nil || len(constraints) == 0 {
 			break
 		}
 
-		for _, motion := range motions {
-			// Motion是否Close
-			active := true
-			if !motion.Active || !motion.Discoverable {
-				active = false
-			}
-
-			inOffers, err := MotionOfferRecord.WithContext(ctx).Where(MotionOfferRecord.ToMotionID.Eq(motion.ID)).Find()
-			if err != nil {
-				logger.L.Error("query inOffers error", zap.Error(err), zap.String("motionId", motion.ID))
-				return err
-			}
-			outOffers, err := MotionOfferRecord.WithContext(ctx).Where(MotionOfferRecord.MotionID.Eq(motion.ID)).Find()
-			if err != nil {
-				logger.L.Error("query outOffers error", zap.Error(err), zap.String("motionId", motion.ID))
-				return err
-			}
-			inOfferNum := len(inOffers)
-			outOfferNum := len(outOffers)
-			pendingInNum := 0
-			pendingOutNum := 0
-			activeNum := 0
-
-			for _, offer := range inOffers {
-				if offer.State == string(models.MotionOfferStatePending) {
-					pendingInNum++
-				}
-				if offer.State == string(models.MotionOfferStateAccepted) ||
-					offer.State == string(models.MotionOfferStateFinished) {
-					activeNum++
-				}
-			}
-			for _, offer := range outOffers {
-				if offer.State == string(models.MotionOfferStatePending) {
-					pendingOutNum++
-				}
-				if offer.State == string(models.MotionOfferStateAccepted) ||
-					offer.State == string(models.MotionOfferStateFinished) {
-					activeNum++
-				}
-			}
-
-			discoverable := true
-			if !active && pendingInNum+pendingOutNum == 0 {
-				discoverable = false
-			}
-
-			if _, err := Motion.WithContext(ctx).Where(Motion.ID.Eq(motion.ID)).UpdateSimple(
-				Motion.Active.Value(active),
-				Motion.Discoverable.Value(discoverable),
-				Motion.InOfferNum.Value(inOfferNum),
-				Motion.OutOfferNum.Value(outOfferNum),
-				Motion.PendingInNum.Value(pendingInNum),
-				Motion.PendingOutNum.Value(pendingOutNum),
-				Motion.ActiveNum.Value(activeNum),
-			); err != nil {
-				logger.L.Error("update motion error", zap.Error(err), zap.String("motionId", motion.ID))
-				return err
-			}
-
+		// 查询用户信息
+		var userIds []string
+		for _, constraint := range constraints {
+			userIds = append(userIds, constraint.UserID)
 		}
+		services := midacontext.GetServices(ctx)
+		resp, _ := hoopoe.GetUserByIDs(ctx, services.Hoopoe, userIds)
+		userMap := make(map[string]*hoopoe.GetUserByIDsGetUserByIdsUser)
+		if resp != nil && resp.GetUserByIds != nil {
+			for _, user := range resp.GetUserByIds {
+				userMap[user.Id] = user
+			}
+		}
+
+		for _, constraint := range constraints {
+			level := userMap[constraint.UserID].Level
+			levelRights, _ := lo.Find(levelConfig.Rights, func(item *models.LevelRights) bool {
+				return item.Level == level
+			})
+			remainMotionQuota := levelRights.MotionQuota + constraint.RemainMotionQuota - constraint.TotalMotionQuota
+			remainOfferQuota := levelRights.OfferQuota + constraint.RemainOfferQuota - constraint.TotalOfferQuota
+			if _, err := DurationConstraint.WithContext(ctx).Where(DurationConstraint.ID.Eq(constraint.ID)).UpdateSimple(
+				DurationConstraint.TotalMotionQuota.Value(levelRights.MotionQuota),
+				DurationConstraint.RemainMotionQuota.Value(remainMotionQuota),
+				DurationConstraint.TotalOfferQuota.Value(levelRights.OfferQuota),
+				DurationConstraint.RemainOfferQuota.Value(remainOfferQuota),
+			); err != nil {
+				return err
+			}
+		}
+
 		offset += 10
 	}
 
-	loader := midacontext.GetLoader[loader.Loader](ctx)
-	loader.Motion.ClearAll()
-	loader.InMotionOfferRecord.ClearAll()
-	loader.OutMotionOfferRecord.ClearAll()
-
+	midacontext.GetLoader[loader.Loader](ctx).DurationConstraint.ClearAll()
 	return nil
 }
