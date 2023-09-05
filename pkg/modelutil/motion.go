@@ -34,8 +34,12 @@ func CreateMotion(ctx context.Context, userID string, param *models.CreateMotion
 	if err != nil {
 		return nil, err
 	}
-	if durationConstraint.RemainMotionQuota <= 0 { // 限制每周可发起的 motion 次数
-		return nil, whalecode.ErrMotionQuotaNotEnough
+
+	// todo: 检查为什么 durationConstraint 会为 nil
+	if durationConstraint != nil {
+		if durationConstraint.RemainMotionQuota <= 0 { // 限制每周可发起的 motion 次数
+			return nil, whalecode.ErrMotionQuotaNotEnough
+		}
 	}
 
 	profileThunk := midacontext.GetLoader[loader.Loader](ctx).UserProfile.Load(ctx, userID)
