@@ -36,6 +36,7 @@ var (
 
 	ErrIsAlreadyHasActiveMotionOfTopic              = midacode.NewError("IS_ALREADY_HAS_ACTIVE_MOTION_OF_TOPIC", "已经有该话题的活动卡片", midacode.LogLevelWarn)
 	ErrMotionOfferQuotaNotEnough                    = midacode.NewError("MOTION_OFFER_QUOTA_NOT_ENOUGH", "邀约次数不足", midacode.LogLevelWarn)
+	ErrMotionContentRisky                           = midacode.NewError("MOTION_CONTENT_RISKY", "卡片内容包含敏感词", midacode.LogLevelWarn)
 	ErrMotionQuotaNotEnough                         = midacode.NewError("MOTION_QUOTA_NOT_ENOUGH", "本周创建卡片次数已用完", midacode.LogLevelWarn)
 	ErrMotionOfferIsNotPending                      = midacode.NewError("MOTION_OFFER_IS_NOT_PENDING", "邀约已经处理过，无法重复处理", midacode.LogLevelWarn)
 	ErrOnlyChatWhenNotAccepted                      = midacode.NewError("ONLY_CHAT_WHEN_NOT_ACCEPTED", "只有在未接受状态下才能发送该消息", midacode.LogLevelWarn)
@@ -50,6 +51,7 @@ var (
 	ErrMatchingOfferIsCancelableOnlyWhenUnprocessed = midacode.NewError("MATCHING_OFFER_IS_CANCELABLE_ONLY_WHEN_UNPROCESSED", "邀约只有在未处理状态下才能取消", midacode.LogLevelWarn)
 	ErrMatchingOfferIsAcceptableOnlyWhenUnprocessed = midacode.NewError("MATCHING_OFFER_IS_ACCEPTABLE_ONLY_WHEN_UNPROCESSED", "邀约只有在未处理状态下才能接受", midacode.LogLevelWarn)
 	ErrMatchingOfferIsNotActive                     = midacode.NewError("MOTION_OFFER_IS_NOT_ACTIVE", "邀约已经失效", midacode.LogLevelWarn)
+	ErrDeadlineShouldNotBeBeforeNow                 = midacode.NewError("DEADLINE_SHOULD_NOT_BE_BEFORE_NOW", "截止时间不能早于当前时间", midacode.LogLevelWarn)
 	ErrMotionCanOnlyFinishedWhenAccepted            = midacode.NewError("MOTION_CAN_ONLY_FINISHED_WHEN_ACCEPTED", "只有在接受状态下才能结束邀约", midacode.LogLevelWarn)
 	ErrRemarkTooShort                               = midacode.NewError("REMARK_TOO_SHORT", "描述长度不能少于5", midacode.LogLevelWarn)
 	ErrRemarkTooLong                                = midacode.NewError("REMARK_TOO_LONG", "描述长度不能超过250", midacode.LogLevelWarn)

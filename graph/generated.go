@@ -27866,7 +27866,7 @@ func (ec *executionContext) unmarshalInputCreateMotionParam(ctx context.Context,
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"topicId", "areaIds", "cityId", "gender", "dayRange", "preferredPeriods", "properties", "remark", "deadline"}
+	fieldsInOrder := [...]string{"topicId", "areaIds", "cityId", "gender", "dayRange", "preferredPeriods", "properties", "remark", "quick", "deadline"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -27945,6 +27945,15 @@ func (ec *executionContext) unmarshalInputCreateMotionParam(ctx context.Context,
 				return it, err
 			}
 			it.Remark = data
+		case "quick":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("quick"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Quick = data
 		case "deadline":
 			var err error
 
@@ -29001,7 +29010,7 @@ func (ec *executionContext) unmarshalInputUpdateMotionParam(ctx context.Context,
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"areaIds", "cityId", "gender", "dayRange", "preferredPeriods", "properties", "remark", "deadline"}
+	fieldsInOrder := [...]string{"areaIds", "cityId", "gender", "dayRange", "preferredPeriods", "properties", "remark", "quick", "deadline"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -29071,6 +29080,15 @@ func (ec *executionContext) unmarshalInputUpdateMotionParam(ctx context.Context,
 				return it, err
 			}
 			it.Remark = data
+		case "quick":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("quick"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Quick = data
 		case "deadline":
 			var err error
 

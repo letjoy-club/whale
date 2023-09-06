@@ -179,3 +179,7 @@ query CreateMotionCheck(
     filled
   }
 }
+
+mutation TextCheck($userId: String!, $content: String!) {
+  textCheck(userId: $userId, content: $content)
+}

@@ -98,7 +98,9 @@ type CreateMotionParam struct {
 	// 匹配属性
 	Properties []*MotionPropertyParam `json:"properties"`
 	Remark     *string                `json:"remark,omitempty"`
-	Deadline   *time.Time             `json:"deadline,omitempty"`
+	// 是否极速搭
+	Quick    *bool      `json:"quick,omitempty"`
+	Deadline *time.Time `json:"deadline,omitempty"`
 }
 
 type CreateUserJoinTopicParam struct {
@@ -281,7 +283,9 @@ type UpdateMotionParam struct {
 	// 匹配属性
 	Properties []*MotionPropertyParam `json:"properties,omitempty"`
 	Remark     *string                `json:"remark,omitempty"`
-	Deadline   *time.Time             `json:"deadline,omitempty"`
+	// 是否极速搭
+	Quick    *bool      `json:"quick,omitempty"`
+	Deadline *time.Time `json:"deadline,omitempty"`
 }
 
 type UpdateRecentMatchingParam struct {

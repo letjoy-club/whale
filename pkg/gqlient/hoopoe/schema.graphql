@@ -412,20 +412,29 @@ type LevelCompletion {
   """用户资料完善程度"""
   profilePercent: Int!
 
+  """发卡片数量"""
+  motionNum: Int!
+
+  """用户评论数"""
+  reviewNum: Int!
+
   """发起匹配次数"""
-  startMatchingNum: Int!
+  startMatchingNum: Int! @deprecated(reason: "no longer use")
 
   """匹配成功次数"""
-  matchingSuccessNum: Int!
+  matchingSuccessNum: Int! @deprecated(reason: "no longer use")
 
   """评价次数"""
-  evaluationNum: Int!
+  evaluationNum: Int! @deprecated(reason: "replaced by reviewNum")
 
   """邀请次数"""
   invitedNum: Int!
 
+  """邀请并完成发卡片人数"""
+  invitedMotionedNum: Int!
+
   """邀请并完成一次匹配人数"""
-  invitedMatchedNum: Int!
+  invitedMatchedNum: Int! @deprecated(reason: "no longer use")
 }
 
 type LevelDetail {
@@ -449,20 +458,29 @@ type LevelRequirement {
   """用户资料完善程度"""
   profilePercent: Int!
 
+  """发卡片数量"""
+  motionNum: Int!
+
+  """用户评论数"""
+  reviewNum: Int!
+
   """发起匹配次数"""
-  startMatchingNum: Int!
+  startMatchingNum: Int! @deprecated(reason: "no longer use")
 
   """匹配成功次数"""
-  matchingSuccessNum: Int!
+  matchingSuccessNum: Int! @deprecated(reason: "no longer use")
 
   """评价次数"""
-  evaluationNum: Int!
+  evaluationNum: Int! @deprecated(reason: "replaced by reviewNum")
 
   """邀请人数"""
   invitedNum: Int!
 
+  """邀请并完成发卡片人数"""
+  invitedMotionedNum: Int!
+
   """邀请并完成一次匹配人数"""
-  invitedMatchedNum: Int!
+  invitedMatchedNum: Int! @deprecated(reason: "no longer use")
 }
 
 type LevelRights {
@@ -476,10 +494,10 @@ type LevelRights {
   genderSelection(userId: String): Boolean!
 
   """加权举报次数（每周）"""
-  weightedReport: Int!
+  weightedReport: Int! @deprecated(reason: "no longer use")
 
   """自定义话题数量（每周）"""
-  customTopic: Int!
+  customTopic: Int! @deprecated(reason: "no longer use")
 }
 
 type LoginResult {
@@ -521,6 +539,9 @@ type Mutation {
 
   """【通用】修改配置"""
   updateHoopoeConfig(id: Int!, param: UpdateHoopoeConfigParam!): String
+
+  """【系统】用户检查文本内容是否违规，内部使用"""
+  textCheck(userId: String!, content: String!): TextCheckResult!
   addAdminAccount(email: String!): AdminAccount!
   feishuLogin(param: FeishuLoginParam!): AdminAccount!
   updateAdminAccount(id: String!, param: UpdateAdminAccountParam!): AdminAccount!
@@ -600,8 +621,17 @@ type Mutation {
     """标签，长度不超过10"""
     tag: String!
 
-    """匹配ID，用于校验"""
-    matchingId: String!
+    """群组ID，用于校验"""
+    chatGroupId: String!
+
+    """操作人ID，管理端使用"""
+    operatorId: String
+  ): String
+
+  """【标签】用户移除给其他人打的标签"""
+  removeEvaluateTag(
+    """给他人打标签记录ID"""
+    id: String!
 
     """操作人ID，管理端使用"""
     operatorId: String
@@ -1128,6 +1158,18 @@ type Query {
     paginator: GraphQLPaginator
   ): [UserEvaluateTag!]
 
+  """【标签】我在群组里对某个用户的印象"""
+  evaluateTagsInGroup(
+    """群组ID"""
+    chatGroupId: String!
+
+    """被评价人的用户ID"""
+    userId: String!
+
+    """评价人的用户ID，管理端使用"""
+    operatorId: String
+  ): [UserEvaluateTag!]
+
   """【标签】其他用户打的标签总数量"""
   userEvaluateTagsCount(
     """用户ID"""
@@ -1469,6 +1511,20 @@ type TagStyle {
 
   """可用状态"""
   enable: Boolean!
+}
+
+enum TextCheckResult {
+  """有风险"""
+  risky
+
+  """无风险"""
+  pass
+
+  """需要审核"""
+  review
+
+  """微信专有：用户两小时内没访问过小程序，无法进行查询，结果未知"""
+  unknown
 }
 
 scalar Time
@@ -1945,10 +2001,10 @@ input UserInitParam {
   nickname: String!
 
   """性别，M-男性/F-女性"""
-  gender: String!
+  gender: String
 
   """生日，格式yyyyMMdd"""
-  birthday: String!
+  birthday: String
 
   """头像url"""
   avatarUrl: String!
@@ -2025,8 +2081,8 @@ type UserReport {
   """举报记录ID"""
   id: Int!
 
-  """举报关联的匹配ID"""
-  matchingId: String!
+  """举报关联的群组ID"""
+  chatGroupId: String!
 
   """被举报人ID"""
   userId: String!
@@ -2076,6 +2132,18 @@ enum UserRequiredField {
 
   """手机号"""
   Phone
+
+  """职业"""
+  Career
+
+  """家乡城市"""
+  City
+
+  """学校"""
+  School
+
+  """MBTI"""
+  Mbti
 }
 
 type UserStatsInfo {

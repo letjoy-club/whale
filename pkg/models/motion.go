@@ -32,7 +32,11 @@ type Motion struct {
 	PendingOutNum int `gorm:"default:0"`
 	ActiveNum     int `gorm:"default:0"`
 
+	// 优先级，用于置顶的排序
 	// Level int `gorm:"default:0"`
+
+	// 是否极速搭
+	Quick bool
 
 	Discoverable bool
 

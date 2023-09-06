@@ -75,7 +75,7 @@ func CreateMotion(ctx context.Context, userID string, param *models.CreateMotion
 		}),
 		MyGender:        string(profile.Gender),
 		State:           string(models.MatchingStateMatching),
-		Deadline:        time.Now().Add(time.Hour * 24 * 7),
+		Deadline:        *param.Deadline,
 		StartMatchingAt: &matchingStartAt,
 	}
 
@@ -86,12 +86,13 @@ func CreateMotion(ctx context.Context, userID string, param *models.CreateMotion
 		CityID:   param.CityID,
 		Active:   true,
 		Remark:   *param.Remark,
-		Deadline: time.Now().Add(time.Hour * 24 * 7),
+		Deadline: *param.Deadline,
 		MyGender: string(profile.Gender),
 		TopicID:  param.TopicID,
 		Properties: lo.Map(param.Properties, func(p *models.MotionPropertyParam, i int) models.MotionProperty {
 			return models.MotionProperty{ID: p.ID, Values: p.Values}
 		}),
+		Quick:            *param.Quick,
 		Discoverable:     true,
 		AreaIDs:          param.AreaIds,
 		DayRange:         param.DayRange,
@@ -164,6 +165,24 @@ func checkCreateMotionParam(ctx context.Context, userID string, param *models.Cr
 		return whalecode.ErrRemarkTooLong
 	}
 
+	defaultDeadline := time.Now().Add(time.Hour * 24 * 7)
+
+	if param.Deadline != nil {
+		if param.Deadline.Before(time.Now()) {
+			return whalecode.ErrDeadlineShouldNotBeBeforeNow
+		}
+	} else {
+		param.Deadline = &defaultDeadline
+	}
+
+	if param.Quick != nil {
+		if *param.Quick {
+			// 极速搭过期时间为 24 小时
+			defaultDeadline = time.Now().Add(time.Hour * 24)
+			param.Deadline = &defaultDeadline
+		}
+	}
+
 	// 基础检查
 	res, err := hoopoe.CreateMotionCheck(ctx, midacontext.GetServices(ctx).Hoopoe, param.TopicID, param.CityID, userID)
 	if err != nil {
@@ -182,6 +201,17 @@ func checkCreateMotionParam(ctx context.Context, userID string, param *models.Cr
 		return whalecode.ErrUserBlocked
 	}
 
+	// 内容检查，长于一定长度才进行
+	if len(*param.Remark) > 1 {
+		contentCheckRes, err := hoopoe.TextCheck(ctx, midacontext.GetServices(ctx).Hoopoe, userID, *param.Remark)
+		if err != nil {
+			logger.L.Error("failed to check motion content", zap.Error(err))
+		} else {
+			if contentCheckRes != nil && contentCheckRes.TextCheck == hoopoe.TextCheckResultRisky {
+				return whalecode.ErrMotionContentRisky
+			}
+		}
+	}
 	return nil
 }
 

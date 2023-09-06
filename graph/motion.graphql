@@ -16,6 +16,9 @@ input CreateMotionParam {
 
   remark: String
 
+  "是否极速搭"
+  quick: Boolean
+
   deadline: Time
 }
 
@@ -37,6 +40,9 @@ input UpdateMotionParam {
   properties: [MotionPropertyParam!]
 
   remark: String
+
+  "是否极速搭"
+  quick: Boolean
 
   deadline: Time
 }
