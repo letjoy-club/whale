@@ -24,7 +24,6 @@ import (
 	"github.com/letjoy-club/mida-tool/redisutil"
 )
 
-// todo: 邀约对手方额度如何处理，是在邀约方就进行校验，还是等到对手方同意时再进行校验？
 func CreateMotionOffer(ctx context.Context, myUserID, myMotionID, targetMotionID string) (string, error) {
 	motionsThunk := midacontext.GetLoader[loader.Loader](ctx).Motion.LoadMany(ctx, []string{myMotionID, targetMotionID})
 	motions, err := utils.ReturnThunk(motionsThunk)
@@ -52,13 +51,21 @@ func CreateMotionOffer(ctx context.Context, myUserID, myMotionID, targetMotionID
 		return "", whalecode.ErrTheMotionIsNotActive
 	}
 	// 额度检查
-	durationConstraintThunk := midacontext.GetLoader[loader.Loader](ctx).DurationConstraint.Load(ctx, myUserID)
-	durationConstraint, err := durationConstraintThunk()
+	myConstraintThunk := midacontext.GetLoader[loader.Loader](ctx).DurationConstraint.Load(ctx, myMotion.UserID)
+	myConstraint, err := myConstraintThunk()
 	if err != nil {
 		return "", err
 	}
-	if durationConstraint.RemainOfferQuota <= 0 { // 限制每周可发起的 motionOffer 次数
-		return "", whalecode.ErrMotionOfferQuotaNotEnough
+	if myConstraint.RemainOfferQuota <= 0 { // 限制每周可发起的 motionOffer 次数
+		return "", whalecode.ErrMyMotionOfferQuotaNotEnough
+	}
+	targetConstraintThunk := midacontext.GetLoader[loader.Loader](ctx).DurationConstraint.Load(ctx, targetMotion.UserID)
+	targetConstraint, err := targetConstraintThunk()
+	if err != nil {
+		return "", err
+	}
+	if targetConstraint.RemainOfferQuota <= 0 { // 限制每周可发起的 motionOffer 次数
+		return "", whalecode.ErrTargetMotionOfferQuotaNotEnough
 	}
 
 	// 拉黑检查
@@ -178,7 +185,7 @@ func CreateMotionOffer(ctx context.Context, myUserID, myMotionID, targetMotionID
 		}
 
 		// 更新用户的剩余邀约次数
-		tx.DurationConstraint.WithContext(ctx).Where(tx.DurationConstraint.ID.Eq(durationConstraint.ID)).
+		tx.DurationConstraint.WithContext(ctx).Where(tx.DurationConstraint.ID.Eq(myConstraint.ID)).
 			UpdateSimple(tx.DurationConstraint.RemainOfferQuota.Add(-1))
 		return nil
 	}); err != nil {
@@ -189,7 +196,7 @@ func CreateMotionOffer(ctx context.Context, myUserID, myMotionID, targetMotionID
 		logger.L.Error("CreateMotionOffer - PublishMotionOfferCreatedEvent error",
 			zap.Error(err), zap.Any("motionOfferId", record.ID))
 	}
-	midacontext.GetLoader[loader.Loader](ctx).DurationConstraint.Clear(ctx, myUserID)
+	midacontext.GetLoader[loader.Loader](ctx).DurationConstraint.Clear(ctx, myMotion.UserID)
 	midacontext.GetLoader[loader.Loader](ctx).Motion.Clear(ctx, myMotionID)
 	midacontext.GetLoader[loader.Loader](ctx).Motion.Clear(ctx, targetMotionID)
 	midacontext.GetLoader[loader.Loader](ctx).InMotionOfferRecord.Clear(ctx, myMotionID)
@@ -219,6 +226,16 @@ func AcceptMotionOffer(ctx context.Context, myUserID, myMotionID, targetMotionID
 		return err
 	}
 	defer release(ctx)
+
+	// 额度检查
+	myConstraintThunk := midacontext.GetLoader[loader.Loader](ctx).DurationConstraint.Load(ctx, myMotion.UserID)
+	myConstraint, err := myConstraintThunk()
+	if err != nil {
+		return err
+	}
+	if myConstraint.RemainOfferQuota <= 0 { // 限制每周可发起的 motionOffer 次数
+		return whalecode.ErrMyMotionOfferQuotaNotEnough
+	}
 
 	db := dbutil.GetDB(ctx)
 	MotionOfferRecord := dbquery.Use(db).MotionOfferRecord
@@ -298,6 +315,10 @@ func AcceptMotionOffer(ctx context.Context, myUserID, myMotionID, targetMotionID
 		if rx.RowsAffected != 1 {
 			return midacode.ErrStateMayHaveChanged
 		}
+
+		// 更新用户的剩余邀约次数
+		tx.DurationConstraint.WithContext(ctx).Where(tx.DurationConstraint.ID.Eq(myConstraint.ID)).
+			UpdateSimple(tx.DurationConstraint.RemainOfferQuota.Add(-1))
 		if err = SendMotionOfferAcceptedMessage(ctx, myMotion.TopicID, record); err != nil {
 			logger.L.Error("failed to send motion offer accepted message", zap.Error(err))
 		}
@@ -310,6 +331,8 @@ func AcceptMotionOffer(ctx context.Context, myUserID, myMotionID, targetMotionID
 		logger.L.Error("AcceptMotionOffer - PublishMotionOfferAcceptedEvent error",
 			zap.Error(err), zap.Any("motionOfferId", record.ID))
 	}
+
+	midacontext.GetLoader[loader.Loader](ctx).DurationConstraint.Clear(ctx, myMotion.UserID)
 	midacontext.GetLoader[loader.Loader](ctx).Motion.Clear(ctx, myMotionID)
 	midacontext.GetLoader[loader.Loader](ctx).Motion.Clear(ctx, targetMotionID)
 	midacontext.GetLoader[loader.Loader](ctx).InMotionOfferRecord.Clear(ctx, myMotionID)

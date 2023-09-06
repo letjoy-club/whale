@@ -35,7 +35,8 @@ var (
 	ErrYouAreInUserBlacklist     = midacode.NewError("YOU_ARE_IN_USER_BLACKLIST", "您被对方加入黑名单，无法邀约", midacode.LogLevelWarn)
 
 	ErrIsAlreadyHasActiveMotionOfTopic              = midacode.NewError("IS_ALREADY_HAS_ACTIVE_MOTION_OF_TOPIC", "已经有该话题的活动卡片", midacode.LogLevelWarn)
-	ErrMotionOfferQuotaNotEnough                    = midacode.NewError("MOTION_OFFER_QUOTA_NOT_ENOUGH", "邀约次数不足", midacode.LogLevelWarn)
+	ErrMyMotionOfferQuotaNotEnough                  = midacode.NewError("MY_MOTION_OFFER_QUOTA_NOT_ENOUGH", "您的邀约次数不足", midacode.LogLevelWarn)
+	ErrTargetMotionOfferQuotaNotEnough              = midacode.NewError("TARGET_MOTION_OFFER_QUOTA_NOT_ENOUGH", "对方的邀约次数不足", midacode.LogLevelWarn)
 	ErrMotionQuotaNotEnough                         = midacode.NewError("MOTION_QUOTA_NOT_ENOUGH", "本周创建卡片次数已用完", midacode.LogLevelWarn)
 	ErrMotionOfferIsNotPending                      = midacode.NewError("MOTION_OFFER_IS_NOT_PENDING", "邀约已经处理过，无法重复处理", midacode.LogLevelWarn)
 	ErrOnlyChatWhenNotAccepted                      = midacode.NewError("ONLY_CHAT_WHEN_NOT_ACCEPTED", "只有在未接受状态下才能发送该消息", midacode.LogLevelWarn)
