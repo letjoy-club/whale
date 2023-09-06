@@ -3,10 +3,6 @@ package modelutil
 import (
 	"context"
 	"errors"
-	"github.com/samber/lo"
-	"go.uber.org/zap"
-	"gorm.io/gen/field"
-	"gorm.io/gorm"
 	"time"
 	"whale/pkg/dbquery"
 	"whale/pkg/gqlient/hoopoe"
@@ -15,6 +11,11 @@ import (
 	"whale/pkg/models"
 	"whale/pkg/utils"
 	"whale/pkg/whalecode"
+
+	"github.com/samber/lo"
+	"go.uber.org/zap"
+	"gorm.io/gen/field"
+	"gorm.io/gorm"
 
 	"github.com/letjoy-club/mida-tool/dbutil"
 	"github.com/letjoy-club/mida-tool/keyer"
@@ -180,15 +181,17 @@ func CreateMotionOffer(ctx context.Context, myUserID, myMotionID, targetMotionID
 		// 更新用户的剩余邀约次数
 		tx.DurationConstraint.WithContext(ctx).Where(tx.DurationConstraint.ID.Eq(durationConstraint.ID)).
 			UpdateSimple(tx.DurationConstraint.RemainOfferQuota.Add(-1))
+
+		if err := PublishMotionOfferCreatedEvent(ctx, record); err != nil {
+			logger.L.Error("CreateMotionOffer - PublishMotionOfferCreatedEvent error",
+				zap.Error(err), zap.Any("motionOfferId", record.ID))
+		}
+
 		return nil
 	}); err != nil {
 		return "", err
 	}
 
-	if err := PublishMotionOfferCreatedEvent(ctx, record); err != nil {
-		logger.L.Error("CreateMotionOffer - PublishMotionOfferCreatedEvent error",
-			zap.Error(err), zap.Any("motionOfferId", record.ID))
-	}
 	midacontext.GetLoader[loader.Loader](ctx).DurationConstraint.Clear(ctx, myUserID)
 	midacontext.GetLoader[loader.Loader](ctx).Motion.Clear(ctx, myMotionID)
 	midacontext.GetLoader[loader.Loader](ctx).Motion.Clear(ctx, targetMotionID)
