@@ -110,7 +110,7 @@ func CreateMotionOffer(ctx context.Context, myUserID, myMotionID, targetMotionID
 			return err
 		}
 		MotionOfferRecord := tx.MotionOfferRecord
-		record := &models.MotionOfferRecord{
+		record = &models.MotionOfferRecord{
 			UserID:     myMotion.UserID,
 			MotionID:   myMotion.ID,
 			ToUserID:   targetMotion.UserID,
