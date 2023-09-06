@@ -298,17 +298,18 @@ func AcceptMotionOffer(ctx context.Context, myUserID, myMotionID, targetMotionID
 		if rx.RowsAffected != 1 {
 			return midacode.ErrStateMayHaveChanged
 		}
-		if err = SendMotionOfferAcceptedMessage(ctx, myMotion.TopicID, record); err != nil {
-			logger.L.Error("failed to send motion offer accepted message", zap.Error(err))
-		}
 		return nil
 	}); err != nil {
 		return err
 	}
-
+	// 事件消息
 	if err := PublishMotionOfferAcceptedEvent(ctx, record); err != nil {
 		logger.L.Error("AcceptMotionOffer - PublishMotionOfferAcceptedEvent error",
 			zap.Error(err), zap.Any("motionOfferId", record.ID))
+	}
+	// 卡片发送服务通知
+	if err = SendMotionOfferAcceptedMessage(ctx, myMotion.TopicID, record); err != nil {
+		logger.L.Error("failed to send motion offer accepted message", zap.Error(err))
 	}
 	midacontext.GetLoader[loader.Loader](ctx).Motion.Clear(ctx, myMotionID)
 	midacontext.GetLoader[loader.Loader](ctx).Motion.Clear(ctx, targetMotionID)
