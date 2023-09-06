@@ -75,7 +75,7 @@ func CreateMotion(ctx context.Context, userID string, param *models.CreateMotion
 		}),
 		MyGender:        string(profile.Gender),
 		State:           string(models.MatchingStateMatching),
-		Deadline:        time.Now().Add(time.Hour * 24 * 7),
+		Deadline:        *param.Deadline,
 		StartMatchingAt: &matchingStartAt,
 	}
 
@@ -86,7 +86,7 @@ func CreateMotion(ctx context.Context, userID string, param *models.CreateMotion
 		CityID:   param.CityID,
 		Active:   true,
 		Remark:   *param.Remark,
-		Deadline: time.Now().Add(time.Hour * 24 * 7),
+		Deadline: *param.Deadline,
 		MyGender: string(profile.Gender),
 		TopicID:  param.TopicID,
 		Properties: lo.Map(param.Properties, func(p *models.MotionPropertyParam, i int) models.MotionProperty {
@@ -95,6 +95,7 @@ func CreateMotion(ctx context.Context, userID string, param *models.CreateMotion
 		Discoverable:     true,
 		AreaIDs:          param.AreaIds,
 		DayRange:         param.DayRange,
+		Quick:            *param.Quick,
 		PreferredPeriods: SimplifyPreferredPeriods(param.PreferredPeriods),
 	}
 
@@ -164,6 +165,24 @@ func checkCreateMotionParam(ctx context.Context, userID string, param *models.Cr
 		return whalecode.ErrRemarkTooLong
 	}
 
+	defaultDeadline := time.Now().Add(time.Hour * 24 * 7)
+
+	if param.Deadline != nil {
+		if param.Deadline.Before(time.Now()) {
+			return whalecode.ErrDeadlineShouldNotBeBeforeNow
+		}
+	} else {
+		param.Deadline = &defaultDeadline
+	}
+
+	if param.Quick != nil {
+		if *param.Quick {
+			// 极速搭过期时间为 24 小时
+			defaultDeadline = time.Now().Add(time.Hour * 24)
+			param.Deadline = &defaultDeadline
+		}
+	}
+
 	// 基础检查
 	res, err := hoopoe.CreateMotionCheck(ctx, midacontext.GetServices(ctx).Hoopoe, param.TopicID, param.CityID, userID)
 	if err != nil {
@@ -219,6 +238,9 @@ func UpdateMotion(ctx context.Context, motionID string, param *models.UpdateMoti
 	}
 	if param.DayRange != nil {
 		fields = append(fields, Motion.DayRange.Value(graphqlutil.ElementList[string](param.DayRange)))
+	}
+	if param.Quick != nil {
+		fields = append(fields, Motion.Quick.Value(*param.Quick))
 	}
 	if param.PreferredPeriods != nil {
 		fields = append(fields, Motion.PreferredPeriods.Value(graphqlutil.ElementList[string](SimplifyPreferredPeriods(param.PreferredPeriods))))

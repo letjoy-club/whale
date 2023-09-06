@@ -97,8 +97,10 @@ type CreateMotionParam struct {
 	PreferredPeriods []DatePeriod `json:"preferredPeriods"`
 	// 匹配属性
 	Properties []*MotionPropertyParam `json:"properties"`
-	Remark     *string                `json:"remark,omitempty"`
-	Deadline   *time.Time             `json:"deadline,omitempty"`
+	// 是否极速搭
+	Quick    *bool      `json:"quick,omitempty"`
+	Remark   *string    `json:"remark,omitempty"`
+	Deadline *time.Time `json:"deadline,omitempty"`
 }
 
 type CreateUserJoinTopicParam struct {
@@ -280,6 +282,7 @@ type UpdateMotionParam struct {
 	PreferredPeriods []DatePeriod `json:"preferredPeriods,omitempty"`
 	// 匹配属性
 	Properties []*MotionPropertyParam `json:"properties,omitempty"`
+	Quick      *bool                  `json:"quick,omitempty"`
 	Remark     *string                `json:"remark,omitempty"`
 	Deadline   *time.Time             `json:"deadline,omitempty"`
 }

@@ -320,6 +320,7 @@ type ComplexityRoot struct {
 		PendingOutNum     func(childComplexity int) int
 		PreferredPeriods  func(childComplexity int) int
 		Properties        func(childComplexity int) int
+		Quick             func(childComplexity int) int
 		RelatedMatchingID func(childComplexity int) int
 		Remark            func(childComplexity int) int
 		ThumbsUp          func(childComplexity int) int
@@ -636,6 +637,7 @@ type MotionResolver interface {
 	Liked(ctx context.Context, obj *models.Motion) (bool, error)
 
 	ThumbsUp(ctx context.Context, obj *models.Motion) (bool, error)
+
 	Topic(ctx context.Context, obj *models.Motion) (*models.Topic, error)
 	TopicOptionConfig(ctx context.Context, obj *models.Motion) (*models.TopicOptionConfig, error)
 	User(ctx context.Context, obj *models.Motion) (*models.User, error)
@@ -2081,6 +2083,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Motion.Properties(childComplexity), true
+
+	case "Motion.quick":
+		if e.complexity.Motion.Quick == nil {
+			break
+		}
+
+		return e.complexity.Motion.Quick(childComplexity), true
 
 	case "Motion.relatedMatchingId":
 		if e.complexity.Motion.RelatedMatchingID == nil {
@@ -6369,6 +6378,8 @@ func (ec *executionContext) fieldContext_AvailableMotionOffer_motion(ctx context
 				return ec.fieldContext_Motion_thumbsUpCount(ctx, field)
 			case "thumbsUp":
 				return ec.fieldContext_Motion_thumbsUp(ctx, field)
+			case "quick":
+				return ec.fieldContext_Motion_quick(ctx, field)
 			case "topic":
 				return ec.fieldContext_Motion_topic(ctx, field)
 			case "topicOptionConfig":
@@ -15124,6 +15135,50 @@ func (ec *executionContext) fieldContext_Motion_thumbsUp(ctx context.Context, fi
 	return fc, nil
 }
 
+func (ec *executionContext) _Motion_quick(ctx context.Context, field graphql.CollectedField, obj *models.Motion) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Motion_quick(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Quick, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Motion_quick(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Motion",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Motion_topic(ctx context.Context, field graphql.CollectedField, obj *models.Motion) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Motion_topic(ctx, field)
 	if err != nil {
@@ -17970,6 +18025,8 @@ func (ec *executionContext) fieldContext_Mutation_createMotion(ctx context.Conte
 				return ec.fieldContext_Motion_thumbsUpCount(ctx, field)
 			case "thumbsUp":
 				return ec.fieldContext_Motion_thumbsUp(ctx, field)
+			case "quick":
+				return ec.fieldContext_Motion_quick(ctx, field)
 			case "topic":
 				return ec.fieldContext_Motion_topic(ctx, field)
 			case "topicOptionConfig":
@@ -18081,6 +18138,8 @@ func (ec *executionContext) fieldContext_Mutation_updateMotion(ctx context.Conte
 				return ec.fieldContext_Motion_thumbsUpCount(ctx, field)
 			case "thumbsUp":
 				return ec.fieldContext_Motion_thumbsUp(ctx, field)
+			case "quick":
+				return ec.fieldContext_Motion_quick(ctx, field)
 			case "topic":
 				return ec.fieldContext_Motion_topic(ctx, field)
 			case "topicOptionConfig":
@@ -18192,6 +18251,8 @@ func (ec *executionContext) fieldContext_Mutation_userUpdateMotion(ctx context.C
 				return ec.fieldContext_Motion_thumbsUpCount(ctx, field)
 			case "thumbsUp":
 				return ec.fieldContext_Motion_thumbsUp(ctx, field)
+			case "quick":
+				return ec.fieldContext_Motion_quick(ctx, field)
 			case "topic":
 				return ec.fieldContext_Motion_topic(ctx, field)
 			case "topicOptionConfig":
@@ -21941,6 +22002,8 @@ func (ec *executionContext) fieldContext_Query_motion(ctx context.Context, field
 				return ec.fieldContext_Motion_thumbsUpCount(ctx, field)
 			case "thumbsUp":
 				return ec.fieldContext_Motion_thumbsUp(ctx, field)
+			case "quick":
+				return ec.fieldContext_Motion_quick(ctx, field)
 			case "topic":
 				return ec.fieldContext_Motion_topic(ctx, field)
 			case "topicOptionConfig":
@@ -22052,6 +22115,8 @@ func (ec *executionContext) fieldContext_Query_userMotions(ctx context.Context, 
 				return ec.fieldContext_Motion_thumbsUpCount(ctx, field)
 			case "thumbsUp":
 				return ec.fieldContext_Motion_thumbsUp(ctx, field)
+			case "quick":
+				return ec.fieldContext_Motion_quick(ctx, field)
 			case "topic":
 				return ec.fieldContext_Motion_topic(ctx, field)
 			case "topicOptionConfig":
@@ -22222,6 +22287,8 @@ func (ec *executionContext) fieldContext_Query_activeMotions(ctx context.Context
 				return ec.fieldContext_Motion_thumbsUpCount(ctx, field)
 			case "thumbsUp":
 				return ec.fieldContext_Motion_thumbsUp(ctx, field)
+			case "quick":
+				return ec.fieldContext_Motion_quick(ctx, field)
 			case "topic":
 				return ec.fieldContext_Motion_topic(ctx, field)
 			case "topicOptionConfig":
@@ -22333,6 +22400,8 @@ func (ec *executionContext) fieldContext_Query_motions(ctx context.Context, fiel
 				return ec.fieldContext_Motion_thumbsUpCount(ctx, field)
 			case "thumbsUp":
 				return ec.fieldContext_Motion_thumbsUp(ctx, field)
+			case "quick":
+				return ec.fieldContext_Motion_quick(ctx, field)
 			case "topic":
 				return ec.fieldContext_Motion_topic(ctx, field)
 			case "topicOptionConfig":
@@ -27866,7 +27935,7 @@ func (ec *executionContext) unmarshalInputCreateMotionParam(ctx context.Context,
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"topicId", "areaIds", "cityId", "gender", "dayRange", "preferredPeriods", "properties", "remark", "deadline"}
+	fieldsInOrder := [...]string{"topicId", "areaIds", "cityId", "gender", "dayRange", "preferredPeriods", "properties", "quick", "remark", "deadline"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -27936,6 +28005,15 @@ func (ec *executionContext) unmarshalInputCreateMotionParam(ctx context.Context,
 				return it, err
 			}
 			it.Properties = data
+		case "quick":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("quick"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Quick = data
 		case "remark":
 			var err error
 
@@ -29001,7 +29079,7 @@ func (ec *executionContext) unmarshalInputUpdateMotionParam(ctx context.Context,
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"areaIds", "cityId", "gender", "dayRange", "preferredPeriods", "properties", "remark", "deadline"}
+	fieldsInOrder := [...]string{"areaIds", "cityId", "gender", "dayRange", "preferredPeriods", "properties", "quick", "remark", "deadline"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -29062,6 +29140,15 @@ func (ec *executionContext) unmarshalInputUpdateMotionParam(ctx context.Context,
 				return it, err
 			}
 			it.Properties = data
+		case "quick":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("quick"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Quick = data
 		case "remark":
 			var err error
 
@@ -32836,6 +32923,11 @@ func (ec *executionContext) _Motion(ctx context.Context, sel ast.SelectionSet, o
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "quick":
+			out.Values[i] = ec._Motion_quick(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
 		case "topic":
 			field := field
 

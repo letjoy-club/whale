@@ -14,6 +14,9 @@ input CreateMotionParam {
   "匹配属性"
   properties: [MotionPropertyParam!]!
 
+  "是否极速搭"
+  quick: Boolean
+
   remark: String
 
   deadline: Time
@@ -35,6 +38,8 @@ input UpdateMotionParam {
   preferredPeriods: [DatePeriod!]
   "匹配属性"
   properties: [MotionPropertyParam!]
+
+  quick: Boolean
 
   remark: String
 

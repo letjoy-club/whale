@@ -46,6 +46,7 @@ func newMotion(db *gorm.DB, opts ...gen.DOOption) motion {
 	_motion.PendingInNum = field.NewInt(tableName, "pending_in_num")
 	_motion.PendingOutNum = field.NewInt(tableName, "pending_out_num")
 	_motion.ActiveNum = field.NewInt(tableName, "active_num")
+	_motion.Quick = field.NewBool(tableName, "quick")
 	_motion.Discoverable = field.NewBool(tableName, "discoverable")
 	_motion.RelatedMatchingID = field.NewString(tableName, "related_matching_id")
 	_motion.Deadline = field.NewTime(tableName, "deadline")
@@ -81,6 +82,7 @@ type motion struct {
 	PendingInNum      field.Int
 	PendingOutNum     field.Int
 	ActiveNum         field.Int
+	Quick             field.Bool
 	Discoverable      field.Bool
 	RelatedMatchingID field.String
 	Deadline          field.Time
@@ -122,6 +124,7 @@ func (m *motion) updateTableName(table string) *motion {
 	m.PendingInNum = field.NewInt(table, "pending_in_num")
 	m.PendingOutNum = field.NewInt(table, "pending_out_num")
 	m.ActiveNum = field.NewInt(table, "active_num")
+	m.Quick = field.NewBool(table, "quick")
 	m.Discoverable = field.NewBool(table, "discoverable")
 	m.RelatedMatchingID = field.NewString(table, "related_matching_id")
 	m.Deadline = field.NewTime(table, "deadline")
@@ -149,7 +152,7 @@ func (m *motion) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 }
 
 func (m *motion) fillFieldMap() {
-	m.fieldMap = make(map[string]field.Expr, 25)
+	m.fieldMap = make(map[string]field.Expr, 26)
 	m.fieldMap["id"] = m.ID
 	m.fieldMap["user_id"] = m.UserID
 	m.fieldMap["topic_id"] = m.TopicID
@@ -170,6 +173,7 @@ func (m *motion) fillFieldMap() {
 	m.fieldMap["pending_in_num"] = m.PendingInNum
 	m.fieldMap["pending_out_num"] = m.PendingOutNum
 	m.fieldMap["active_num"] = m.ActiveNum
+	m.fieldMap["quick"] = m.Quick
 	m.fieldMap["discoverable"] = m.Discoverable
 	m.fieldMap["related_matching_id"] = m.RelatedMatchingID
 	m.fieldMap["deadline"] = m.Deadline

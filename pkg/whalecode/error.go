@@ -51,6 +51,7 @@ var (
 	ErrMatchingOfferIsAcceptableOnlyWhenUnprocessed = midacode.NewError("MATCHING_OFFER_IS_ACCEPTABLE_ONLY_WHEN_UNPROCESSED", "邀约只有在未处理状态下才能接受", midacode.LogLevelWarn)
 	ErrMatchingOfferIsNotActive                     = midacode.NewError("MOTION_OFFER_IS_NOT_ACTIVE", "邀约已经失效", midacode.LogLevelWarn)
 	ErrMotionCanOnlyFinishedWhenAccepted            = midacode.NewError("MOTION_CAN_ONLY_FINISHED_WHEN_ACCEPTED", "只有在接受状态下才能结束邀约", midacode.LogLevelWarn)
+	ErrDeadlineShouldNotBeBeforeNow                 = midacode.NewError("DEADLINE_SHOULD_NOT_BE_BEFORE_NOW", "截止时间不能早于当前时间", midacode.LogLevelWarn)
 	ErrRemarkTooShort                               = midacode.NewError("REMARK_TOO_SHORT", "描述长度不能少于5", midacode.LogLevelWarn)
 	ErrRemarkTooLong                                = midacode.NewError("REMARK_TOO_LONG", "描述长度不能超过250", midacode.LogLevelWarn)
 	ErrYourMotionIsNotActive                        = midacode.NewError("YOUR_MOTION_IS_NOT_ACTIVE", "你的活动已关闭", midacode.LogLevelWarn)

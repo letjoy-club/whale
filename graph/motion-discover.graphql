@@ -45,6 +45,9 @@ type Motion {
   thumbsUpCount: Int!
   thumbsUp: Boolean!
 
+  # 是否极速搭
+  quick: Boolean!
+
   topic: Topic!
   topicOptionConfig: TopicOptionConfig
   user: User!

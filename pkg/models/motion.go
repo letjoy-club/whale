@@ -33,6 +33,8 @@ type Motion struct {
 	ActiveNum     int `gorm:"default:0"`
 
 	// Level int `gorm:"default:0"`
+	// 是否极速搭
+	Quick bool
 
 	Discoverable bool
 
