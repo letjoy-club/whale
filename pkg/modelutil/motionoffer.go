@@ -319,17 +319,18 @@ func AcceptMotionOffer(ctx context.Context, myUserID, myMotionID, targetMotionID
 		// 更新用户的剩余邀约次数
 		tx.DurationConstraint.WithContext(ctx).Where(tx.DurationConstraint.ID.Eq(myConstraint.ID)).
 			UpdateSimple(tx.DurationConstraint.RemainOfferQuota.Add(-1))
-		if err = SendMotionOfferAcceptedMessage(ctx, myMotion.TopicID, record); err != nil {
-			logger.L.Error("failed to send motion offer accepted message", zap.Error(err))
-		}
 		return nil
 	}); err != nil {
 		return err
 	}
-
+	// 事件消息
 	if err := PublishMotionOfferAcceptedEvent(ctx, record); err != nil {
 		logger.L.Error("AcceptMotionOffer - PublishMotionOfferAcceptedEvent error",
 			zap.Error(err), zap.Any("motionOfferId", record.ID))
+	}
+	// 卡片发送服务通知
+	if err = SendMotionOfferAcceptedMessage(ctx, myMotion.TopicID, record); err != nil {
+		logger.L.Error("failed to send motion offer accepted message", zap.Error(err))
 	}
 
 	midacontext.GetLoader[loader.Loader](ctx).DurationConstraint.Clear(ctx, myMotion.UserID)
