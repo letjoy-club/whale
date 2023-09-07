@@ -188,11 +188,7 @@ func checkCreateMotionParam(ctx context.Context, userID string, param *models.Cr
 	if res.User.BlockInfo.UserBlocked || res.User.BlockInfo.MatchingBlocked {
 		return whalecode.ErrUserBlocked
 	}
-	if param.Gender != models.GenderN {
-		if !res.LevelDetail.Rights.GenderSelection {
-			return whalecode.ErrCannotSelectGender
-		}
-	}
+
 	return nil
 }
 
