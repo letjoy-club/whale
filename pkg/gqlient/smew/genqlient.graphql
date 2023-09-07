@@ -29,3 +29,7 @@ mutation SendTextMessage(
 mutation DestroyGroup($groupId: String!) {
   destroyGroup(groupId: $groupId)
 }
+
+mutation CloseGroup($groupId: String!, $reason: GroupCloseReason!) {
+  closeGroup(groupId: $groupId, reason: $reason)
+}
