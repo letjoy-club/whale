@@ -3,7 +3,9 @@ package modelutil
 import (
 	"context"
 	"errors"
+
 	"gorm.io/gorm"
+
 	"time"
 	"unicode/utf8"
 	"whale/pkg/dbquery"
@@ -83,6 +85,10 @@ func CreateMotion(ctx context.Context, userID string, param *models.CreateMotion
 		StartMatchingAt: &matchingStartAt,
 	}
 
+	isQuick := false
+	if param.Quick != nil {
+		isQuick = *param.Quick
+	}
 	motion := &models.Motion{
 		ID:       shortid.NewWithTime("mo_", 4),
 		UserID:   userID,
@@ -96,7 +102,7 @@ func CreateMotion(ctx context.Context, userID string, param *models.CreateMotion
 		Properties: lo.Map(param.Properties, func(p *models.MotionPropertyParam, i int) models.MotionProperty {
 			return models.MotionProperty{ID: p.ID, Values: p.Values}
 		}),
-		Quick:            *param.Quick,
+		Quick:            isQuick,
 		Discoverable:     true,
 		AreaIDs:          param.AreaIds,
 		DayRange:         param.DayRange,
