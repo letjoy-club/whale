@@ -253,28 +253,6 @@ func (v *CreateMotionCheckArea) GetCode() string { return v.Code }
 // GetEnabled returns CreateMotionCheckArea.Enabled, and is useful for accessing the field via an interface.
 func (v *CreateMotionCheckArea) GetEnabled() bool { return v.Enabled }
 
-// CreateMotionCheckLevelDetail includes the requested fields of the GraphQL type LevelDetail.
-type CreateMotionCheckLevelDetail struct {
-	// 当前等级的权益
-	Rights *CreateMotionCheckLevelDetailRightsLevelRights `json:"rights"`
-}
-
-// GetRights returns CreateMotionCheckLevelDetail.Rights, and is useful for accessing the field via an interface.
-func (v *CreateMotionCheckLevelDetail) GetRights() *CreateMotionCheckLevelDetailRightsLevelRights {
-	return v.Rights
-}
-
-// CreateMotionCheckLevelDetailRightsLevelRights includes the requested fields of the GraphQL type LevelRights.
-type CreateMotionCheckLevelDetailRightsLevelRights struct {
-	// 性别选择
-	GenderSelection bool `json:"genderSelection"`
-}
-
-// GetGenderSelection returns CreateMotionCheckLevelDetailRightsLevelRights.GenderSelection, and is useful for accessing the field via an interface.
-func (v *CreateMotionCheckLevelDetailRightsLevelRights) GetGenderSelection() bool {
-	return v.GenderSelection
-}
-
 // CreateMotionCheckResponse is returned by CreateMotionCheck on success.
 type CreateMotionCheckResponse struct {
 	// 【话题】话题查询
@@ -285,8 +263,6 @@ type CreateMotionCheckResponse struct {
 	User *CreateMotionCheckUser `json:"user"`
 	// 【用户】 用户信息完整性检查
 	UserInfoCompletenessCheck *CreateMotionCheckUserInfoCompletenessCheckUserInfoCompleteness `json:"userInfoCompletenessCheck"`
-	// 【用户】等级详情
-	LevelDetail *CreateMotionCheckLevelDetail `json:"levelDetail"`
 }
 
 // GetTopic returns CreateMotionCheckResponse.Topic, and is useful for accessing the field via an interface.
@@ -301,11 +277,6 @@ func (v *CreateMotionCheckResponse) GetUser() *CreateMotionCheckUser { return v.
 // GetUserInfoCompletenessCheck returns CreateMotionCheckResponse.UserInfoCompletenessCheck, and is useful for accessing the field via an interface.
 func (v *CreateMotionCheckResponse) GetUserInfoCompletenessCheck() *CreateMotionCheckUserInfoCompletenessCheckUserInfoCompleteness {
 	return v.UserInfoCompletenessCheck
-}
-
-// GetLevelDetail returns CreateMotionCheckResponse.LevelDetail, and is useful for accessing the field via an interface.
-func (v *CreateMotionCheckResponse) GetLevelDetail() *CreateMotionCheckLevelDetail {
-	return v.LevelDetail
 }
 
 // CreateMotionCheckTopic includes the requested fields of the GraphQL type Topic.
@@ -355,6 +326,88 @@ type CreateMotionCheckUserInfoCompletenessCheckUserInfoCompleteness struct {
 func (v *CreateMotionCheckUserInfoCompletenessCheckUserInfoCompleteness) GetFilled() bool {
 	return v.Filled
 }
+
+// CreateMotionOfferCheckBlacklistRelationshipUserPair includes the requested fields of the GraphQL type UserPair.
+type CreateMotionOfferCheckBlacklistRelationshipUserPair struct {
+	A string `json:"a"`
+	B string `json:"b"`
+}
+
+// GetA returns CreateMotionOfferCheckBlacklistRelationshipUserPair.A, and is useful for accessing the field via an interface.
+func (v *CreateMotionOfferCheckBlacklistRelationshipUserPair) GetA() string { return v.A }
+
+// GetB returns CreateMotionOfferCheckBlacklistRelationshipUserPair.B, and is useful for accessing the field via an interface.
+func (v *CreateMotionOfferCheckBlacklistRelationshipUserPair) GetB() string { return v.B }
+
+// CreateMotionOfferCheckLevelDetail includes the requested fields of the GraphQL type LevelDetail.
+type CreateMotionOfferCheckLevelDetail struct {
+	// 当前等级的权益
+	Rights *CreateMotionOfferCheckLevelDetailRightsLevelRights `json:"rights"`
+}
+
+// GetRights returns CreateMotionOfferCheckLevelDetail.Rights, and is useful for accessing the field via an interface.
+func (v *CreateMotionOfferCheckLevelDetail) GetRights() *CreateMotionOfferCheckLevelDetailRightsLevelRights {
+	return v.Rights
+}
+
+// CreateMotionOfferCheckLevelDetailRightsLevelRights includes the requested fields of the GraphQL type LevelRights.
+type CreateMotionOfferCheckLevelDetailRightsLevelRights struct {
+	// 性别选择
+	GenderSelection bool `json:"genderSelection"`
+}
+
+// GetGenderSelection returns CreateMotionOfferCheckLevelDetailRightsLevelRights.GenderSelection, and is useful for accessing the field via an interface.
+func (v *CreateMotionOfferCheckLevelDetailRightsLevelRights) GetGenderSelection() bool {
+	return v.GenderSelection
+}
+
+// CreateMotionOfferCheckResponse is returned by CreateMotionOfferCheck on success.
+type CreateMotionOfferCheckResponse struct {
+	// 【用户】获取用户信息
+	User *CreateMotionOfferCheckUser `json:"user"`
+	// 【用户】等级详情
+	LevelDetail *CreateMotionOfferCheckLevelDetail `json:"levelDetail"`
+	// 【黑名单】获取指定 userId 之间的黑名单关系
+	BlacklistRelationship []*CreateMotionOfferCheckBlacklistRelationshipUserPair `json:"blacklistRelationship"`
+}
+
+// GetUser returns CreateMotionOfferCheckResponse.User, and is useful for accessing the field via an interface.
+func (v *CreateMotionOfferCheckResponse) GetUser() *CreateMotionOfferCheckUser { return v.User }
+
+// GetLevelDetail returns CreateMotionOfferCheckResponse.LevelDetail, and is useful for accessing the field via an interface.
+func (v *CreateMotionOfferCheckResponse) GetLevelDetail() *CreateMotionOfferCheckLevelDetail {
+	return v.LevelDetail
+}
+
+// GetBlacklistRelationship returns CreateMotionOfferCheckResponse.BlacklistRelationship, and is useful for accessing the field via an interface.
+func (v *CreateMotionOfferCheckResponse) GetBlacklistRelationship() []*CreateMotionOfferCheckBlacklistRelationshipUserPair {
+	return v.BlacklistRelationship
+}
+
+// CreateMotionOfferCheckUser includes the requested fields of the GraphQL type User.
+type CreateMotionOfferCheckUser struct {
+	// 用户封禁信息
+	BlockInfo *CreateMotionOfferCheckUserBlockInfo `json:"blockInfo"`
+}
+
+// GetBlockInfo returns CreateMotionOfferCheckUser.BlockInfo, and is useful for accessing the field via an interface.
+func (v *CreateMotionOfferCheckUser) GetBlockInfo() *CreateMotionOfferCheckUserBlockInfo {
+	return v.BlockInfo
+}
+
+// CreateMotionOfferCheckUserBlockInfo includes the requested fields of the GraphQL type UserBlockInfo.
+type CreateMotionOfferCheckUserBlockInfo struct {
+	// 是否用户封禁，封禁则整个APP无法使用
+	UserBlocked bool `json:"userBlocked"`
+	// 是否匹配封禁，封禁则无法加入新的匹配
+	MatchingBlocked bool `json:"matchingBlocked"`
+}
+
+// GetUserBlocked returns CreateMotionOfferCheckUserBlockInfo.UserBlocked, and is useful for accessing the field via an interface.
+func (v *CreateMotionOfferCheckUserBlockInfo) GetUserBlocked() bool { return v.UserBlocked }
+
+// GetMatchingBlocked returns CreateMotionOfferCheckUserBlockInfo.MatchingBlocked, and is useful for accessing the field via an interface.
+func (v *CreateMotionOfferCheckUserBlockInfo) GetMatchingBlocked() bool { return v.MatchingBlocked }
 
 type ExtraOptionKey string
 
@@ -1004,6 +1057,18 @@ func (v *__CreateMotionCheckInput) GetCityId() string { return v.CityId }
 // GetUserId returns __CreateMotionCheckInput.UserId, and is useful for accessing the field via an interface.
 func (v *__CreateMotionCheckInput) GetUserId() string { return v.UserId }
 
+// __CreateMotionOfferCheckInput is used internally by genqlient
+type __CreateMotionOfferCheckInput struct {
+	UserId string   `json:"userId"`
+	Ids    []string `json:"ids"`
+}
+
+// GetUserId returns __CreateMotionOfferCheckInput.UserId, and is useful for accessing the field via an interface.
+func (v *__CreateMotionOfferCheckInput) GetUserId() string { return v.UserId }
+
+// GetIds returns __CreateMotionOfferCheckInput.Ids, and is useful for accessing the field via an interface.
+func (v *__CreateMotionOfferCheckInput) GetIds() []string { return v.Ids }
+
 // __GetAllTopicAndCategoryAndTopicNameInput is used internally by genqlient
 type __GetAllTopicAndCategoryAndTopicNameInput struct {
 	Paginator *GraphQLPaginator `json:"paginator,omitempty"`
@@ -1220,11 +1285,6 @@ query CreateMotionCheck ($topicId: String!, $cityId: AreaCode!, $userId: String!
 	userInfoCompletenessCheck(userId: $userId) {
 		filled
 	}
-	levelDetail(userId: $userId) {
-		rights {
-			genderSelection(userId: $userId)
-		}
-	}
 }
 `
 
@@ -1247,6 +1307,55 @@ func CreateMotionCheck(
 	var err error
 
 	var data CreateMotionCheckResponse
+	resp := &graphql.Response{Data: &data}
+
+	err = client.MakeRequest(
+		ctx,
+		req,
+		resp,
+	)
+
+	return &data, err
+}
+
+// The query or mutation executed by CreateMotionOfferCheck.
+const CreateMotionOfferCheck_Operation = `
+query CreateMotionOfferCheck ($userId: String!, $ids: [String!]!) {
+	user(id: $userId) {
+		blockInfo {
+			userBlocked
+			matchingBlocked
+		}
+	}
+	levelDetail(userId: $userId) {
+		rights {
+			genderSelection(userId: $userId)
+		}
+	}
+	blacklistRelationship(ids: $ids) {
+		a
+		b
+	}
+}
+`
+
+func CreateMotionOfferCheck(
+	ctx context.Context,
+	client graphql.Client,
+	userId string,
+	ids []string,
+) (*CreateMotionOfferCheckResponse, error) {
+	req := &graphql.Request{
+		OpName: "CreateMotionOfferCheck",
+		Query:  CreateMotionOfferCheck_Operation,
+		Variables: &__CreateMotionOfferCheckInput{
+			UserId: userId,
+			Ids:    ids,
+		},
+	}
+	var err error
+
+	var data CreateMotionOfferCheckResponse
 	resp := &graphql.Response{Data: &data}
 
 	err = client.MakeRequest(

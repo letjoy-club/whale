@@ -25,7 +25,7 @@ var (
 	ErrTopicNotExisted           = midacode.NewError("TOPIC_NOT_EXISTED", "话题不存在", midacode.LogLevelWarn)
 	ErrUserIDCannotBeEmpty       = midacode.NewError("USER_ID_CANNOT_BE_EMPTY", "用户 id 不能为空", midacode.LogLevelWarn)
 	ErrUserInfoNotComplete       = midacode.NewError("USER_INFO_NOT_COMPLETE", "用户信息未完善，请先补充", midacode.LogLevelWarn)
-	ErrUserBlocked               = midacode.NewError("USER_BLOCKED", "用户已被封禁，无法发起匹配", midacode.LogLevelWarn)
+	ErrUserBlocked               = midacode.NewError("USER_BLOCKED", "您已被封禁", midacode.LogLevelWarn)
 	ErrUserInBlacklist           = midacode.NewError("USER_IN_BLACKLIST", "对方已将您加入黑名单，无法邀请", midacode.LogLevelWarn)
 	ErrInviteeInBlacklist        = midacode.NewError("INVITEE_IN_BLACKLIST", "您已将对方加入黑名单，无法邀请", midacode.LogLevelWarn)
 	ErrInviteeNotExist           = midacode.NewError("INVITEE_NOT_EXISTED", "您邀请的人不存在", midacode.LogLevelWarn)
@@ -33,6 +33,7 @@ var (
 	ErrInviteeBlocked            = midacode.NewError("INVITEE_BLOCKED", "对方已被封禁，无法发起邀请", midacode.LogLevelWarn)
 	ErrUserInYourBlacklist       = midacode.NewError("USER_IN_YOUR_BLACKLIST", "对方被您加入黑名单，无法邀约", midacode.LogLevelWarn)
 	ErrYouAreInUserBlacklist     = midacode.NewError("YOU_ARE_IN_USER_BLACKLIST", "您被对方加入黑名单，无法邀约", midacode.LogLevelWarn)
+	ErrCannotOfferFemale         = midacode.NewError("CAN_NOT_OFFER_FEMALE", "无法向女生发起邀约，先去提升等级吧", midacode.LogLevelWarn)
 
 	ErrIsAlreadyHasActiveMotionOfTopic              = midacode.NewError("IS_ALREADY_HAS_ACTIVE_MOTION_OF_TOPIC", "已经有该话题的活动卡片", midacode.LogLevelWarn)
 	ErrMyMotionOfferQuotaNotEnough                  = midacode.NewError("MY_MOTION_OFFER_QUOTA_NOT_ENOUGH", "您的邀约次数不足", midacode.LogLevelWarn)

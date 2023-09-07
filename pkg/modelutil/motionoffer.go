@@ -38,18 +38,11 @@ func CreateMotionOffer(ctx context.Context, myUserID, myMotionID, targetMotionID
 			return "", midacode.ErrNotPermitted
 		}
 	}
-	if targetMotion.UserID == myUserID {
-		return "", whalecode.ErrCannotSendMatchingOfferToSelf
+
+	if err := checkCreateMotionOffer(ctx, myMotion, targetMotion); err != nil {
+		return "", err
 	}
-	if myMotion.TopicID != targetMotion.TopicID {
-		return "", whalecode.ErrCannotSendMatchingOfferToDifferentTopic
-	}
-	if !myMotion.Active {
-		return "", whalecode.ErrYourMotionIsNotActive
-	}
-	if !targetMotion.Active {
-		return "", whalecode.ErrTheMotionIsNotActive
-	}
+
 	// 额度检查
 	myConstraintThunk := midacontext.GetLoader[loader.Loader](ctx).DurationConstraint.Load(ctx, myMotion.UserID)
 	myConstraint, err := myConstraintThunk()
@@ -66,21 +59,6 @@ func CreateMotionOffer(ctx context.Context, myUserID, myMotionID, targetMotionID
 	}
 	if targetConstraint.RemainOfferQuota <= 0 { // 限制每周可发起的 motionOffer 次数
 		return "", whalecode.ErrTargetMotionOfferQuotaNotEnough
-	}
-
-	// 拉黑检查
-	resp, err := hoopoe.GetBlacklistRelationship(ctx, midacontext.GetServices(ctx).Hoopoe, []string{myMotion.UserID, targetMotion.UserID})
-	if err != nil {
-		return "", err
-	}
-	if resp.BlacklistRelationship != nil && len(resp.BlacklistRelationship) > 0 {
-		for _, pair := range resp.BlacklistRelationship {
-			if pair.A == myMotion.UserID {
-				return "", whalecode.ErrUserInYourBlacklist
-			} else {
-				return "", whalecode.ErrYouAreInUserBlacklist
-			}
-		}
 	}
 
 	db := dbutil.GetDB(ctx)
@@ -203,6 +181,46 @@ func CreateMotionOffer(ctx context.Context, myUserID, myMotionID, targetMotionID
 	midacontext.GetLoader[loader.Loader](ctx).OutMotionOfferRecord.Clear(ctx, targetMotionID)
 
 	return groupId, err
+}
+
+func checkCreateMotionOffer(ctx context.Context, myMotion, targetMotion *models.Motion) error {
+	if targetMotion.UserID == myMotion.UserID {
+		return whalecode.ErrCannotSendMatchingOfferToSelf
+	}
+	if myMotion.TopicID != targetMotion.TopicID {
+		return whalecode.ErrCannotSendMatchingOfferToDifferentTopic
+	}
+	if !myMotion.Active {
+		return whalecode.ErrYourMotionIsNotActive
+	}
+	if !targetMotion.Active {
+		return whalecode.ErrTheMotionIsNotActive
+	}
+
+	// 用户相关信息查询
+	resp, err := hoopoe.CreateMotionOfferCheck(ctx, midacontext.GetServices(ctx).Hoopoe, myMotion.UserID, []string{myMotion.UserID, targetMotion.UserID})
+	if err != nil {
+		return err
+	}
+	// 封禁检查
+	if resp.User.BlockInfo.UserBlocked || resp.User.BlockInfo.MatchingBlocked {
+		return whalecode.ErrUserBlocked
+	}
+	// 性别检查
+	if !resp.LevelDetail.Rights.GenderSelection && targetMotion.MyGender == string(models.GenderF) {
+		return whalecode.ErrCannotOfferFemale
+	}
+	// 拉黑检查
+	if resp.BlacklistRelationship != nil && len(resp.BlacklistRelationship) > 0 {
+		for _, pair := range resp.BlacklistRelationship {
+			if pair.A == myMotion.UserID {
+				return whalecode.ErrUserInYourBlacklist
+			} else {
+				return whalecode.ErrYouAreInUserBlacklist
+			}
+		}
+	}
+	return nil
 }
 
 func AcceptMotionOffer(ctx context.Context, myUserID, myMotionID, targetMotionID string) error {

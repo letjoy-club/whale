@@ -178,9 +178,25 @@ query CreateMotionCheck(
   userInfoCompletenessCheck(userId: $userId) {
     filled
   }
+}
+
+query CreateMotionOfferCheck(
+  $userId: String!
+  $ids: [String!]!
+) {
+  user(id: $userId) {
+    blockInfo {
+      userBlocked
+      matchingBlocked
+    }
+  }
   levelDetail(userId: $userId) {
     rights {
       genderSelection(userId: $userId)
     }
+  }
+  blacklistRelationship(ids: $ids) {
+    a
+    b
   }
 }
