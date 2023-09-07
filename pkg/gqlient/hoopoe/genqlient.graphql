@@ -200,3 +200,7 @@ query CreateMotionOfferCheck(
     b
   }
 }
+
+mutation TextCheck($userId: String!, $content: String!) {
+  textCheck(userId: $userId, content: $content)
+}

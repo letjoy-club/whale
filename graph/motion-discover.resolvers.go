@@ -353,7 +353,7 @@ func (r *mutationResolver) SendMotionOfferAcceptMessage(ctx context.Context, id 
 }
 
 // DiscoverCategoryMotions is the resolver for the discoverCategoryMotions field.
-func (r *queryResolver) DiscoverCategoryMotions(ctx context.Context, userID *string, filter *models.DiscoverTopicCategoryMotionFilter, topicCategoryID string, nextToken *string) (*models.DiscoverMotionResult, error) {
+func (r *queryResolver) DiscoverCategoryMotions(ctx context.Context, userID *string, filter models.DiscoverTopicCategoryMotionFilter, topicCategoryID *string, nextToken *string) (*models.DiscoverMotionResult, error) {
 	err := midacontext.GetLoader[loader.Loader](ctx).AllMotion.Load(ctx)
 	if err != nil {
 		return nil, err
@@ -362,21 +362,33 @@ func (r *queryResolver) DiscoverCategoryMotions(ctx context.Context, userID *str
 	if nextToken != nil {
 		next = *nextToken
 	}
+
 	opt := loader.UserDiscoverMotionOpt{
 		N:         6,
 		NextToken: next,
 		Gender:    models.GenderN,
 	}
-	if filter != nil {
-		if filter.CityID != nil {
-			opt.CityID = *filter.CityID
+
+	if filter.CategoryID != nil {
+		opt.CategoryID = *filter.CategoryID
+	} else {
+		if topicCategoryID != nil {
+			opt.CategoryID = *topicCategoryID
 		}
-		if filter.Gender != nil {
-			opt.Gender = *filter.Gender
-		}
-		if len(filter.TopicIds) > 0 {
-			opt.TopicIDs = filter.TopicIds
-		}
+	}
+
+	if opt.CategoryID == "" {
+		opt.CategoryID = loader.AllCategoryID
+	}
+
+	if filter.CityID != nil {
+		opt.CityID = *filter.CityID
+	}
+	if filter.Gender != nil {
+		opt.Gender = *filter.Gender
+	}
+	if len(filter.TopicIds) > 0 {
+		opt.TopicIDs = filter.TopicIds
 	}
 	opt.NextToken = next
 
@@ -386,9 +398,9 @@ func (r *queryResolver) DiscoverCategoryMotions(ctx context.Context, userID *str
 	var ids []string
 	var retNext string
 	if uid != "" {
-		ids, retNext = midacontext.GetLoader[loader.Loader](ctx).AllMotion.LoadForUser(ctx, uid, topicCategoryID, opt)
+		ids, retNext = midacontext.GetLoader[loader.Loader](ctx).AllMotion.LoadForUser(ctx, uid, opt)
 	} else {
-		ids = midacontext.GetLoader[loader.Loader](ctx).AllMotion.LoadForAnoumynous(ctx, topicCategoryID, opt)
+		ids = midacontext.GetLoader[loader.Loader](ctx).AllMotion.LoadForAnoumynous(ctx, opt)
 	}
 	thunk := midacontext.GetLoader[loader.Loader](ctx).Motion.LoadMany(ctx, ids)
 	motions, err := utils.ReturnThunk(thunk)
@@ -399,7 +411,7 @@ func (r *queryResolver) DiscoverCategoryMotions(ctx context.Context, userID *str
 }
 
 // DiscoverLatestCategoryMotions is the resolver for the discoverLatestCategoryMotions field.
-func (r *queryResolver) DiscoverLatestCategoryMotions(ctx context.Context, filter models.DiscoverTopicCategoryMotionFilter, topicCategoryID string, lastID *string) ([]*models.Motion, error) {
+func (r *queryResolver) DiscoverLatestCategoryMotions(ctx context.Context, filter models.DiscoverTopicCategoryMotionFilter, topicCategoryID *string, lastID *string) ([]*models.Motion, error) {
 	err := midacontext.GetLoader[loader.Loader](ctx).AllMotion.Load(ctx)
 	if err != nil {
 		return nil, err
@@ -408,6 +420,19 @@ func (r *queryResolver) DiscoverLatestCategoryMotions(ctx context.Context, filte
 		N:      6,
 		Gender: models.GenderN,
 	}
+
+	if filter.CategoryID != nil {
+		opt.CategoryID = *filter.CategoryID
+	} else {
+		if topicCategoryID != nil {
+			opt.CategoryID = *topicCategoryID
+		}
+	}
+
+	if opt.CategoryID == "" {
+		opt.CategoryID = loader.AllCategoryID
+	}
+
 	if lastID != nil {
 		opt.LastID = *lastID
 	}
@@ -420,9 +445,12 @@ func (r *queryResolver) DiscoverLatestCategoryMotions(ctx context.Context, filte
 	if len(filter.TopicIds) > 0 {
 		opt.TopicIDs = filter.TopicIds
 	}
+	if opt.CategoryID == "" {
+		opt.CategoryID = loader.AllCategoryID
+	}
 
 	var ids []string
-	ids = midacontext.GetLoader[loader.Loader](ctx).AllMotion.GetOrderedMotions(ctx, topicCategoryID, opt)
+	ids = midacontext.GetLoader[loader.Loader](ctx).AllMotion.GetOrderedMotions(ctx, opt)
 
 	thunk := midacontext.GetLoader[loader.Loader](ctx).Motion.LoadMany(ctx, ids)
 	motions, err := utils.ReturnThunk(thunk)

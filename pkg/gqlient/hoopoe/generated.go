@@ -900,6 +900,28 @@ func (v *GraphQLPaginator) GetPage() int { return v.Page }
 // GetSize returns GraphQLPaginator.Size, and is useful for accessing the field via an interface.
 func (v *GraphQLPaginator) GetSize() int { return v.Size }
 
+// TextCheckResponse is returned by TextCheck on success.
+type TextCheckResponse struct {
+	// 【系统】用户检查文本内容是否违规，内部使用
+	TextCheck TextCheckResult `json:"textCheck"`
+}
+
+// GetTextCheck returns TextCheckResponse.TextCheck, and is useful for accessing the field via an interface.
+func (v *TextCheckResponse) GetTextCheck() TextCheckResult { return v.TextCheck }
+
+type TextCheckResult string
+
+const (
+	// 有风险
+	TextCheckResultRisky TextCheckResult = "risky"
+	// 无风险
+	TextCheckResultPass TextCheckResult = "pass"
+	// 需要审核
+	TextCheckResultReview TextCheckResult = "review"
+	// 微信专有：用户两小时内没访问过小程序，无法进行查询，结果未知
+	TextCheckResultUnknown TextCheckResult = "unknown"
+)
+
 // TopicOptionConfigFields includes the GraphQL fields of TopicOptionConfig requested by the fragment TopicOptionConfigFields.
 type TopicOptionConfigFields struct {
 	TopicId    string `json:"topicId"`
@@ -1150,6 +1172,18 @@ type __GetUserByIDsInput struct {
 
 // GetIds returns __GetUserByIDsInput.Ids, and is useful for accessing the field via an interface.
 func (v *__GetUserByIDsInput) GetIds() []string { return v.Ids }
+
+// __TextCheckInput is used internally by genqlient
+type __TextCheckInput struct {
+	UserId  string `json:"userId"`
+	Content string `json:"content"`
+}
+
+// GetUserId returns __TextCheckInput.UserId, and is useful for accessing the field via an interface.
+func (v *__TextCheckInput) GetUserId() string { return v.UserId }
+
+// GetContent returns __TextCheckInput.Content, and is useful for accessing the field via an interface.
+func (v *__TextCheckInput) GetContent() string { return v.Content }
 
 // The query or mutation executed by CreateMatchingCheck.
 const CreateMatchingCheck_Operation = `
@@ -1770,6 +1804,41 @@ func GetUserByIDs(
 	var err error
 
 	var data GetUserByIDsResponse
+	resp := &graphql.Response{Data: &data}
+
+	err = client.MakeRequest(
+		ctx,
+		req,
+		resp,
+	)
+
+	return &data, err
+}
+
+// The query or mutation executed by TextCheck.
+const TextCheck_Operation = `
+mutation TextCheck ($userId: String!, $content: String!) {
+	textCheck(userId: $userId, content: $content)
+}
+`
+
+func TextCheck(
+	ctx context.Context,
+	client graphql.Client,
+	userId string,
+	content string,
+) (*TextCheckResponse, error) {
+	req := &graphql.Request{
+		OpName: "TextCheck",
+		Query:  TextCheck_Operation,
+		Variables: &__TextCheckInput{
+			UserId:  userId,
+			Content: content,
+		},
+	}
+	var err error
+
+	var data TextCheckResponse
 	resp := &graphql.Response{Data: &data}
 
 	err = client.MakeRequest(

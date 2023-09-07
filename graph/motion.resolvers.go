@@ -298,11 +298,20 @@ func (r *queryResolver) Motions(ctx context.Context, filter *models.MotionFilter
 		if filter.CityID != nil {
 			query = query.Where(Motion.CityID.Eq(*filter.CityID))
 		}
+		if filter.TopicID != nil {
+			query = query.Where(Motion.TopicID.Eq(*filter.TopicID))
+		}
+		if filter.Before != nil {
+			query = query.Where(Motion.CreatedAt.Lt(*filter.Before))
+		}
+		if filter.After != nil {
+			query = query.Where(Motion.CreatedAt.Gt(*filter.After))
+		}
 	}
 
 	pager := graphqlutil.GetPager(paginator)
 
-	err := query.Limit(pager.Limit()).Offset(pager.Offset()).Pluck(Motion.ID, &ids)
+	err := query.Limit(pager.Limit()).Offset(pager.Offset()).Order(Motion.ID.Desc()).Pluck(Motion.ID, &ids)
 	if err != nil {
 		return nil, nil
 	}
@@ -329,6 +338,15 @@ func (r *queryResolver) MotionsCount(ctx context.Context, filter *models.MotionF
 		}
 		if filter.CityID != nil {
 			query = query.Where(Motion.CityID.Eq(*filter.CityID))
+		}
+		if filter.TopicID != nil {
+			query = query.Where(Motion.TopicID.Eq(*filter.TopicID))
+		}
+		if filter.Before != nil {
+			query = query.Where(Motion.CreatedAt.Lt(*filter.Before))
+		}
+		if filter.After != nil {
+			query = query.Where(Motion.CreatedAt.Gt(*filter.After))
 		}
 	}
 

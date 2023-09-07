@@ -16,6 +16,9 @@ input CreateMotionParam {
 
   remark: String
 
+  "是否极速搭"
+  quick: Boolean
+
   deadline: Time
 }
 
@@ -38,6 +41,9 @@ input UpdateMotionParam {
 
   remark: String
 
+  "是否极速搭"
+  quick: Boolean
+
   deadline: Time
 }
 
@@ -55,6 +61,10 @@ input MotionFilter {
   userId: String
   cityId: String
   gender: Gender
+  topicId: String
+
+  before: Time
+  after: Time
 }
 
 extend type Query {
