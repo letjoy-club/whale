@@ -7,8 +7,8 @@ import (
 	"whale/pkg/dbquery"
 	"whale/pkg/gqlient/hoopoe"
 	"whale/pkg/models"
+	"whale/pkg/utils"
 
-	"github.com/golang-module/carbon"
 	"github.com/graph-gophers/dataloader/v7"
 	"github.com/letjoy-club/mida-tool/loaderutil"
 	"github.com/samber/lo"
@@ -48,8 +48,8 @@ func NewDurationConstraintLoader(db *gorm.DB) *dataloader.Loader[string, *models
 			}
 		}
 		// 创建记录
-		weekStart := carbon.Now().StartOfWeek().ToStdTime()
-		weekEnd := carbon.Now().EndOfWeek().ToStdTime()
+		weekStart := utils.StartTimeOfWeek(time.Now())
+		weekEnd := weekStart.AddDate(0, 0, 7)
 		constraints := lo.Map(userIDs, func(userID string, i int) *models.DurationConstraint {
 			level := userMap[userID].Level
 			levelRights, _ := lo.Find(levelConfig.Rights, func(item *models.LevelRights) bool {
