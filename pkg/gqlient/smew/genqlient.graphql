@@ -26,10 +26,6 @@ mutation SendTextMessage(
   sendTextMessage(chatGroupId: $chatGroupId, sender: $sender, text: $text)
 }
 
-mutation DestroyGroup($groupId: String!) {
-  destroyGroup(groupId: $groupId)
-}
-
 mutation CloseGroup($groupId: String!, $reason: GroupCloseReason!) {
   closeGroup(groupId: $groupId, reason: $reason)
 }

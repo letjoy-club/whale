@@ -76,19 +76,11 @@ type CreateTimGroupResponse struct {
 // GetCreateTimGroup returns CreateTimGroupResponse.CreateTimGroup, and is useful for accessing the field via an interface.
 func (v *CreateTimGroupResponse) GetCreateTimGroup() string { return v.CreateTimGroup }
 
-// DestroyGroupResponse is returned by DestroyGroup on success.
-type DestroyGroupResponse struct {
-	// 【群组】解散群组
-	DestroyGroup string `json:"destroyGroup"`
-}
-
-// GetDestroyGroup returns DestroyGroupResponse.DestroyGroup, and is useful for accessing the field via an interface.
-func (v *DestroyGroupResponse) GetDestroyGroup() string { return v.DestroyGroup }
-
 type GroupCloseReason string
 
 const (
 	GroupCloseReasonAccepttimeout GroupCloseReason = "AcceptTimeout"
+	GroupCloseReasonSystemclose   GroupCloseReason = "SystemClose"
 	GroupCloseReasonTimeout       GroupCloseReason = "Timeout"
 	GroupCloseReasonUserclose     GroupCloseReason = "UserClose"
 	GroupCloseReasonUserreject    GroupCloseReason = "UserReject"
@@ -155,14 +147,6 @@ type __CreateTimGroupInput struct {
 
 // GetChatGroupId returns __CreateTimGroupInput.ChatGroupId, and is useful for accessing the field via an interface.
 func (v *__CreateTimGroupInput) GetChatGroupId() string { return v.ChatGroupId }
-
-// __DestroyGroupInput is used internally by genqlient
-type __DestroyGroupInput struct {
-	GroupId string `json:"groupId"`
-}
-
-// GetGroupId returns __DestroyGroupInput.GroupId, and is useful for accessing the field via an interface.
-func (v *__DestroyGroupInput) GetGroupId() string { return v.GroupId }
 
 // __GroupMemberLeaveInput is used internally by genqlient
 type __GroupMemberLeaveInput struct {
@@ -319,39 +303,6 @@ func CreateTimGroup(
 	var err error
 
 	var data CreateTimGroupResponse
-	resp := &graphql.Response{Data: &data}
-
-	err = client.MakeRequest(
-		ctx,
-		req,
-		resp,
-	)
-
-	return &data, err
-}
-
-// The query or mutation executed by DestroyGroup.
-const DestroyGroup_Operation = `
-mutation DestroyGroup ($groupId: String!) {
-	destroyGroup(groupId: $groupId)
-}
-`
-
-func DestroyGroup(
-	ctx context.Context,
-	client graphql.Client,
-	groupId string,
-) (*DestroyGroupResponse, error) {
-	req := &graphql.Request{
-		OpName: "DestroyGroup",
-		Query:  DestroyGroup_Operation,
-		Variables: &__DestroyGroupInput{
-			GroupId: groupId,
-		},
-	}
-	var err error
-
-	var data DestroyGroupResponse
 	resp := &graphql.Response{Data: &data}
 
 	err = client.MakeRequest(
