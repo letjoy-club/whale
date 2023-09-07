@@ -8,6 +8,14 @@ import (
 	"github.com/Khan/genqlient/graphql"
 )
 
+// CloseGroupResponse is returned by CloseGroup on success.
+type CloseGroupResponse struct {
+	CloseGroup string `json:"closeGroup"`
+}
+
+// GetCloseGroup returns CloseGroupResponse.CloseGroup, and is useful for accessing the field via an interface.
+func (v *CloseGroupResponse) GetCloseGroup() string { return v.CloseGroup }
+
 // CreateChatGroupResponse is returned by CreateChatGroup on success.
 type CreateChatGroupResponse struct {
 	// 【群组】创建匹配群组
@@ -18,37 +26,37 @@ type CreateChatGroupResponse struct {
 func (v *CreateChatGroupResponse) GetCreateGroup() string { return v.CreateGroup }
 
 type CreateMotionGroupParam struct {
-	// 匹配结果ID
-	ResultId int `json:"resultId"`
-	// 话题ID
-	TopicId string `json:"topicId"`
-	// 连接发起方ID
-	FromUserId string `json:"fromUserId"`
 	// 连接发起方Motion ID
 	FromMotionId string `json:"fromMotionId"`
 	// 连接发起方ID
-	ToUserId string `json:"toUserId"`
+	FromUserId string `json:"fromUserId"`
+	// 匹配结果ID
+	ResultId int `json:"resultId"`
 	// 连接发起方Motion ID
 	ToMotionId string `json:"toMotionId"`
+	// 连接发起方ID
+	ToUserId string `json:"toUserId"`
+	// 话题ID
+	TopicId string `json:"topicId"`
 }
-
-// GetResultId returns CreateMotionGroupParam.ResultId, and is useful for accessing the field via an interface.
-func (v *CreateMotionGroupParam) GetResultId() int { return v.ResultId }
-
-// GetTopicId returns CreateMotionGroupParam.TopicId, and is useful for accessing the field via an interface.
-func (v *CreateMotionGroupParam) GetTopicId() string { return v.TopicId }
-
-// GetFromUserId returns CreateMotionGroupParam.FromUserId, and is useful for accessing the field via an interface.
-func (v *CreateMotionGroupParam) GetFromUserId() string { return v.FromUserId }
 
 // GetFromMotionId returns CreateMotionGroupParam.FromMotionId, and is useful for accessing the field via an interface.
 func (v *CreateMotionGroupParam) GetFromMotionId() string { return v.FromMotionId }
 
-// GetToUserId returns CreateMotionGroupParam.ToUserId, and is useful for accessing the field via an interface.
-func (v *CreateMotionGroupParam) GetToUserId() string { return v.ToUserId }
+// GetFromUserId returns CreateMotionGroupParam.FromUserId, and is useful for accessing the field via an interface.
+func (v *CreateMotionGroupParam) GetFromUserId() string { return v.FromUserId }
+
+// GetResultId returns CreateMotionGroupParam.ResultId, and is useful for accessing the field via an interface.
+func (v *CreateMotionGroupParam) GetResultId() int { return v.ResultId }
 
 // GetToMotionId returns CreateMotionGroupParam.ToMotionId, and is useful for accessing the field via an interface.
 func (v *CreateMotionGroupParam) GetToMotionId() string { return v.ToMotionId }
+
+// GetToUserId returns CreateMotionGroupParam.ToUserId, and is useful for accessing the field via an interface.
+func (v *CreateMotionGroupParam) GetToUserId() string { return v.ToUserId }
+
+// GetTopicId returns CreateMotionGroupParam.TopicId, and is useful for accessing the field via an interface.
+func (v *CreateMotionGroupParam) GetTopicId() string { return v.TopicId }
 
 // CreateMotionGroupResponse is returned by CreateMotionGroup on success.
 type CreateMotionGroupResponse struct {
@@ -77,6 +85,15 @@ type DestroyGroupResponse struct {
 // GetDestroyGroup returns DestroyGroupResponse.DestroyGroup, and is useful for accessing the field via an interface.
 func (v *DestroyGroupResponse) GetDestroyGroup() string { return v.DestroyGroup }
 
+type GroupCloseReason string
+
+const (
+	GroupCloseReasonAccepttimeout GroupCloseReason = "AcceptTimeout"
+	GroupCloseReasonTimeout       GroupCloseReason = "Timeout"
+	GroupCloseReasonUserclose     GroupCloseReason = "UserClose"
+	GroupCloseReasonUserreject    GroupCloseReason = "UserReject"
+)
+
 // GroupMemberLeaveResponse is returned by GroupMemberLeave on success.
 type GroupMemberLeaveResponse struct {
 	// 【群组】群组成员离开
@@ -94,6 +111,18 @@ type SendTextMessageResponse struct {
 
 // GetSendTextMessage returns SendTextMessageResponse.SendTextMessage, and is useful for accessing the field via an interface.
 func (v *SendTextMessageResponse) GetSendTextMessage() string { return v.SendTextMessage }
+
+// __CloseGroupInput is used internally by genqlient
+type __CloseGroupInput struct {
+	GroupId string           `json:"groupId"`
+	Reason  GroupCloseReason `json:"reason"`
+}
+
+// GetGroupId returns __CloseGroupInput.GroupId, and is useful for accessing the field via an interface.
+func (v *__CloseGroupInput) GetGroupId() string { return v.GroupId }
+
+// GetReason returns __CloseGroupInput.Reason, and is useful for accessing the field via an interface.
+func (v *__CloseGroupInput) GetReason() GroupCloseReason { return v.Reason }
 
 // __CreateChatGroupInput is used internally by genqlient
 type __CreateChatGroupInput struct {
@@ -162,6 +191,41 @@ func (v *__SendTextMessageInput) GetSender() string { return v.Sender }
 
 // GetText returns __SendTextMessageInput.Text, and is useful for accessing the field via an interface.
 func (v *__SendTextMessageInput) GetText() string { return v.Text }
+
+// The query or mutation executed by CloseGroup.
+const CloseGroup_Operation = `
+mutation CloseGroup ($groupId: String!, $reason: GroupCloseReason!) {
+	closeGroup(groupId: $groupId, reason: $reason)
+}
+`
+
+func CloseGroup(
+	ctx context.Context,
+	client graphql.Client,
+	groupId string,
+	reason GroupCloseReason,
+) (*CloseGroupResponse, error) {
+	req := &graphql.Request{
+		OpName: "CloseGroup",
+		Query:  CloseGroup_Operation,
+		Variables: &__CloseGroupInput{
+			GroupId: groupId,
+			Reason:  reason,
+		},
+	}
+	var err error
+
+	var data CloseGroupResponse
+	resp := &graphql.Response{Data: &data}
+
+	err = client.MakeRequest(
+		ctx,
+		req,
+		resp,
+	)
+
+	return &data, err
+}
 
 // The query or mutation executed by CreateChatGroup.
 const CreateChatGroup_Operation = `
