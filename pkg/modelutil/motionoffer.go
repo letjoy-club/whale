@@ -335,7 +335,7 @@ func RejectMotionOffer(ctx context.Context, userID, myMotionID, targetMotionID s
 	err = dbquery.Use(db).Transaction(func(tx *dbquery.Query) error {
 		MotionOfferRecord := tx.MotionOfferRecord
 		if motionOffer.ChatGroupID != "" {
-			_, err := smew.DestroyGroup(ctx, midacontext.GetServices(ctx).Smew, motionOffer.ChatGroupID)
+			_, err := smew.CloseGroup(ctx, midacontext.GetServices(ctx).Smew, motionOffer.ChatGroupID, smew.GroupCloseReasonUserreject)
 			if err != nil {
 				return err
 			}
@@ -609,7 +609,7 @@ func ClearOutDateMotionOffer(ctx context.Context) error {
 					return midacode.ErrStateMayHaveChanged
 				}
 
-				if _, err := smew.DestroyGroup(ctx, midacontext.GetServices(ctx).Smew, record.ChatGroupID); err != nil {
+				if _, err := smew.CloseGroup(ctx, midacontext.GetServices(ctx).Smew, record.ChatGroupID, smew.GroupCloseReasonAccepttimeout); err != nil {
 					return err
 				}
 			}

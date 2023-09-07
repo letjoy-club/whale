@@ -1,3 +1,10 @@
+# This file was generated. Do not edit manually.
+
+schema {
+  query: Query
+  mutation: Mutation
+}
+
 directive @adminOnly on FIELD_DEFINITION
 
 directive @extends on OBJECT | INTERFACE
@@ -18,106 +25,47 @@ directive @requires(fields: _FieldSet!) on FIELD_DEFINITION
 
 directive @shareable on OBJECT | FIELD_DEFINITION
 
-"""
-The @specifiedBy built-in directive is used within the type system definition
-language to provide a scalar specification URL for specifying the behavior of
-custom scalar types.
-"""
-directive @specifiedBy(url: String!) on SCALAR
-
-directive @tag(name: String!) on FIELD_DEFINITION | INTERFACE | OBJECT | UNION | ARGUMENT_DEFINITION | SCALAR | ENUM | ENUM_VALUE | INPUT_OBJECT | INPUT_FIELD_DEFINITION
-
-scalar _Any
+directive @tag(name: String!) on SCALAR | OBJECT | FIELD_DEFINITION | ARGUMENT_DEFINITION | INTERFACE | UNION | ENUM | ENUM_VALUE | INPUT_OBJECT | INPUT_FIELD_DEFINITION
 
 union _Entity = ChatGroup | Message | Topic | User
 
-scalar _FieldSet
-
-type _Service {
-  sdl: String
-}
-
 type ChatGroup {
-  """群组ID"""
-  id: String!
-
-  """群组名称"""
-  name: String!
-
-  """匹配结果ID"""
-  resultId: Int!
-
-  """话题"""
-  topic: Topic
-
-  """
-  群组来源类型
-  Matching-匹配
-  Invitation-邀请
-  Motion-广场
-  """
-  sourceType: String
-
-  """TIM群组是否已创建"""
-  timCreated: Boolean!
-
-  """成员ID列表"""
-  memberIds: IDList!
-
-  """群组成员"""
-  members: [User!]!
-
-  """创建时间"""
-  createdAt: Time!
-
-  """最新一条消息"""
-  latestMessage: Message
-
-  """最新消息时间"""
-  latestMessageTime: Time!
-
-  """群组是否关闭"""
-  closed: Boolean!
-
-  """群组关闭时间"""
+  "群组关闭时间"
   closeAt: Time
-
-  """成员状态"""
+  "群组是否关闭"
+  closed: Boolean!
+  "创建时间"
+  createdAt: Time!
+  "群组ID"
+  id: String!
+  "最新一条消息"
+  latestMessage: Message
+  "最新消息时间"
+  latestMessageTime: Time!
+  "成员ID列表"
+  memberIds: IDList!
+  "成员状态"
   memberStatus: [GroupMember!]!
-
-  """聊天消息条数"""
+  "群组成员"
+  members: [User!]!
+  "聊天消息条数"
   messageCount: Int!
-}
-
-input ChatGroupFilter {
-  """成员ID"""
-  userId: String
-
-  """话题ID"""
-  topicId: String
-
-  """状态"""
-  state: String
-}
-
-input CreateMotionGroupParam {
-  """匹配结果ID"""
+  "群组名称"
+  name: String!
+  "匹配结果ID"
   resultId: Int!
+  "群组来源类型"
+  sourceType: GroupSourceType
+  "TIM群组是否已创建"
+  timCreated: Boolean!
+  "话题"
+  topic: Topic
+  """
 
-  """话题ID"""
-  topicId: String!
-
-  """连接发起方ID"""
-  fromUserId: String!
-
-  """连接发起方Motion ID"""
-  fromMotionId: String!
-
-  """连接发起方ID"""
-  toUserId: String!
-
-  """连接发起方Motion ID"""
-  toMotionId: String!
+  未读消息数量，仅限于SourceType=Offer && timCreated=false时可用
+  用户端可用，管理端全部返回0
+  """
+  unreadMsgNum: Int!
 }
 
 type Entity {
@@ -126,132 +74,51 @@ type Entity {
   findUserByID(id: String!): User!
 }
 
-input GraphQLPaginator {
-  page: Int!
-  size: Int!
-}
-
 type GroupMember {
-  """成员ID"""
-  memberId: String!
-
-  """是否退出群组"""
+  "是否退出群组"
   leaved: Boolean!
-
-  """退出时间"""
+  "退出时间"
   leavedAt: Time
-
-  """角色"""
-  role: String
-
-  """来源ID"""
+  "成员ID"
+  memberId: String!
+  "角色"
+  role: GroupMemberRole
+  "来源ID"
   sourceId: String
+  "未读消息数量，仅限于SourceType=Offer && timCreated=false时可用"
+  unreadMsgNum: Int!
 }
-
-scalar IDList
-
-scalar Map
 
 type Message {
-  """消息ID"""
-  id: Int!
-
-  """群组ID"""
+  "群组ID"
   groupId: String!
-
-  """消息发送者ID"""
-  userId: String!
-
-  """消息发送者"""
-  user: User!
-
-  """请求发起者ID，可以用来识别是否为管理员请求的"""
-  operatorId: String!
-
-  """消息序列号"""
-  msgSeq: Int!
-
-  """消息发送时间"""
-  msgTime: Time!
-
-  """在线消息，为1，否则为0"""
-  onlineOnlyFlag: Int!
-
-  """消息体"""
+  "消息ID"
+  id: Int!
+  "消息体"
   msgBody: [MsgBody!]!
-
-  """是否撤回"""
+  "消息序列号"
+  msgSeq: Int!
+  "消息发送时间"
+  msgTime: Time!
+  "在线消息，为1，否则为0"
+  onlineOnlyFlag: Int!
+  "请求发起者ID，可以用来识别是否为管理员请求的"
+  operatorId: String!
+  "是否撤回"
   recalled: Boolean!
-
-  """撤回时间"""
+  "撤回时间"
   recalledAt: Time
-}
-
-enum MessageType {
-  """
-  文字消息
-  msgContent样例：
-  {"Text":"text content"}
-  """
-  Text
-
-  """
-  图片消息
-  msgContent样例：
-  {
-  "UUID": "1853095_D61040894AC3DE44CDFFFB3EC7EB720F",
-  "ImageFormat": 1,
-  "ImageInfoArray": [
-  {
-  "Type": 1,           //原图
-  "Size": 1853095,
-  "Width": 2448,
-  "Height": 3264,
-  "URL": "http://xxx/3200490432214177468_144115198371610486_D61040894AC3DE44CDFFFB3EC7EB720F/0"
-  },
-  {
-  "Type": 2,      //大图
-  "Size": 2565240,
-  "Width": 0,
-  "Height": 0,
-  "URL": "http://xxx/3200490432214177468_144115198371610486_D61040894AC3DE44CDFFFB3EC7EB720F/720"
-  },
-  {
-  "Type": 3,   //缩略图
-  "Size": 12535,
-  "Width": 0,
-  "Height": 0,
-  "URL": "http://xxx/3200490432214177468_144115198371610486_D61040894AC3DE44CDFFFB3EC7EB720F/198"
-  }
-  ]
-  }
-  """
-  Image
-
-  """
-  位置消息
-  msgContent样例：
-  {"Desc": "someinfo","Latitude": 29.340656774469956,"Longitude": 116.77497920478824}
-  """
-  Location
-
-  """
-  motion卡片
-  msgContent样例：
-  {"MotionId":"id"}
-  """
-  MotionCard
-
-  """
-  微信号卡片
-  msgContent样例：
-  {"WechatNo":"no"}
-  """
-  WhchatCard
+  "消息发送者"
+  user: User!
+  "消息发送者ID"
+  userId: String!
 }
 
 type MsgBody {
+  "消息元素的内容，不同的 MsgType 有不同的 MsgContent 格式"
+  msgContent: Map!
   """
+
   消息元素类别
   TIMTextElem：文本消息
   TIMLocationElem：地理位置消息
@@ -259,157 +126,140 @@ type MsgBody {
   TIMImageElem：图像消息
   """
   msgType: String!
-
-  """消息元素的内容，不同的 MsgType 有不同的 MsgContent 格式"""
-  msgContent: Map!
 }
 
 type Mutation {
-  """【群组】创建匹配群组"""
+  closeGroup(
+    "群组ID"
+    groupId: String!,
+    "关闭原因"
+    reason: GroupCloseReason!
+  ): String
+  "【群组】创建匹配群组"
   createGroup(
-    """匹配结果ID"""
-    resultId: Int!
-
-    """话题ID"""
+    "成员ID"
+    memberIds: [String!]!,
+    "匹配结果ID"
+    resultId: Int!,
+    "话题ID"
     topicId: String!
-
-    """成员ID"""
-    memberIds: [String!]!
-  ): String!
-
-  """【群组】创建Motion群组"""
+  ): String! @deprecated(reason: "instead by createMatchingGroup and createInvitationGroup")
+  "【群组】创建邀请群组"
+  createInvitationGroup(param: CreateInvitationGroupParam!): String!
+  "【群组】创建匹配群组"
+  createMatchingGroup(param: CreateMatchingGroupParam!): String!
+  "【群组】创建Motion群组"
   createMotionGroup(param: CreateMotionGroupParam!): String!
-
-  """【群组】TIM群组创建——对内部群组适用"""
+  "【群组】TIM群组创建——对内部群组适用"
   createTimGroup(chatGroupId: String!): String
-
-  """【群组】群组成员离开"""
-  groupMemberLeave(
-    """群组ID"""
+  "【群组】解散群组"
+  destroyGroup(
+    "群组ID"
     groupId: String!
-
-    """退出成员ID"""
+  ): String
+  "【群组】群组成员离开"
+  groupMemberLeave(
+    "群组ID"
+    groupId: String!,
+    "退出成员ID"
     userId: String!
   ): String
-
-  """【群组】解散群组"""
-  destroyGroup(
-    """群组ID"""
-    groupId: String!
-  ): String
-
-  """【消息】发送文字消息"""
-  sendTextMessage(
-    """群组ID"""
+  "【消息】将消息标记为已读"
+  markMessageAsRead(
+    "群组ID"
     chatGroupId: String!
-
-    """发送者"""
-    sender: String!
-
-    """消息类型"""
+  ): String
+  "【消息】发送文字消息"
+  sendTextMessage(
+    "群组ID"
+    chatGroupId: String!,
+    "发送者"
+    sender: String!,
+    "消息类型"
     text: String!
   ): String
 }
 
 type Query {
-  """【用户】是否在线"""
-  isOnline(
-    """用户ID"""
-    userId: String!
-  ): Boolean!
-
-  """【群组】群组详情查询"""
-  chatGroup(
-    """群组ID"""
-    groupId: String!
-  ): ChatGroup!
-
-  """【群组】根据匹配结果查询群组详情，仅管理端和内部使用"""
-  chatGroupByResultId(
-    """匹配结果ID"""
-    resultId: Int!
-  ): ChatGroup
-
-  """【群组】群组列表查询，管理端使用"""
-  chatGroups(
-    """过滤条件"""
-    filter: ChatGroupFilter
-
-    """翻页器"""
-    paginator: GraphQLPaginator
-  ): [ChatGroup!]!
-
-  """【群组】群组列表总数查询，管理端使用"""
-  chatGroupsCount(
-    """过滤条件"""
-    filter: ChatGroupFilter
-  ): Summary!
-
-  """【群组】用户群组查询，客户端使用"""
-  userChatGroups(
-    """是否结束"""
-    closed: Boolean!
-
-    """翻页器"""
-    paginator: GraphQLPaginator
-  ): [ChatGroup!]
-
-  """【群组】用户群组查询，客户端使用"""
-  userChatGroupsCount(
-    """是否结束"""
-    closed: Boolean!
-  ): Summary!
-
-  """【消息】群组消息查询-向前翻页"""
-  groupMessagesPre(
-    """群组ID"""
-    groupId: String!
-
-    """上次返回最小Seq，不上送则返回最新的消息"""
-    lastSeq: Int
-  ): [Message!]!
-
-  """【消息】群组消息查询-向后翻页"""
-  groupMessagesNext(
-    """群组ID"""
-    groupId: String!
-
-    """上次返回最大Seq，不上送则返回最早的消息"""
-    lastSeq: Int
-  ): [Message!]!
-
-  """【消息】消息搜索-群组"""
-  searchMessageGroups(
-    """关键词"""
-    keyword: String!
-
-    """用户ID，管理端必填"""
-    userId: String
-  ): [SearchGroupResult!]
-
-  """【消息】消息搜索-消息"""
-  searchMessages(
-    """群组ID"""
-    groupId: String!
-
-    """关键词"""
-    keyword: String!
-
-    """用户ID，管理端必填"""
-    userId: String
-  ): [Message!]
   _entities(representations: [_Any!]!): [_Entity]!
   _service: _Service!
+  "【群组】群组详情查询"
+  chatGroup(
+    "群组ID"
+    groupId: String!
+  ): ChatGroup!
+  "【群组】根据匹配结果查询群组详情，仅管理端和内部使用"
+  chatGroupByResultId(
+    "匹配结果ID"
+    resultId: Int!
+  ): ChatGroup
+  "【群组】群组列表查询，管理端使用"
+  chatGroups(
+    "过滤条件"
+    filter: ChatGroupFilter,
+    "翻页器"
+    paginator: GraphQLPaginator
+  ): [ChatGroup!]!
+  "【群组】群组列表总数查询，管理端使用"
+  chatGroupsCount(
+    "过滤条件"
+    filter: ChatGroupFilter
+  ): Summary!
+  "【消息】群组消息查询-向后翻页"
+  groupMessagesNext(
+    "群组ID"
+    groupId: String!,
+    "上次返回最大Seq，不上送则返回最早的消息"
+    lastSeq: Int
+  ): [Message!]!
+  "【消息】群组消息查询-向前翻页"
+  groupMessagesPre(
+    "群组ID"
+    groupId: String!,
+    "上次返回最小Seq，不上送则返回最新的消息"
+    lastSeq: Int
+  ): [Message!]!
+  "【用户】是否在线"
+  isOnline(
+    "用户ID"
+    userId: String!
+  ): Boolean!
+  "【消息】消息搜索-群组"
+  searchMessageGroups(
+    "关键词"
+    keyword: String!,
+    "用户ID，管理端必填"
+    userId: String
+  ): [SearchGroupResult!]
+  "【消息】消息搜索-消息"
+  searchMessages(
+    "群组ID"
+    groupId: String!,
+    "关键词"
+    keyword: String!,
+    "用户ID，管理端必填"
+    userId: String
+  ): [Message!]
+  "【群组】用户群组查询，客户端使用"
+  userChatGroups(
+    "是否结束"
+    closed: Boolean!,
+    "翻页器"
+    paginator: GraphQLPaginator
+  ): [ChatGroup!]
+  "【群组】用户群组查询，客户端使用"
+  userChatGroupsCount(
+    "是否结束"
+    closed: Boolean!
+  ): Summary!
 }
 
 type SearchGroupResult {
-  """群组ID"""
-  groupId: String!
-
-  """群组信息"""
+  "群组信息"
   group: ChatGroup!
-
-  """消息数量"""
+  "群组ID"
+  groupId: String!
+  "消息数量"
   messageNum: Int!
 }
 
@@ -417,21 +267,112 @@ type Summary {
   count: Int!
 }
 
-scalar Time
-
 type Topic {
-  """话题ID"""
+  "话题ID"
   id: String!
 }
 
 type User {
-  """用户ID"""
+  "用户ID"
   id: String!
-
-  """是否在线"""
+  "是否在线"
   online: Boolean!
-
-  """IM登录密码"""
+  "IM登录密码"
   userSig: String
 }
 
+type _Service {
+  sdl: String
+}
+
+enum GroupCloseReason {
+  AcceptTimeout
+  Timeout
+  UserClose
+  UserReject
+}
+
+enum GroupMemberRole {
+  "邀请接收者：sourceType=Invitation"
+  Invitee
+  "邀请发起者：sourceType=Invitation"
+  Inviter
+  "匹配成员（sourceType=Matching）"
+  Member
+  "Offer接收者：sourceType=Offer"
+  OfferReceiver
+  "Offer发起者：sourceType=Offer"
+  OfferSender
+}
+
+enum GroupSourceType {
+  "邀请"
+  Invitation
+  "匹配"
+  Matching
+  "广场"
+  Offer
+}
+
+scalar IDList
+
+scalar Map
+
+scalar Time
+
+scalar _Any
+
+scalar _FieldSet
+
+input ChatGroupFilter {
+  "状态"
+  state: String
+  "话题ID"
+  topicId: String
+  "成员ID"
+  userId: String
+}
+
+input CreateInvitationGroupParam {
+  "邀请ID"
+  invitationId: String!
+  "被邀请者ID"
+  inviteeId: String!
+  "邀请者ID"
+  inviterId: String!
+  "匹配结果ID"
+  resultId: Int!
+  "话题ID"
+  topicId: String!
+}
+
+input CreateMatchingGroupParam {
+  "匹配ID，必须和memberIds顺序相同"
+  matchingIds: [String!]!
+  "成员ID"
+  memberIds: [String!]!
+  "匹配结果ID"
+  resultId: Int!
+  "话题ID"
+  topicId: String!
+}
+
+input CreateMotionGroupParam {
+  "连接发起方Motion ID"
+  fromMotionId: String!
+  "连接发起方ID"
+  fromUserId: String!
+  "匹配结果ID"
+  resultId: Int!
+  "连接发起方Motion ID"
+  toMotionId: String!
+  "连接发起方ID"
+  toUserId: String!
+  "话题ID"
+  topicId: String!
+}
+
+input GraphQLPaginator {
+  page: Int!
+  size: Int!
+}
