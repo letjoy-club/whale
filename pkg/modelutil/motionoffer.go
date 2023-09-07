@@ -679,7 +679,7 @@ func FinishMotionOffer(ctx context.Context, myUserID, fromMatchingID, toMatching
 		if record.ChatGroupID != "" {
 			smewClient := midacontext.GetServices(ctx).Smew
 			if myUserID == "" { // 管理端关闭
-				if _, err := smew.DestroyGroup(ctx, smewClient, record.ChatGroupID); err != nil {
+				if _, err := smew.CloseGroup(ctx, smewClient, record.ChatGroupID, smew.GroupCloseReasonSystemclose); err != nil {
 					return err
 				}
 			} else { // 用户关闭

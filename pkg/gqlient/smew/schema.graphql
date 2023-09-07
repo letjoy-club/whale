@@ -287,6 +287,7 @@ type _Service {
 
 enum GroupCloseReason {
   AcceptTimeout
+  SystemClose
   Timeout
   UserClose
   UserReject
