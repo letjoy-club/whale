@@ -261,6 +261,9 @@ func UpdateMotion(ctx context.Context, motionID string, param *models.UpdateMoti
 				})),
 		))
 	}
+	if param.Quick != nil {
+		fields = append(fields, Motion.Quick.Value(*param.Quick))
+	}
 
 	if _, err := Motion.WithContext(ctx).Where(Motion.ID.Eq(motionID)).UpdateSimple(fields...); err != nil {
 		return err

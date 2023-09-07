@@ -119,6 +119,9 @@ type DiscoverTopicCategoryMotionFilter struct {
 	Gender *Gender `json:"gender,omitempty"`
 	// 话题 id，不填则为不限
 	TopicIds []string `json:"topicIds,omitempty"`
+	// 话题种类, 比如日常搭，游戏搭
+	CategoryID *string     `json:"categoryId,omitempty"`
+	Type       *MotionType `json:"type,omitempty"`
 }
 
 type HotTopicsFilter struct {
@@ -155,10 +158,13 @@ type MatchingResultFilter struct {
 }
 
 type MotionFilter struct {
-	ID     *string `json:"id,omitempty"`
-	UserID *string `json:"userId,omitempty"`
-	CityID *string `json:"cityId,omitempty"`
-	Gender *Gender `json:"gender,omitempty"`
+	ID      *string    `json:"id,omitempty"`
+	UserID  *string    `json:"userId,omitempty"`
+	CityID  *string    `json:"cityId,omitempty"`
+	Gender  *Gender    `json:"gender,omitempty"`
+	TopicID *string    `json:"topicId,omitempty"`
+	Before  *time.Time `json:"before,omitempty"`
+	After   *time.Time `json:"after,omitempty"`
 }
 
 type MotionPropertyParam struct {
@@ -695,6 +701,55 @@ func (e *MotionOfferState) UnmarshalGQL(v interface{}) error {
 }
 
 func (e MotionOfferState) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type MotionType string
+
+const (
+	// 所有
+	MotionTypeAll MotionType = "All"
+	// 一般区
+	MotionTypeNormal MotionType = "Normal"
+	// 女生专区
+	MotionTypeGirlOnly MotionType = "GirlOnly"
+	// 极速搭
+	MotionTypeQuick MotionType = "Quick"
+)
+
+var AllMotionType = []MotionType{
+	MotionTypeAll,
+	MotionTypeNormal,
+	MotionTypeGirlOnly,
+	MotionTypeQuick,
+}
+
+func (e MotionType) IsValid() bool {
+	switch e {
+	case MotionTypeAll, MotionTypeNormal, MotionTypeGirlOnly, MotionTypeQuick:
+		return true
+	}
+	return false
+}
+
+func (e MotionType) String() string {
+	return string(e)
+}
+
+func (e *MotionType) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = MotionType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid MotionType", str)
+	}
+	return nil
+}
+
+func (e MotionType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

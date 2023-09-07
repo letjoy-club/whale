@@ -123,6 +123,11 @@ input DiscoverTopicCategoryMotionFilter {
 
   "话题 id，不填则为不限"
   topicIds: [String!]
+
+  "话题种类, 比如日常搭，游戏搭"
+  categoryId: String
+
+  type: MotionType
 }
 
 type AvailableMotionOffer {
@@ -136,19 +141,32 @@ type CreateMotionOfferResult {
   chatGroupId: String!
 }
 
+enum MotionType {
+  "所有"
+  All
+  "一般区"
+  Normal
+  "女生专区"
+  GirlOnly
+  "极速搭"
+  Quick
+}
+
 extend type Query {
   "【广场】发现 V2"
   discoverCategoryMotions(
     userId: String
-    filter: DiscoverTopicCategoryMotionFilter
-    topicCategoryId: String!
+    "话题种类，优先读取 filter 中的设置"
+    filter: DiscoverTopicCategoryMotionFilter!
+    topicCategoryId: String
     nextToken: String
   ): DiscoverMotionResult!
 
   "【广场】发现 V2，按时间排序"
   discoverLatestCategoryMotions(
     filter: DiscoverTopicCategoryMotionFilter!
-    topicCategoryId: String!
+    "话题种类，优先读取 filter 中的设置"
+    topicCategoryId: String
     "返回比该 motion 创建更早的"
     lastId: String
   ): [DiscoverMotion!]!
@@ -180,7 +198,10 @@ extend type Mutation {
   ): AvailableMotionOffer!
 
   "【广场】发起活动意向"
-  createMotionOffer(myMotionId: String!, targetMotionId: String!): CreateMotionOfferResult!
+  createMotionOffer(
+    myMotionId: String!
+    targetMotionId: String!
+  ): CreateMotionOfferResult!
 
   "【广场】取消活动意向"
   cancelMotionOffer(myMotionId: String!, targetMotionId: String!): String

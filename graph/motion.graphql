@@ -61,6 +61,10 @@ input MotionFilter {
   userId: String
   cityId: String
   gender: Gender
+  topicId: String
+
+  before: Time
+  after: Time
 }
 
 extend type Query {

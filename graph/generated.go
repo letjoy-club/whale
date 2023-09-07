@@ -405,8 +405,8 @@ type ComplexityRoot struct {
 		CitiesTopicsCount             func(childComplexity int, filter *models.CitiesTopicsFilter) int
 		CityDistribution              func(childComplexity int) int
 		CityTopics                    func(childComplexity int, cityID string) int
-		DiscoverCategoryMotions       func(childComplexity int, userID *string, filter *models.DiscoverTopicCategoryMotionFilter, topicCategoryID string, nextToken *string) int
-		DiscoverLatestCategoryMotions func(childComplexity int, filter models.DiscoverTopicCategoryMotionFilter, topicCategoryID string, lastID *string) int
+		DiscoverCategoryMotions       func(childComplexity int, userID *string, filter models.DiscoverTopicCategoryMotionFilter, topicCategoryID *string, nextToken *string) int
+		DiscoverLatestCategoryMotions func(childComplexity int, filter models.DiscoverTopicCategoryMotionFilter, topicCategoryID *string, lastID *string) int
 		GetDiscoverMotion             func(childComplexity int, motionID string) int
 		GetMotionOffer                func(childComplexity int, motionID string, toMotionID string) int
 		HotTopics                     func(childComplexity int, filter *models.HotTopicsFilter, paginator *graphqlutil.GraphQLPaginator) int
@@ -728,8 +728,8 @@ type QueryResolver interface {
 	TopicDistribution(ctx context.Context) ([]*models.TopicToMatching, error)
 	CityDistribution(ctx context.Context) ([]*models.CityToTopicMatching, error)
 	MatchingDurationConstraints(ctx context.Context, userID string) (*models.MatchingDurationConstraint, error)
-	DiscoverCategoryMotions(ctx context.Context, userID *string, filter *models.DiscoverTopicCategoryMotionFilter, topicCategoryID string, nextToken *string) (*models.DiscoverMotionResult, error)
-	DiscoverLatestCategoryMotions(ctx context.Context, filter models.DiscoverTopicCategoryMotionFilter, topicCategoryID string, lastID *string) ([]*models.Motion, error)
+	DiscoverCategoryMotions(ctx context.Context, userID *string, filter models.DiscoverTopicCategoryMotionFilter, topicCategoryID *string, nextToken *string) (*models.DiscoverMotionResult, error)
+	DiscoverLatestCategoryMotions(ctx context.Context, filter models.DiscoverTopicCategoryMotionFilter, topicCategoryID *string, lastID *string) ([]*models.Motion, error)
 	GetDiscoverMotion(ctx context.Context, motionID string) (*models.Motion, error)
 	OutMotionOffers(ctx context.Context, motionID string) ([]*models.MotionOfferRecord, error)
 	InMotionOffers(ctx context.Context, motionID string) ([]*models.MotionOfferRecord, error)
@@ -2848,7 +2848,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.DiscoverCategoryMotions(childComplexity, args["userId"].(*string), args["filter"].(*models.DiscoverTopicCategoryMotionFilter), args["topicCategoryId"].(string), args["nextToken"].(*string)), true
+		return e.complexity.Query.DiscoverCategoryMotions(childComplexity, args["userId"].(*string), args["filter"].(models.DiscoverTopicCategoryMotionFilter), args["topicCategoryId"].(*string), args["nextToken"].(*string)), true
 
 	case "Query.discoverLatestCategoryMotions":
 		if e.complexity.Query.DiscoverLatestCategoryMotions == nil {
@@ -2860,7 +2860,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.DiscoverLatestCategoryMotions(childComplexity, args["filter"].(models.DiscoverTopicCategoryMotionFilter), args["topicCategoryId"].(string), args["lastId"].(*string)), true
+		return e.complexity.Query.DiscoverLatestCategoryMotions(childComplexity, args["filter"].(models.DiscoverTopicCategoryMotionFilter), args["topicCategoryId"].(*string), args["lastId"].(*string)), true
 
 	case "Query.getDiscoverMotion":
 		if e.complexity.Query.GetDiscoverMotion == nil {
@@ -5274,19 +5274,19 @@ func (ec *executionContext) field_Query_discoverCategoryMotions_args(ctx context
 		}
 	}
 	args["userId"] = arg0
-	var arg1 *models.DiscoverTopicCategoryMotionFilter
+	var arg1 models.DiscoverTopicCategoryMotionFilter
 	if tmp, ok := rawArgs["filter"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
-		arg1, err = ec.unmarshalODiscoverTopicCategoryMotionFilter2ᚖwhaleᚋpkgᚋmodelsᚐDiscoverTopicCategoryMotionFilter(ctx, tmp)
+		arg1, err = ec.unmarshalNDiscoverTopicCategoryMotionFilter2whaleᚋpkgᚋmodelsᚐDiscoverTopicCategoryMotionFilter(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
 	args["filter"] = arg1
-	var arg2 string
+	var arg2 *string
 	if tmp, ok := rawArgs["topicCategoryId"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("topicCategoryId"))
-		arg2, err = ec.unmarshalNString2string(ctx, tmp)
+		arg2, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -5316,10 +5316,10 @@ func (ec *executionContext) field_Query_discoverLatestCategoryMotions_args(ctx c
 		}
 	}
 	args["filter"] = arg0
-	var arg1 string
+	var arg1 *string
 	if tmp, ok := rawArgs["topicCategoryId"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("topicCategoryId"))
-		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -21372,7 +21372,7 @@ func (ec *executionContext) _Query_discoverCategoryMotions(ctx context.Context, 
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().DiscoverCategoryMotions(rctx, fc.Args["userId"].(*string), fc.Args["filter"].(*models.DiscoverTopicCategoryMotionFilter), fc.Args["topicCategoryId"].(string), fc.Args["nextToken"].(*string))
+		return ec.resolvers.Query().DiscoverCategoryMotions(rctx, fc.Args["userId"].(*string), fc.Args["filter"].(models.DiscoverTopicCategoryMotionFilter), fc.Args["topicCategoryId"].(*string), fc.Args["nextToken"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -21433,7 +21433,7 @@ func (ec *executionContext) _Query_discoverLatestCategoryMotions(ctx context.Con
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().DiscoverLatestCategoryMotions(rctx, fc.Args["filter"].(models.DiscoverTopicCategoryMotionFilter), fc.Args["topicCategoryId"].(string), fc.Args["lastId"].(*string))
+		return ec.resolvers.Query().DiscoverLatestCategoryMotions(rctx, fc.Args["filter"].(models.DiscoverTopicCategoryMotionFilter), fc.Args["topicCategoryId"].(*string), fc.Args["lastId"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -28005,7 +28005,7 @@ func (ec *executionContext) unmarshalInputDiscoverTopicCategoryMotionFilter(ctx 
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"cityId", "gender", "topicIds"}
+	fieldsInOrder := [...]string{"cityId", "gender", "topicIds", "categoryId", "type"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -28039,6 +28039,24 @@ func (ec *executionContext) unmarshalInputDiscoverTopicCategoryMotionFilter(ctx 
 				return it, err
 			}
 			it.TopicIds = data
+		case "categoryId":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("categoryId"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CategoryID = data
+		case "type":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("type"))
+			data, err := ec.unmarshalOMotionType2ᚖwhaleᚋpkgᚋmodelsᚐMotionType(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Type = data
 		}
 	}
 
@@ -28343,7 +28361,7 @@ func (ec *executionContext) unmarshalInputMotionFilter(ctx context.Context, obj 
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"id", "userId", "cityId", "gender"}
+	fieldsInOrder := [...]string{"id", "userId", "cityId", "gender", "topicId", "before", "after"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -28386,6 +28404,33 @@ func (ec *executionContext) unmarshalInputMotionFilter(ctx context.Context, obj 
 				return it, err
 			}
 			it.Gender = data
+		case "topicId":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("topicId"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TopicID = data
+		case "before":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("before"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Before = data
+		case "after":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.After = data
 		}
 	}
 
@@ -38834,14 +38879,6 @@ func (ec *executionContext) marshalODatePeriod2ᚕwhaleᚋpkgᚋmodelsᚐDatePer
 	return ret
 }
 
-func (ec *executionContext) unmarshalODiscoverTopicCategoryMotionFilter2ᚖwhaleᚋpkgᚋmodelsᚐDiscoverTopicCategoryMotionFilter(ctx context.Context, v interface{}) (*models.DiscoverTopicCategoryMotionFilter, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalInputDiscoverTopicCategoryMotionFilter(ctx, v)
-	return &res, graphql.ErrorOnPath(ctx, err)
-}
-
 func (ec *executionContext) unmarshalOGender2ᚖwhaleᚋpkgᚋmodelsᚐGender(ctx context.Context, v interface{}) (*models.Gender, error) {
 	if v == nil {
 		return nil, nil
@@ -39100,6 +39137,22 @@ func (ec *executionContext) unmarshalOMotionPropertyParam2ᚕᚖwhaleᚋpkgᚋmo
 		}
 	}
 	return res, nil
+}
+
+func (ec *executionContext) unmarshalOMotionType2ᚖwhaleᚋpkgᚋmodelsᚐMotionType(ctx context.Context, v interface{}) (*models.MotionType, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var res = new(models.MotionType)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOMotionType2ᚖwhaleᚋpkgᚋmodelsᚐMotionType(ctx context.Context, sel ast.SelectionSet, v *models.MotionType) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
 }
 
 func (ec *executionContext) unmarshalONotifyNewMotionOfferMessageParam2ᚖwhaleᚋpkgᚋmodelsᚐNotifyNewMotionOfferMessageParam(ctx context.Context, v interface{}) (*models.NotifyNewMotionOfferMessageParam, error) {
