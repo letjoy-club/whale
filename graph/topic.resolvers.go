@@ -6,6 +6,7 @@ package graph
 
 import (
 	"context"
+	"time"
 	"whale/pkg/dbquery"
 	"whale/pkg/loader"
 	"whale/pkg/models"
@@ -217,6 +218,20 @@ func (r *queryResolver) CitiesTopicsCount(ctx context.Context, filter *models.Ci
 
 // HotTopics is the resolver for the hotTopics field.
 func (r *queryResolver) HotTopicsInArea(ctx context.Context, cityID *string) (*models.HotTopicsInArea, error) {
+	token := midacontext.GetClientToken(ctx)
+	if token.IsUser() || token.IsAnonymous() {
+		// 如果是用户，就获取v2版本的数据
+		hotTopicsV2 := midacontext.GetLoader[loader.Loader](ctx).HotTopicsV2
+		hotTopicsV2.Load(ctx)
+
+		return &models.HotTopicsInArea{
+			CityID:       "310100",
+			TopicMetrics: hotTopicsV2.Metrics(),
+			UpdatedAt:    time.Now(),
+			CreatedAt:    time.Now(),
+		}, nil
+	}
+
 	cid := "310100"
 	if cityID != nil {
 		cid = *cityID
