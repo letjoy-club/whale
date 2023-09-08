@@ -2,6 +2,8 @@ package modelutil
 
 import (
 	"context"
+	"errors"
+	"gorm.io/gorm"
 	"time"
 	"unicode/utf8"
 	"whale/pkg/dbquery"
@@ -102,34 +104,38 @@ func CreateMotion(ctx context.Context, userID string, param *models.CreateMotion
 	motion.RelatedMatchingID = matching.ID
 
 	err = dbquery.Use(db).Transaction(func(tx *dbquery.Query) error {
+		createMatching := true
 		Matching := tx.Matching
-		if existMatching, err := Matching.WithContext(ctx).Where(
+		existMatching, err := Matching.WithContext(ctx).Where(
 			Matching.TopicID.Eq(motion.TopicID), Matching.UserID.Eq(motion.UserID), Matching.State.Eq(string(models.MatchingStateMatching)),
-		).Take(); err != nil {
-			// 如果没找到对应话题正在进行中的匹配，说明可以为用户创建
+		).Take()
+		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) { // 数据库查询报错，不进行创建matching操作
+			motion.RelatedMatchingID = ""
+			createMatching = false
+		}
+		if existMatching != nil { // 存在相同条件的进行中的匹配
+			if existMatching.RelatedMotionID == "" { // 存在的匹配和Motion无关
+				motion.RelatedMatchingID = ""
+				createMatching = false
+			} else { // 相关的先关闭再创建
+				if _, err := Matching.WithContext(ctx).Where(Matching.ID.Eq(existMatching.ID)).UpdateSimple(
+					Matching.State.Value(string(models.MatchingStateCanceled)),
+				); err != nil { // 关闭匹配失败，不创建新匹配
+					motion.RelatedMatchingID = ""
+					createMatching = false
+					logger.L.Error("failed to close previous matching created by motion", zap.Error(err))
+				}
+			}
+		}
+		if createMatching {
 			if err := Matching.WithContext(ctx).Create(matching); err != nil {
 				// 创建失败，忽略
 				motion.RelatedMatchingID = ""
 				logger.L.Error("failed to create corresponding matching", zap.Error(err))
 			}
-		} else if existMatching.RelatedMotionID == "" {
-			// 这个匹配是由 motion 创建的，需要主动关闭，并创建新匹配
-			_, err := Matching.WithContext(ctx).Where(Matching.ID.Eq(existMatching.ID)).UpdateSimple(Matching.State.Value(string(models.MatchingStateCanceled)))
-			if err != nil {
-				// 关闭匹配失败，不创建新匹配
-				motion.RelatedMatchingID = ""
-				logger.L.Error("failed to close previous matching created by motion", zap.Error(err))
-			} else {
-				midacontext.GetLoader[loader.Loader](ctx).Matching.Clear(ctx, existMatching.ID)
-				// 已经关闭原有匹配，创建新匹配
-				if err := Matching.WithContext(ctx).Create(matching); err != nil {
-					// 创建失败，忽略
-					motion.RelatedMatchingID = ""
-					logger.L.Error("failed to create corresponding matching", zap.Error(err))
-				}
-			}
 		}
 
+		// 创建Motion
 		if err := Motion.WithContext(ctx).Create(motion); err != nil {
 			return err
 		}
@@ -259,28 +265,27 @@ func CloseMotion(ctx context.Context, userID, motionID string) error {
 
 	db := dbutil.GetDB(ctx)
 	err = dbquery.Use(db).Transaction(func(tx *dbquery.Query) error {
+		Motion := tx.Motion
+		latestMotion, err := Motion.WithContext(ctx).Where(Motion.ID.Eq(motionID)).Take()
+		if err != nil {
+			return err
+		}
+		if !latestMotion.Active { // 幂等校验
+			return nil
+		}
+		// 关闭关联的匹配记录
 		if motion.RelatedMatchingID != "" {
-			// 关闭没有结束的匹配
 			Matching := tx.Matching
 			_, err := Matching.WithContext(ctx).Where(
 				Matching.ID.Eq(motion.RelatedMatchingID),
-				Matching.State.Eq(models.MatchingStateMatched.String()),
+				Matching.State.Eq(models.MatchingStateMatching.String()),
 			).UpdateSimple(Matching.State.Value(string(models.MatchingStateCanceled)))
 			if err != nil {
 				return err
 			}
 			midacontext.GetLoader[loader.Loader](ctx).Matching.Clear(ctx, motion.RelatedMatchingID)
 		}
-
-		Motion := tx.Motion
-		latestMotion, err := Motion.WithContext(ctx).Where(Motion.ID.Eq(motionID)).Take()
-		if err != nil {
-			return err
-		}
-		if !latestMotion.Active {
-			return nil
-		}
-
+		// 关闭Motion
 		fields := []field.AssignExpr{}
 		fields = append(fields, Motion.Active.Value(false))
 
