@@ -98,6 +98,9 @@ type DiscoverMotion {
   thumbsUpCount: Int!
   createdAt: Time!
 
+  "是否极速搭"
+  quick: Boolean!
+
   # query
   "是否标记为喜欢"
   liked("管理员填写 userId" userId: String): Boolean!
