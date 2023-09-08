@@ -2,7 +2,6 @@ package modelutil
 
 import (
 	"context"
-	"github.com/golang-module/carbon"
 	"errors"
 	"gorm.io/gorm"
 	"time"
@@ -12,6 +11,8 @@ import (
 	"whale/pkg/loader"
 	"whale/pkg/models"
 	"whale/pkg/whalecode"
+
+	"github.com/golang-module/carbon"
 
 	"github.com/letjoy-club/mida-tool/dbutil"
 	"github.com/letjoy-club/mida-tool/graphqlutil"
@@ -82,10 +83,6 @@ func CreateMotion(ctx context.Context, userID string, param *models.CreateMotion
 		StartMatchingAt: &matchingStartAt,
 	}
 
-	isQuick := false
-	if param.Quick != nil {
-		isQuick = *param.Quick
-	}
 	motion := &models.Motion{
 		ID:       shortid.NewWithTime("mo_", 4),
 		UserID:   userID,
@@ -99,7 +96,7 @@ func CreateMotion(ctx context.Context, userID string, param *models.CreateMotion
 		Properties: lo.Map(param.Properties, func(p *models.MotionPropertyParam, i int) models.MotionProperty {
 			return models.MotionProperty{ID: p.ID, Values: p.Values}
 		}),
-		Quick:            isQuick,
+		Quick:            *param.Quick,
 		Discoverable:     true,
 		AreaIDs:          param.AreaIds,
 		DayRange:         param.DayRange,
@@ -195,10 +192,13 @@ func checkCreateMotionParam(ctx context.Context, userID string, param *models.Cr
 
 	if param.Quick != nil {
 		if *param.Quick {
-			// 极速搭过期时间为 24 小时
+			// 极速搭过期时间为当天结束
 			defaultDeadline = carbon.Now().EndOfDay().ToStdTime()
 			param.Deadline = &defaultDeadline
 		}
+	} else {
+		defaultQuick := false
+		param.Quick = &defaultQuick
 	}
 
 	// 基础检查

@@ -37,9 +37,12 @@ type UserDiscoverMotionOpt struct {
 
 	N int
 
-	NextToken  string
-	LastID     string
+	NextToken string
+	LastID    string
+
 	CategoryID string
+
+	Type models.MotionType
 }
 
 var sessionMaxViewed = 300
@@ -79,7 +82,7 @@ func (u *UserDiscoverMotion) LoadMotionIDs(
 			motions := motionLoader(opt.CategoryID, opt.CityID)
 			u.motionMap[opt.CategoryID] = motions
 		}
-		motionIDs, nextIndex = u.motionMap.Load(opt.CategoryID, opt.TopicIDs, opt.Gender.String(), startIndex, opt.N)
+		motionIDs, nextIndex = u.motionMap.Load(opt.CategoryID, opt.TopicIDs, opt.Type, opt.Gender.String(), startIndex, opt.N)
 	} else {
 		cityMotions, ok := u.cityMotionMap[opt.CityID]
 		if !ok {
@@ -91,7 +94,7 @@ func (u *UserDiscoverMotion) LoadMotionIDs(
 			motions := motionLoader(opt.CategoryID, opt.CityID)
 			u.cityMotionMap[opt.CityID][opt.CategoryID] = motions
 		}
-		motionIDs, nextIndex = cityMotions.Load(opt.CategoryID, opt.TopicIDs, opt.Gender.String(), startIndex, opt.N)
+		motionIDs, nextIndex = cityMotions.Load(opt.CategoryID, opt.TopicIDs, opt.Type, opt.Gender.String(), startIndex, opt.N)
 	}
 
 	next = shortid.New("", 4)
@@ -126,7 +129,7 @@ type CategoryID = string
 type GroupedMotions map[CategoryID][]*models.Motion
 type CityMotions = GroupedMotions
 
-func (g GroupedMotions) Load(categoryID string, topicIDs []string, gender string, start, n int) ([]string, int) {
+func (g GroupedMotions) Load(categoryID string, topicIDs []string, motionType models.MotionType, gender string, start, n int) ([]string, int) {
 	retN := 0
 	retIDs := make([]string, 0, n)
 
@@ -152,6 +155,15 @@ func (g GroupedMotions) Load(categoryID string, topicIDs []string, gender string
 				continue
 			}
 		}
+
+		// 如果是请求特定类型 motion
+		if motionType != models.MotionTypeAll {
+			t := GetMotionType(motion)
+			if motionType != t {
+				continue
+			}
+		}
+
 		retIDs = append(retIDs, motion.ID)
 		retN++
 		if retN >= n {
@@ -178,9 +190,6 @@ type AllMotionLoader struct {
 
 	// 当有新的 motion 时，需要更新这个字段
 	latestMotions []*models.Motion
-
-	// 启发排序
-	creativeOrderedMotions []*models.Motion
 }
 
 // GetOrderedMotions 获取按照时间排序的 motion id
@@ -260,13 +269,13 @@ func (l *AllMotionLoader) GetCityToMotions() map[string]CityMotions {
 
 func (l *AllMotionLoader) LoadForAnoumynous(ctx context.Context, opt UserDiscoverMotionOpt) (retIDs []string) {
 	if opt.CityID == "" {
-		ret, _ := l.categoryMap.Load(opt.CategoryID, opt.TopicIDs, opt.Gender.String(), 0, opt.N)
+		ret, _ := l.categoryMap.Load(opt.CategoryID, opt.TopicIDs, opt.Type, opt.Gender.String(), 0, opt.N)
 		return ret
 	}
 	if l.cityMotionMap[opt.CityID] == nil {
 		return []string{}
 	}
-	ret, _ := l.cityMotionMap[opt.CityID].Load(opt.CategoryID, opt.TopicIDs, opt.Gender.String(), 0, opt.N)
+	ret, _ := l.cityMotionMap[opt.CityID].Load(opt.CategoryID, opt.TopicIDs, opt.Type, opt.Gender.String(), 0, opt.N)
 	return ret
 }
 
@@ -429,11 +438,8 @@ func (l *AllMotionLoader) Load(ctx context.Context) error {
 			citiesMotionMap[m.CityID] = cityMotion
 		}
 
-		creativeSort(motions)
-
 		categoryMap[AllCategoryID] = motions
 
-		l.creativeOrderedMotions = motions
 		l.categoryMap = categoryMap
 		l.cityMotionMap = citiesMotionMap
 		l.latestMotions = motions
@@ -443,20 +449,30 @@ func (l *AllMotionLoader) Load(ctx context.Context) error {
 
 var AllCategoryID = "ALL"
 
-func creativeSort(motions []*models.Motion) {
-	length := len(motions)
-	for i := 0; i < length; i++ {
-		curr := motions[i]
-		targetIndex := rand.Intn(length-i) + i
-		target := motions[i]
-		if curr.ThumbsUpCount < target.ThumbsUpCount || curr.CreatedAt.Before(target.CreatedAt) {
-			motions[i], motions[targetIndex] = motions[targetIndex], motions[i]
-		}
-	}
-}
+// func creativeSort(motions []*models.Motion) {
+// 	length := len(motions)
+// 	for i := 0; i < length; i++ {
+// 		curr := motions[i]
+// 		targetIndex := rand.Intn(length-i) + i
+// 		target := motions[i]
+// 		if curr.ThumbsUpCount < target.ThumbsUpCount || curr.CreatedAt.Before(target.CreatedAt) {
+// 			motions[i], motions[targetIndex] = motions[targetIndex], motions[i]
+// 		}
+// 	}
+// }
 
 func (l *AllMotionLoader) AppendNewMotion(ctx context.Context, motion *models.Motion) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	l.latestMotions = append(l.latestMotions, motion)
+}
+
+func GetMotionType(m *models.Motion) models.MotionType {
+	if m.Quick {
+		return models.MotionTypeQuick
+	}
+	if m.MyGender == models.GenderF.String() && m.Gender == m.MyGender {
+		return models.MotionTypeGirlOnly
+	}
+	return models.MotionTypeNormal
 }

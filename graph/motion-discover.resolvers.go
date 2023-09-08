@@ -367,6 +367,7 @@ func (r *queryResolver) DiscoverCategoryMotions(ctx context.Context, userID *str
 		N:         6,
 		NextToken: next,
 		Gender:    models.GenderN,
+		Type:      models.MotionTypeAll,
 	}
 
 	if filter.CategoryID != nil {
@@ -379,6 +380,10 @@ func (r *queryResolver) DiscoverCategoryMotions(ctx context.Context, userID *str
 
 	if opt.CategoryID == "" {
 		opt.CategoryID = loader.AllCategoryID
+	}
+
+	if filter.Type != nil {
+		opt.Type = *filter.Type
 	}
 
 	if filter.CityID != nil {
@@ -419,6 +424,7 @@ func (r *queryResolver) DiscoverLatestCategoryMotions(ctx context.Context, filte
 	opt := loader.UserDiscoverMotionOpt{
 		N:      6,
 		Gender: models.GenderN,
+		Type:   models.MotionTypeAll,
 	}
 
 	if filter.CategoryID != nil {
@@ -427,6 +433,13 @@ func (r *queryResolver) DiscoverLatestCategoryMotions(ctx context.Context, filte
 		if topicCategoryID != nil {
 			opt.CategoryID = *topicCategoryID
 		}
+	}
+	if opt.CategoryID == "" {
+		opt.CategoryID = loader.AllCategoryID
+	}
+
+	if filter.Type != nil {
+		opt.Type = *filter.Type
 	}
 
 	if opt.CategoryID == "" {
@@ -444,9 +457,6 @@ func (r *queryResolver) DiscoverLatestCategoryMotions(ctx context.Context, filte
 	}
 	if len(filter.TopicIds) > 0 {
 		opt.TopicIDs = filter.TopicIds
-	}
-	if opt.CategoryID == "" {
-		opt.CategoryID = loader.AllCategoryID
 	}
 
 	var ids []string
