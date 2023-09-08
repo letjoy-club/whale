@@ -48,7 +48,8 @@ type Loader struct {
 	UserAvatarNickname *dataloader.Loader[string, UserAvatarNickname]
 
 	// 查询城市的热门话题
-	HotTopics *dataloader.Loader[string, *models.HotTopicsInArea]
+	HotTopics   *dataloader.Loader[string, *models.HotTopicsInArea]
+	HotTopicsV2 *HotTopicV2Loader
 
 	TopicOptionConfig *TopicOptionConfigLoader
 	TopicCategory     *TopicCategoryLoader
@@ -65,6 +66,7 @@ func NewLoader(db *gorm.DB) *Loader {
 		CityTopicRequestNum: NewCityTopicRequestNumLoader(db),
 		CityTopics:          NewCityTopicLoader(db),
 		HotTopics:           NewHotTopicLoader(db),
+		HotTopicsV2:         NewHotTopicV2Loader(db),
 
 		Matching:                   NewMatchingLoader(db),
 		MatchingInvitation:         NewMatchingInvitationLoader(db),

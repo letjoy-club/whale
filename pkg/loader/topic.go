@@ -2,6 +2,7 @@ package loader
 
 import (
 	"context"
+	"math/rand"
 	"sync"
 	"time"
 	"whale/pkg/dbquery"
@@ -10,6 +11,7 @@ import (
 
 	"github.com/graph-gophers/dataloader/v7"
 	"github.com/letjoy-club/mida-tool/midacontext"
+	"golang.org/x/exp/slices"
 	"gorm.io/gorm"
 )
 
@@ -87,4 +89,69 @@ func (t *TopicCategoryLoader) Topics(categoryID string) []string {
 
 func (t *TopicCategoryLoader) Category(topicID string) string {
 	return t.topic2category[topicID]
+}
+
+type HotTopicV2Loader struct {
+	metrics    []models.TopicMetrics
+	db         *gorm.DB
+	lastUpdate time.Time
+	mu         sync.Mutex
+}
+
+type TopicFreq struct {
+	TopicID string
+	Freq    int
+}
+
+// Load 热度数据逻辑, topic 卡片数量 * topic 总数 + random(1000)
+func (h *HotTopicV2Loader) Load(ctx context.Context) error {
+	if time.Since(h.lastUpdate) < time.Minute*15 {
+		return nil
+	}
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	// double check
+	if time.Since(h.lastUpdate) < time.Minute*15 {
+		return nil
+	}
+
+	Motion := dbquery.Use(h.db).Motion
+	topicFreqs := []TopicFreq{}
+	err := Motion.WithContext(ctx).Select(Motion.TopicID, Motion.TopicID.Count().As("freq")).Group(Motion.TopicID).Scan(&topicFreqs)
+	if err != nil {
+		return err
+	}
+
+	slices.SortFunc(topicFreqs, func(a, b TopicFreq) int {
+		return b.Freq - a.Freq
+	})
+
+	allNum := 0
+	for _, topicFreq := range topicFreqs {
+		allNum += topicFreq.Freq
+	}
+
+	metrics := make([]models.TopicMetrics, 0, 3)
+	for ix, topicFreq := range topicFreqs {
+		if ix >= 3 {
+			break
+		}
+
+		metrics = append(metrics, models.TopicMetrics{
+			ID:   topicFreq.TopicID,
+			Heat: topicFreq.Freq*allNum + rand.Intn(1000),
+		})
+	}
+	h.metrics = metrics
+	return nil
+}
+
+func (h *HotTopicV2Loader) Metrics() []models.TopicMetrics {
+	return h.metrics
+}
+
+func NewHotTopicV2Loader(db *gorm.DB) *HotTopicV2Loader {
+	return &HotTopicV2Loader{
+		db: db,
+	}
 }
