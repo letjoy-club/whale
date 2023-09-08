@@ -288,9 +288,6 @@ func CloseMotion(ctx context.Context, userID, motionID string) error {
 			return midacode.ErrNotPermitted
 		}
 	}
-	if !motion.Active {
-		return nil
-	}
 
 	release, err := redisutil.LockAll(ctx, keyer.UserMotion(motion.UserID))
 	if err != nil {
@@ -318,9 +315,8 @@ func CloseMotion(ctx context.Context, userID, motionID string) error {
 		if err != nil {
 			return err
 		}
-
-		if !latestMotion.UpdatedAt.Equal(motion.UpdatedAt) {
-			return midacode.ErrStateMayHaveChanged
+		if !latestMotion.Active {
+			return nil
 		}
 
 		fields := []field.AssignExpr{}
