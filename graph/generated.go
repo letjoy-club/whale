@@ -123,6 +123,7 @@ type ComplexityRoot struct {
 		Liked             func(childComplexity int, userID *string) int
 		PreferredPeriods  func(childComplexity int) int
 		Properties        func(childComplexity int) int
+		Quick             func(childComplexity int) int
 		Remark            func(childComplexity int) int
 		Submitted         func(childComplexity int, userID *string) int
 		ThumbsUp          func(childComplexity int, userID *string) int
@@ -1005,6 +1006,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.DiscoverMotion.Properties(childComplexity), true
+
+	case "DiscoverMotion.quick":
+		if e.complexity.DiscoverMotion.Quick == nil {
+			break
+		}
+
+		return e.complexity.DiscoverMotion.Quick(childComplexity), true
 
 	case "DiscoverMotion.remark":
 		if e.complexity.DiscoverMotion.Remark == nil {
@@ -7704,6 +7712,50 @@ func (ec *executionContext) fieldContext_DiscoverMotion_createdAt(ctx context.Co
 	return fc, nil
 }
 
+func (ec *executionContext) _DiscoverMotion_quick(ctx context.Context, field graphql.CollectedField, obj *models.Motion) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DiscoverMotion_quick(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Quick, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DiscoverMotion_quick(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DiscoverMotion",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _DiscoverMotion_liked(ctx context.Context, field graphql.CollectedField, obj *models.Motion) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DiscoverMotion_liked(ctx, field)
 	if err != nil {
@@ -8181,6 +8233,8 @@ func (ec *executionContext) fieldContext_DiscoverMotionResult_motions(ctx contex
 				return ec.fieldContext_DiscoverMotion_thumbsUpCount(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_DiscoverMotion_createdAt(ctx, field)
+			case "quick":
+				return ec.fieldContext_DiscoverMotion_quick(ctx, field)
 			case "liked":
 				return ec.fieldContext_DiscoverMotion_liked(ctx, field)
 			case "submitted":
@@ -13812,6 +13866,8 @@ func (ec *executionContext) fieldContext_MatchingResult_discoverMotion(ctx conte
 				return ec.fieldContext_DiscoverMotion_thumbsUpCount(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_DiscoverMotion_createdAt(ctx, field)
+			case "quick":
+				return ec.fieldContext_DiscoverMotion_quick(ctx, field)
 			case "liked":
 				return ec.fieldContext_DiscoverMotion_liked(ctx, field)
 			case "submitted":
@@ -15988,6 +16044,8 @@ func (ec *executionContext) fieldContext_MotionOfferRecord_toMotion(ctx context.
 				return ec.fieldContext_DiscoverMotion_thumbsUpCount(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_DiscoverMotion_createdAt(ctx, field)
+			case "quick":
+				return ec.fieldContext_DiscoverMotion_quick(ctx, field)
 			case "liked":
 				return ec.fieldContext_DiscoverMotion_liked(ctx, field)
 			case "submitted":
@@ -16078,6 +16136,8 @@ func (ec *executionContext) fieldContext_MotionOfferRecord_motion(ctx context.Co
 				return ec.fieldContext_DiscoverMotion_thumbsUpCount(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_DiscoverMotion_createdAt(ctx, field)
+			case "quick":
+				return ec.fieldContext_DiscoverMotion_quick(ctx, field)
 			case "liked":
 				return ec.fieldContext_DiscoverMotion_liked(ctx, field)
 			case "submitted":
@@ -21594,6 +21654,8 @@ func (ec *executionContext) fieldContext_Query_discoverLatestCategoryMotions(ctx
 				return ec.fieldContext_DiscoverMotion_thumbsUpCount(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_DiscoverMotion_createdAt(ctx, field)
+			case "quick":
+				return ec.fieldContext_DiscoverMotion_quick(ctx, field)
 			case "liked":
 				return ec.fieldContext_DiscoverMotion_liked(ctx, field)
 			case "submitted":
@@ -21695,6 +21757,8 @@ func (ec *executionContext) fieldContext_Query_getDiscoverMotion(ctx context.Con
 				return ec.fieldContext_DiscoverMotion_thumbsUpCount(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_DiscoverMotion_createdAt(ctx, field)
+			case "quick":
+				return ec.fieldContext_DiscoverMotion_quick(ctx, field)
 			case "liked":
 				return ec.fieldContext_DiscoverMotion_liked(ctx, field)
 			case "submitted":
@@ -25691,6 +25755,8 @@ func (ec *executionContext) fieldContext_UserLikeMotion_motion(ctx context.Conte
 				return ec.fieldContext_DiscoverMotion_thumbsUpCount(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_DiscoverMotion_createdAt(ctx, field)
+			case "quick":
+				return ec.fieldContext_DiscoverMotion_quick(ctx, field)
 			case "liked":
 				return ec.fieldContext_DiscoverMotion_liked(ctx, field)
 			case "submitted":
@@ -30179,6 +30245,11 @@ func (ec *executionContext) _DiscoverMotion(ctx context.Context, sel ast.Selecti
 			}
 		case "createdAt":
 			out.Values[i] = ec._DiscoverMotion_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "quick":
+			out.Values[i] = ec._DiscoverMotion_quick(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
 			}

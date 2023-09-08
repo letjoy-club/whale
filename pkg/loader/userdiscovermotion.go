@@ -447,7 +447,7 @@ func (l *AllMotionLoader) Load(ctx context.Context) error {
 	return nil
 }
 
-var AllCategoryID = "ALL"
+var AllCategoryID = "All"
 
 // func creativeSort(motions []*models.Motion) {
 // 	length := len(motions)
