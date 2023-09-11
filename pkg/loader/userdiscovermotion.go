@@ -147,8 +147,12 @@ func (g GroupedMotions) Load(categoryID string, topicIDs []string, motionType mo
 	}
 	for i := start; i < cateLen; i++ {
 		motion := group[i]
-		if gender != models.GenderN.String() && gender != motion.MyGender {
-			continue
+
+		if motionType != models.MotionTypeGirlOnly {
+			// 不是女生专区的，需要遵从性别设置
+			if gender != models.GenderN.String() && gender != motion.MyGender {
+				continue
+			}
 		}
 		if topicMap != nil {
 			if _, ok := topicMap[motion.TopicID]; !ok {
@@ -246,9 +250,19 @@ func (l *AllMotionLoader) GetOrderedMotions(ctx context.Context, opt UserDiscove
 				continue
 			}
 		}
-		if opt.Gender != models.GenderN && opt.Gender.String() != motion.MyGender {
-			// 根据用户期望性别进行过滤
-			continue
+		// 如果是请求女生专区, 忽略性别设置
+		if opt.Type != models.MotionTypeGirlOnly {
+			if opt.Gender != models.GenderN && opt.Gender.String() != motion.MyGender {
+				// 根据用户期望性别进行过滤
+				continue
+			}
+		}
+		// 如果是请求特定类型 motion
+		if opt.Type != models.MotionTypeAll {
+			t := GetMotionType(motion)
+			if opt.Type != t {
+				continue
+			}
 		}
 		ret = append(ret, motion.ID)
 		retN--
