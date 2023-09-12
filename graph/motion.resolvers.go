@@ -191,6 +191,11 @@ func (r *mutationResolver) ReviewMotionOffer(ctx context.Context, userID *string
 	return nil, err
 }
 
+// MarkMotionExpire is the resolver for the markMotionExpire field.
+func (r *mutationResolver) MarkMotionExpire(ctx context.Context) (*string, error) {
+	return nil, modelutil.MotionExpire(ctx)
+}
+
 // Motion is the resolver for the motion field.
 func (r *queryResolver) Motion(ctx context.Context, id string) (*models.Motion, error) {
 	token := midacontext.GetClientToken(ctx)

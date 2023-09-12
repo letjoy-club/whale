@@ -45,6 +45,13 @@ func Mount(r chi.Router) {
 			render.JSON(w, r, Resp{})
 		}
 	})
+	r.Post("/clear-out-date-motion", func(w http.ResponseWriter, r *http.Request) {
+		if err := modelutil.MotionExpire(r.Context()); err != nil {
+			render.JSON(w, r, Resp{Error: err.Error()})
+		} else {
+			render.JSON(w, r, Resp{})
+		}
+	})
 	r.Post("/clear-out-date-offer", func(w http.ResponseWriter, r *http.Request) {
 		if err := modelutil.ClearOutDateMotionOffer(r.Context()); err != nil {
 			render.JSON(w, r, Resp{Error: err.Error()})

@@ -379,6 +379,7 @@ type ComplexityRoot struct {
 		GetAvailableMotionOffer          func(childComplexity int, userID *string, targetMotionID string) int
 		GetMatchingScore                 func(childComplexity int, id1 string, id2 string) int
 		LikeMotion                       func(childComplexity int, userID *string, motionID string) int
+		MarkMotionExpire                 func(childComplexity int) int
 		NotifyNewMotionOffer             func(childComplexity int, param *models.NotifyNewMotionOfferMessageParam) int
 		RefreshTopicMetrics              func(childComplexity int) int
 		RejectMotionOffer                func(childComplexity int, myMotionID string, targetMotionID string) int
@@ -690,6 +691,7 @@ type MutationResolver interface {
 	UserUpdateMotion(ctx context.Context, myMotionID string, param models.UserUpdateMotionParam) (*models.Motion, error)
 	CloseMotion(ctx context.Context, id string) (*string, error)
 	ReviewMotionOffer(ctx context.Context, userID *string, fromMotionID string, toMotionID string, param models.ReviewMotionParam) (*string, error)
+	MarkMotionExpire(ctx context.Context) (*string, error)
 	CreateCityTopics(ctx context.Context, param models.CreateCityTopicParam) (*models.CityTopics, error)
 	UpdateCityTopics(ctx context.Context, cityID string, param models.UpdateCityTopicParam) (*models.CityTopics, error)
 	UpdateHotTopicsInArea(ctx context.Context, cityID string, param models.UpdateHotTopicParam) (*models.HotTopicsInArea, error)
@@ -2552,6 +2554,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.LikeMotion(childComplexity, args["userId"].(*string), args["motionId"].(string)), true
+
+	case "Mutation.markMotionExpire":
+		if e.complexity.Mutation.MarkMotionExpire == nil {
+			break
+		}
+
+		return e.complexity.Mutation.MarkMotionExpire(childComplexity), true
 
 	case "Mutation.notifyNewMotionOffer":
 		if e.complexity.Mutation.NotifyNewMotionOffer == nil {
@@ -18672,6 +18681,47 @@ func (ec *executionContext) fieldContext_Mutation_reviewMotionOffer(ctx context.
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_markMotionExpire(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_markMotionExpire(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().MarkMotionExpire(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_markMotionExpire(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Mutation_createCityTopics(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Mutation_createCityTopics(ctx, field)
 	if err != nil {
@@ -33958,6 +34008,10 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "reviewMotionOffer":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_reviewMotionOffer(ctx, field)
+			})
+		case "markMotionExpire":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_markMotionExpire(ctx, field)
 			})
 		case "createCityTopics":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
