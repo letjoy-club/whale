@@ -26,6 +26,13 @@ func Mount(r chi.Router) {
 			render.JSON(w, r, Resp{})
 		}
 	})
+	r.Post("/clear-out-date-motion", func(w http.ResponseWriter, r *http.Request) {
+		if err := modelutil.MotionExpire(r.Context()); err != nil {
+			render.JSON(w, r, Resp{Error: err.Error()})
+		} else {
+			render.JSON(w, r, Resp{})
+		}
+	})
 	r.Post("/notify-new-motion-offer", func(w http.ResponseWriter, r *http.Request) {
 		param := models.NotifyNewMotionOfferMessageParam{}
 		if err := json.NewDecoder(r.Body).Decode(&param); err != nil {
