@@ -423,7 +423,7 @@ func (l *AllMotionLoader) Load(ctx context.Context) error {
 			Select(
 				Motion.ID, Motion.UserID,
 				// 用于筛选
-				Motion.CityID, Motion.Gender, Motion.MyGender, Motion.TopicID,
+				Motion.CityID, Motion.Gender, Motion.MyGender, Motion.TopicID, Motion.Quick,
 				// 点赞数，时间用于排序
 				Motion.ThumbsUpCount, Motion.CreatedAt,
 			).
