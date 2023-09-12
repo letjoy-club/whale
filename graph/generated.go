@@ -117,6 +117,7 @@ type ComplexityRoot struct {
 		CityID            func(childComplexity int) int
 		CreatedAt         func(childComplexity int) int
 		DayRange          func(childComplexity int) int
+		Deadline          func(childComplexity int) int
 		Gender            func(childComplexity int) int
 		ID                func(childComplexity int) int
 		LikeCount         func(childComplexity int) int
@@ -312,6 +313,7 @@ type ComplexityRoot struct {
 		CityID            func(childComplexity int) int
 		CreatedAt         func(childComplexity int) int
 		DayRange          func(childComplexity int) int
+		Deadline          func(childComplexity int) int
 		Discoverable      func(childComplexity int) int
 		Gender            func(childComplexity int) int
 		ID                func(childComplexity int) int
@@ -323,6 +325,7 @@ type ComplexityRoot struct {
 		PendingOutNum     func(childComplexity int) int
 		PreferredPeriods  func(childComplexity int) int
 		Properties        func(childComplexity int) int
+		Quick             func(childComplexity int) int
 		RelatedMatchingID func(childComplexity int) int
 		Remark            func(childComplexity int) int
 		ThumbsUp          func(childComplexity int) int
@@ -959,6 +962,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.DiscoverMotion.DayRange(childComplexity), true
+
+	case "DiscoverMotion.deadline":
+		if e.complexity.DiscoverMotion.Deadline == nil {
+			break
+		}
+
+		return e.complexity.DiscoverMotion.Deadline(childComplexity), true
 
 	case "DiscoverMotion.gender":
 		if e.complexity.DiscoverMotion.Gender == nil {
@@ -2029,6 +2039,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Motion.DayRange(childComplexity), true
 
+	case "Motion.deadline":
+		if e.complexity.Motion.Deadline == nil {
+			break
+		}
+
+		return e.complexity.Motion.Deadline(childComplexity), true
+
 	case "Motion.discoverable":
 		if e.complexity.Motion.Discoverable == nil {
 			break
@@ -2105,6 +2122,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Motion.Properties(childComplexity), true
+
+	case "Motion.quick":
+		if e.complexity.Motion.Quick == nil {
+			break
+		}
+
+		return e.complexity.Motion.Quick(childComplexity), true
 
 	case "Motion.relatedMatchingId":
 		if e.complexity.Motion.RelatedMatchingID == nil {
@@ -6383,6 +6407,10 @@ func (ec *executionContext) fieldContext_AvailableMotionOffer_motion(ctx context
 				return ec.fieldContext_Motion_gender(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Motion_createdAt(ctx, field)
+			case "quick":
+				return ec.fieldContext_Motion_quick(ctx, field)
+			case "deadline":
+				return ec.fieldContext_Motion_deadline(ctx, field)
 			case "liked":
 				return ec.fieldContext_Motion_liked(ctx, field)
 			case "viewCount":
@@ -7756,6 +7784,50 @@ func (ec *executionContext) fieldContext_DiscoverMotion_quick(ctx context.Contex
 	return fc, nil
 }
 
+func (ec *executionContext) _DiscoverMotion_deadline(ctx context.Context, field graphql.CollectedField, obj *models.Motion) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DiscoverMotion_deadline(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Deadline, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DiscoverMotion_deadline(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DiscoverMotion",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _DiscoverMotion_liked(ctx context.Context, field graphql.CollectedField, obj *models.Motion) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DiscoverMotion_liked(ctx, field)
 	if err != nil {
@@ -8235,6 +8307,8 @@ func (ec *executionContext) fieldContext_DiscoverMotionResult_motions(ctx contex
 				return ec.fieldContext_DiscoverMotion_createdAt(ctx, field)
 			case "quick":
 				return ec.fieldContext_DiscoverMotion_quick(ctx, field)
+			case "deadline":
+				return ec.fieldContext_DiscoverMotion_deadline(ctx, field)
 			case "liked":
 				return ec.fieldContext_DiscoverMotion_liked(ctx, field)
 			case "submitted":
@@ -13868,6 +13942,8 @@ func (ec *executionContext) fieldContext_MatchingResult_discoverMotion(ctx conte
 				return ec.fieldContext_DiscoverMotion_createdAt(ctx, field)
 			case "quick":
 				return ec.fieldContext_DiscoverMotion_quick(ctx, field)
+			case "deadline":
+				return ec.fieldContext_DiscoverMotion_deadline(ctx, field)
 			case "liked":
 				return ec.fieldContext_DiscoverMotion_liked(ctx, field)
 			case "submitted":
@@ -15068,6 +15144,94 @@ func (ec *executionContext) fieldContext_Motion_createdAt(ctx context.Context, f
 	return fc, nil
 }
 
+func (ec *executionContext) _Motion_quick(ctx context.Context, field graphql.CollectedField, obj *models.Motion) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Motion_quick(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Quick, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Motion_quick(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Motion",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Motion_deadline(ctx context.Context, field graphql.CollectedField, obj *models.Motion) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Motion_deadline(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Deadline, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Motion_deadline(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Motion",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Motion_liked(ctx context.Context, field graphql.CollectedField, obj *models.Motion) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Motion_liked(ctx, field)
 	if err != nil {
@@ -16046,6 +16210,8 @@ func (ec *executionContext) fieldContext_MotionOfferRecord_toMotion(ctx context.
 				return ec.fieldContext_DiscoverMotion_createdAt(ctx, field)
 			case "quick":
 				return ec.fieldContext_DiscoverMotion_quick(ctx, field)
+			case "deadline":
+				return ec.fieldContext_DiscoverMotion_deadline(ctx, field)
 			case "liked":
 				return ec.fieldContext_DiscoverMotion_liked(ctx, field)
 			case "submitted":
@@ -16138,6 +16304,8 @@ func (ec *executionContext) fieldContext_MotionOfferRecord_motion(ctx context.Co
 				return ec.fieldContext_DiscoverMotion_createdAt(ctx, field)
 			case "quick":
 				return ec.fieldContext_DiscoverMotion_quick(ctx, field)
+			case "deadline":
+				return ec.fieldContext_DiscoverMotion_deadline(ctx, field)
 			case "liked":
 				return ec.fieldContext_DiscoverMotion_liked(ctx, field)
 			case "submitted":
@@ -18128,6 +18296,10 @@ func (ec *executionContext) fieldContext_Mutation_createMotion(ctx context.Conte
 				return ec.fieldContext_Motion_gender(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Motion_createdAt(ctx, field)
+			case "quick":
+				return ec.fieldContext_Motion_quick(ctx, field)
+			case "deadline":
+				return ec.fieldContext_Motion_deadline(ctx, field)
 			case "liked":
 				return ec.fieldContext_Motion_liked(ctx, field)
 			case "viewCount":
@@ -18239,6 +18411,10 @@ func (ec *executionContext) fieldContext_Mutation_updateMotion(ctx context.Conte
 				return ec.fieldContext_Motion_gender(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Motion_createdAt(ctx, field)
+			case "quick":
+				return ec.fieldContext_Motion_quick(ctx, field)
+			case "deadline":
+				return ec.fieldContext_Motion_deadline(ctx, field)
 			case "liked":
 				return ec.fieldContext_Motion_liked(ctx, field)
 			case "viewCount":
@@ -18350,6 +18526,10 @@ func (ec *executionContext) fieldContext_Mutation_userUpdateMotion(ctx context.C
 				return ec.fieldContext_Motion_gender(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Motion_createdAt(ctx, field)
+			case "quick":
+				return ec.fieldContext_Motion_quick(ctx, field)
+			case "deadline":
+				return ec.fieldContext_Motion_deadline(ctx, field)
 			case "liked":
 				return ec.fieldContext_Motion_liked(ctx, field)
 			case "viewCount":
@@ -21656,6 +21836,8 @@ func (ec *executionContext) fieldContext_Query_discoverLatestCategoryMotions(ctx
 				return ec.fieldContext_DiscoverMotion_createdAt(ctx, field)
 			case "quick":
 				return ec.fieldContext_DiscoverMotion_quick(ctx, field)
+			case "deadline":
+				return ec.fieldContext_DiscoverMotion_deadline(ctx, field)
 			case "liked":
 				return ec.fieldContext_DiscoverMotion_liked(ctx, field)
 			case "submitted":
@@ -21759,6 +21941,8 @@ func (ec *executionContext) fieldContext_Query_getDiscoverMotion(ctx context.Con
 				return ec.fieldContext_DiscoverMotion_createdAt(ctx, field)
 			case "quick":
 				return ec.fieldContext_DiscoverMotion_quick(ctx, field)
+			case "deadline":
+				return ec.fieldContext_DiscoverMotion_deadline(ctx, field)
 			case "liked":
 				return ec.fieldContext_DiscoverMotion_liked(ctx, field)
 			case "submitted":
@@ -22103,6 +22287,10 @@ func (ec *executionContext) fieldContext_Query_motion(ctx context.Context, field
 				return ec.fieldContext_Motion_gender(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Motion_createdAt(ctx, field)
+			case "quick":
+				return ec.fieldContext_Motion_quick(ctx, field)
+			case "deadline":
+				return ec.fieldContext_Motion_deadline(ctx, field)
 			case "liked":
 				return ec.fieldContext_Motion_liked(ctx, field)
 			case "viewCount":
@@ -22214,6 +22402,10 @@ func (ec *executionContext) fieldContext_Query_userMotions(ctx context.Context, 
 				return ec.fieldContext_Motion_gender(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Motion_createdAt(ctx, field)
+			case "quick":
+				return ec.fieldContext_Motion_quick(ctx, field)
+			case "deadline":
+				return ec.fieldContext_Motion_deadline(ctx, field)
 			case "liked":
 				return ec.fieldContext_Motion_liked(ctx, field)
 			case "viewCount":
@@ -22384,6 +22576,10 @@ func (ec *executionContext) fieldContext_Query_activeMotions(ctx context.Context
 				return ec.fieldContext_Motion_gender(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Motion_createdAt(ctx, field)
+			case "quick":
+				return ec.fieldContext_Motion_quick(ctx, field)
+			case "deadline":
+				return ec.fieldContext_Motion_deadline(ctx, field)
 			case "liked":
 				return ec.fieldContext_Motion_liked(ctx, field)
 			case "viewCount":
@@ -22495,6 +22691,10 @@ func (ec *executionContext) fieldContext_Query_motions(ctx context.Context, fiel
 				return ec.fieldContext_Motion_gender(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Motion_createdAt(ctx, field)
+			case "quick":
+				return ec.fieldContext_Motion_quick(ctx, field)
+			case "deadline":
+				return ec.fieldContext_Motion_deadline(ctx, field)
 			case "liked":
 				return ec.fieldContext_Motion_liked(ctx, field)
 			case "viewCount":
@@ -25757,6 +25957,8 @@ func (ec *executionContext) fieldContext_UserLikeMotion_motion(ctx context.Conte
 				return ec.fieldContext_DiscoverMotion_createdAt(ctx, field)
 			case "quick":
 				return ec.fieldContext_DiscoverMotion_quick(ctx, field)
+			case "deadline":
+				return ec.fieldContext_DiscoverMotion_deadline(ctx, field)
 			case "liked":
 				return ec.fieldContext_DiscoverMotion_liked(ctx, field)
 			case "submitted":
@@ -30253,6 +30455,11 @@ func (ec *executionContext) _DiscoverMotion(ctx context.Context, sel ast.Selecti
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
 			}
+		case "deadline":
+			out.Values[i] = ec._DiscoverMotion_deadline(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
 		case "liked":
 			field := field
 
@@ -32998,6 +33205,16 @@ func (ec *executionContext) _Motion(ctx context.Context, sel ast.SelectionSet, o
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "createdAt":
 			out.Values[i] = ec._Motion_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "quick":
+			out.Values[i] = ec._Motion_quick(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "deadline":
+			out.Values[i] = ec._Motion_deadline(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
 			}

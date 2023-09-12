@@ -38,6 +38,11 @@ type Motion {
   gender: Gender!
   createdAt: Time!
 
+  "极速搭"
+  quick: Boolean!
+
+  deadline: Time!
+
   # query
   liked: Boolean!
   viewCount: Int!
@@ -97,6 +102,8 @@ type DiscoverMotion {
 
   "极速搭"
   quick: Boolean!
+
+  deadline: Time!
 
   # query
   "是否标记为喜欢"
