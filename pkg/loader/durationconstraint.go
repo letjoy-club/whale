@@ -55,9 +55,8 @@ func NewDurationConstraintLoader(db *gorm.DB) *dataloader.Loader[string, *models
 			levelRights, _ := lo.Find(levelConfig.Rights, func(item *models.LevelRights) bool {
 				return item.Level == level
 			})
-			// todo: 默认值待确认
-			motionQuota := 10
-			offerQuota := 10
+			motionQuota := 3
+			offerQuota := 5
 			if levelRights != nil && levelRights.MotionQuota != 0 {
 				motionQuota = levelRights.MotionQuota
 			}
