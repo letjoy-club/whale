@@ -43,6 +43,9 @@ func main() {
 		&models.MotionReview{},
 		&models.UserLikeMotion{},
 
+		&models.EventProposal{},
+		&models.UserJoinEventProposal{},
+
 		&models.DurationConstraint{},
 
 		// 用户查看匹配

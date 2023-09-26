@@ -20,6 +20,7 @@ func Use(db *gorm.DB, opts ...gen.DOOption) *Query {
 		db:                          db,
 		CityTopics:                  newCityTopics(db, opts...),
 		DurationConstraint:          newDurationConstraint(db, opts...),
+		EventProposal:               newEventProposal(db, opts...),
 		HotTopicsInArea:             newHotTopicsInArea(db, opts...),
 		Matching:                    newMatching(db, opts...),
 		MatchingDurationConstraint:  newMatchingDurationConstraint(db, opts...),
@@ -37,6 +38,7 @@ func Use(db *gorm.DB, opts ...gen.DOOption) *Query {
 		MotionReview:                newMotionReview(db, opts...),
 		MotionViewHistory:           newMotionViewHistory(db, opts...),
 		RecentMatching:              newRecentMatching(db, opts...),
+		UserJoinEventProposal:       newUserJoinEventProposal(db, opts...),
 		UserJoinTopic:               newUserJoinTopic(db, opts...),
 		UserLikeMotion:              newUserLikeMotion(db, opts...),
 		UserThumbsUpMotion:          newUserThumbsUpMotion(db, opts...),
@@ -50,6 +52,7 @@ type Query struct {
 
 	CityTopics                  cityTopics
 	DurationConstraint          durationConstraint
+	EventProposal               eventProposal
 	HotTopicsInArea             hotTopicsInArea
 	Matching                    matching
 	MatchingDurationConstraint  matchingDurationConstraint
@@ -67,6 +70,7 @@ type Query struct {
 	MotionReview                motionReview
 	MotionViewHistory           motionViewHistory
 	RecentMatching              recentMatching
+	UserJoinEventProposal       userJoinEventProposal
 	UserJoinTopic               userJoinTopic
 	UserLikeMotion              userLikeMotion
 	UserThumbsUpMotion          userThumbsUpMotion
@@ -81,6 +85,7 @@ func (q *Query) clone(db *gorm.DB) *Query {
 		db:                          db,
 		CityTopics:                  q.CityTopics.clone(db),
 		DurationConstraint:          q.DurationConstraint.clone(db),
+		EventProposal:               q.EventProposal.clone(db),
 		HotTopicsInArea:             q.HotTopicsInArea.clone(db),
 		Matching:                    q.Matching.clone(db),
 		MatchingDurationConstraint:  q.MatchingDurationConstraint.clone(db),
@@ -98,6 +103,7 @@ func (q *Query) clone(db *gorm.DB) *Query {
 		MotionReview:                q.MotionReview.clone(db),
 		MotionViewHistory:           q.MotionViewHistory.clone(db),
 		RecentMatching:              q.RecentMatching.clone(db),
+		UserJoinEventProposal:       q.UserJoinEventProposal.clone(db),
 		UserJoinTopic:               q.UserJoinTopic.clone(db),
 		UserLikeMotion:              q.UserLikeMotion.clone(db),
 		UserThumbsUpMotion:          q.UserThumbsUpMotion.clone(db),
@@ -119,6 +125,7 @@ func (q *Query) ReplaceDB(db *gorm.DB) *Query {
 		db:                          db,
 		CityTopics:                  q.CityTopics.replaceDB(db),
 		DurationConstraint:          q.DurationConstraint.replaceDB(db),
+		EventProposal:               q.EventProposal.replaceDB(db),
 		HotTopicsInArea:             q.HotTopicsInArea.replaceDB(db),
 		Matching:                    q.Matching.replaceDB(db),
 		MatchingDurationConstraint:  q.MatchingDurationConstraint.replaceDB(db),
@@ -136,6 +143,7 @@ func (q *Query) ReplaceDB(db *gorm.DB) *Query {
 		MotionReview:                q.MotionReview.replaceDB(db),
 		MotionViewHistory:           q.MotionViewHistory.replaceDB(db),
 		RecentMatching:              q.RecentMatching.replaceDB(db),
+		UserJoinEventProposal:       q.UserJoinEventProposal.replaceDB(db),
 		UserJoinTopic:               q.UserJoinTopic.replaceDB(db),
 		UserLikeMotion:              q.UserLikeMotion.replaceDB(db),
 		UserThumbsUpMotion:          q.UserThumbsUpMotion.replaceDB(db),
@@ -147,6 +155,7 @@ func (q *Query) ReplaceDB(db *gorm.DB) *Query {
 type queryCtx struct {
 	CityTopics                  ICityTopicsDo
 	DurationConstraint          IDurationConstraintDo
+	EventProposal               IEventProposalDo
 	HotTopicsInArea             IHotTopicsInAreaDo
 	Matching                    IMatchingDo
 	MatchingDurationConstraint  IMatchingDurationConstraintDo
@@ -164,6 +173,7 @@ type queryCtx struct {
 	MotionReview                IMotionReviewDo
 	MotionViewHistory           IMotionViewHistoryDo
 	RecentMatching              IRecentMatchingDo
+	UserJoinEventProposal       IUserJoinEventProposalDo
 	UserJoinTopic               IUserJoinTopicDo
 	UserLikeMotion              IUserLikeMotionDo
 	UserThumbsUpMotion          IUserThumbsUpMotionDo
@@ -175,6 +185,7 @@ func (q *Query) WithContext(ctx context.Context) *queryCtx {
 	return &queryCtx{
 		CityTopics:                  q.CityTopics.WithContext(ctx),
 		DurationConstraint:          q.DurationConstraint.WithContext(ctx),
+		EventProposal:               q.EventProposal.WithContext(ctx),
 		HotTopicsInArea:             q.HotTopicsInArea.WithContext(ctx),
 		Matching:                    q.Matching.WithContext(ctx),
 		MatchingDurationConstraint:  q.MatchingDurationConstraint.WithContext(ctx),
@@ -192,6 +203,7 @@ func (q *Query) WithContext(ctx context.Context) *queryCtx {
 		MotionReview:                q.MotionReview.WithContext(ctx),
 		MotionViewHistory:           q.MotionViewHistory.WithContext(ctx),
 		RecentMatching:              q.RecentMatching.WithContext(ctx),
+		UserJoinEventProposal:       q.UserJoinEventProposal.WithContext(ctx),
 		UserJoinTopic:               q.UserJoinTopic.WithContext(ctx),
 		UserLikeMotion:              q.UserLikeMotion.WithContext(ctx),
 		UserThumbsUpMotion:          q.UserThumbsUpMotion.WithContext(ctx),

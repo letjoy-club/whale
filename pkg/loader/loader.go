@@ -35,6 +35,10 @@ type Loader struct {
 	OutMotionOfferRecord *dataloader.Loader[string, *MotionOffers]
 	MotionReviewed       *dataloader.Loader[int, *MotionReviewed]
 
+	EventProposal             *dataloader.Loader[string, *models.EventProposal]
+	EventProposalParticipants *dataloader.Loader[string, *EventProposalParticipants]
+	AllEventProposalLoader    *AllEventProposalLoader
+
 	DurationConstraint *dataloader.Loader[string, *models.DurationConstraint]
 
 	// 从 recentMatching 中查询最近的 city, topic 对应的 matching id 信息
@@ -83,6 +87,10 @@ func NewLoader(db *gorm.DB) *Loader {
 		Motion:               NewMotionLoader(db),
 		UserLikeMotion:       NewUserLikeMotionLoader(db),
 		UserSubmitMotion:     NewUserSubmitMotionLoader(db),
+
+		EventProposal:             NewEventProposalLoader(db),
+		EventProposalParticipants: NewEventProposalParticipantsLoader(db),
+		AllEventProposalLoader:    NewAllEventProposalLoader(),
 
 		UserProfile:        NewUserProfileLoader(db),
 		UserAvatarNickname: NewUserAvatarNicknameLoader(db),

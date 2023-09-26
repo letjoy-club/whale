@@ -1,0 +1,137 @@
+type EventProposal {
+  id: String!
+  topicId: String!
+  cityId: String!
+
+  # 地址与经纬度
+  address: String!
+  latitude: Float!
+  longitude: Float!
+  images: [String!]!
+
+  # 最多用户
+  maxNum: Int!
+  # 当前用户数
+  joinNum: Int!
+  # 标题
+  title: String!
+  # 活动描述
+  desc: String!
+  userId: String!
+  createdAt: Time!
+  # 过期时间
+  deadline: Time!
+  # 开始时间
+  startAt: Time!
+  # 聊天室 id
+  chatGroupId: String!
+  # 是否有效
+  active: Boolean!
+
+  # query
+  # 是否已加入
+  joined: Boolean!
+  # 是否可加入，不可加入的情况：被拉黑，被禁止加入，已关，已加入过（主动退出或者被管理员踢走）
+  joinable: Boolean!
+  # 已加入的用户
+  joinedUsers: [User!]!
+  user: User!
+  topic: Topic!
+  city: Area!
+}
+
+enum JoinEventState {
+  Joined
+  KickedOut
+  Left
+  Closed
+}
+
+type UserJoinEventProposal {
+  userId: String!
+  createdAt: Time!
+  state: JoinEventState!
+  leftAt: Time
+
+  # query
+  eventProposal: EventProposal!
+  user: User!
+}
+
+input DiscoverEventProposalFilter {
+  topicIds: [String!]!
+  categoryId: String!
+  cityId: String!
+}
+
+input EventProposalFilter {
+  userId: String
+  topicIds: [String!]
+  cityId: String
+}
+
+input CreateEventProposalParam {
+  topicId: String!
+  cityId: String!
+  address: String!
+  latitude: Float!
+  longitude: Float!
+  images: [String!]!
+
+  # 最多用户
+  maxNum: Int!
+  # 标题
+  title: String!
+  # 活动描述
+  desc: String!
+  # 过期时间
+  deadline: Time
+  # 开始时间
+  startAt: Time!
+}
+
+extend type Query {
+  "【多人】查看现有多人活动"
+  discoverLatestEventProposals(
+    filter: DiscoverEventProposalFilter!
+    lastId: String
+  ): [EventProposal!]!
+
+  "【多人】我加入的多人活动"
+  userJoinedEventProposals(userId: String): [UserJoinEventProposal!]!
+
+  "【多人】我创建的多人活动"
+  myEventProposals(userId: String): [EventProposal!]!
+
+  "【多人】使用 id 查询多人活动详情"
+  eventProposal(id: String!): EventProposal!
+
+  "【多人】查询多人活动列表，管理端"
+  eventProposals(filter: EventProposalFilter!, paginator: GraphQLPaginator): [EventProposal!]!
+
+  "【多人】查询多人活动参与者"
+  eventProposalParticipants(eventId: String!, all: Boolean): [UserJoinEventProposal!]!
+
+  "【多人】查询多人活动列表数量，管理端"
+  eventProposalsCount(filter: EventProposalFilter!): Summary!
+}
+
+extend type Mutation {
+  "【多人】加入活动"
+  joinEventProposal(userId: String, eventId: String!): String
+
+  "【多人】离开活动"
+  leaveEventProposal(userId: String, eventId: String!): String
+
+  "【多人】活动主办方踢人"
+  kickOutUserFromEventProposal(targetUserId: String!, eventId: String!): String
+
+  "【多人】关闭多人活动"
+  closeEventProposal(userId: String, eventId: String!): String
+
+  "【多人】创建多人活动"
+  createEventProposal(
+    userId: String
+    param: CreateEventProposalParam!
+  ): EventProposal!
+}

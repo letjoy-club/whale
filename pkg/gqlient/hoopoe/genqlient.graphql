@@ -180,10 +180,7 @@ query CreateMotionCheck(
   }
 }
 
-query CreateMotionOfferCheck(
-  $userId: String!
-  $ids: [String!]!
-) {
+query CreateMotionOfferCheck($userId: String!, $ids: [String!]!) {
   user(id: $userId) {
     blockInfo {
       userBlocked
@@ -203,4 +200,8 @@ query CreateMotionOfferCheck(
 
 mutation TextCheck($userId: String!, $content: String!) {
   textCheck(userId: $userId, content: $content)
+}
+
+mutation ImageProcess($urls: [String!]!, $bizType: BizType!, $bizId: String!) {
+  imagesProcess(urls: $urls, bizType: $bizType, bizId: $bizId)
 }

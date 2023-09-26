@@ -9,6 +9,12 @@ import (
 	"github.com/Khan/genqlient/graphql"
 )
 
+type BizType string
+
+const (
+	BizTypeEventproposal BizType = "eventProposal"
+)
+
 // CreateMatchingCheckArea includes the requested fields of the GraphQL type Area.
 type CreateMatchingCheckArea struct {
 	// 地区代码
@@ -900,6 +906,15 @@ func (v *GraphQLPaginator) GetPage() int { return v.Page }
 // GetSize returns GraphQLPaginator.Size, and is useful for accessing the field via an interface.
 func (v *GraphQLPaginator) GetSize() int { return v.Size }
 
+// ImageProcessResponse is returned by ImageProcess on success.
+type ImageProcessResponse struct {
+	// 【通用】图片处理
+	ImagesProcess []string `json:"imagesProcess"`
+}
+
+// GetImagesProcess returns ImageProcessResponse.ImagesProcess, and is useful for accessing the field via an interface.
+func (v *ImageProcessResponse) GetImagesProcess() []string { return v.ImagesProcess }
+
 // TextCheckResponse is returned by TextCheck on success.
 type TextCheckResponse struct {
 	// 【系统】用户检查文本内容是否违规，内部使用
@@ -1172,6 +1187,22 @@ type __GetUserByIDsInput struct {
 
 // GetIds returns __GetUserByIDsInput.Ids, and is useful for accessing the field via an interface.
 func (v *__GetUserByIDsInput) GetIds() []string { return v.Ids }
+
+// __ImageProcessInput is used internally by genqlient
+type __ImageProcessInput struct {
+	Urls    []string `json:"urls"`
+	BizType BizType  `json:"bizType"`
+	BizId   string   `json:"bizId"`
+}
+
+// GetUrls returns __ImageProcessInput.Urls, and is useful for accessing the field via an interface.
+func (v *__ImageProcessInput) GetUrls() []string { return v.Urls }
+
+// GetBizType returns __ImageProcessInput.BizType, and is useful for accessing the field via an interface.
+func (v *__ImageProcessInput) GetBizType() BizType { return v.BizType }
+
+// GetBizId returns __ImageProcessInput.BizId, and is useful for accessing the field via an interface.
+func (v *__ImageProcessInput) GetBizId() string { return v.BizId }
 
 // __TextCheckInput is used internally by genqlient
 type __TextCheckInput struct {
@@ -1804,6 +1835,43 @@ func GetUserByIDs(
 	var err error
 
 	var data GetUserByIDsResponse
+	resp := &graphql.Response{Data: &data}
+
+	err = client.MakeRequest(
+		ctx,
+		req,
+		resp,
+	)
+
+	return &data, err
+}
+
+// The query or mutation executed by ImageProcess.
+const ImageProcess_Operation = `
+mutation ImageProcess ($urls: [String!]!, $bizType: BizType!, $bizId: String!) {
+	imagesProcess(urls: $urls, bizType: $bizType, bizId: $bizId)
+}
+`
+
+func ImageProcess(
+	ctx context.Context,
+	client graphql.Client,
+	urls []string,
+	bizType BizType,
+	bizId string,
+) (*ImageProcessResponse, error) {
+	req := &graphql.Request{
+		OpName: "ImageProcess",
+		Query:  ImageProcess_Operation,
+		Variables: &__ImageProcessInput{
+			Urls:    urls,
+			BizType: bizType,
+			BizId:   bizId,
+		},
+	}
+	var err error
+
+	var data ImageProcessResponse
 	resp := &graphql.Response{Data: &data}
 
 	err = client.MakeRequest(

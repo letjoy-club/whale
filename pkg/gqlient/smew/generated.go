@@ -8,8 +8,27 @@ import (
 	"github.com/Khan/genqlient/graphql"
 )
 
+// AddEventProposalGroupMemberResponse is returned by AddEventProposalGroupMember on success.
+type AddEventProposalGroupMemberResponse struct {
+	// 【群组】新增群组成员
+	AddGroupMember string `json:"addGroupMember"`
+}
+
+// GetAddGroupMember returns AddEventProposalGroupMemberResponse.AddGroupMember, and is useful for accessing the field via an interface.
+func (v *AddEventProposalGroupMemberResponse) GetAddGroupMember() string { return v.AddGroupMember }
+
+// CloseEventProposalGroupResponse is returned by CloseEventProposalGroup on success.
+type CloseEventProposalGroupResponse struct {
+	// 【群组】关闭群组
+	CloseGroup string `json:"closeGroup"`
+}
+
+// GetCloseGroup returns CloseEventProposalGroupResponse.CloseGroup, and is useful for accessing the field via an interface.
+func (v *CloseEventProposalGroupResponse) GetCloseGroup() string { return v.CloseGroup }
+
 // CloseGroupResponse is returned by CloseGroup on success.
 type CloseGroupResponse struct {
+	// 【群组】关闭群组
 	CloseGroup string `json:"closeGroup"`
 }
 
@@ -25,38 +44,67 @@ type CreateChatGroupResponse struct {
 // GetCreateGroup returns CreateChatGroupResponse.CreateGroup, and is useful for accessing the field via an interface.
 func (v *CreateChatGroupResponse) GetCreateGroup() string { return v.CreateGroup }
 
+type CreateEventProposalGroupParam struct {
+	// 多人活动ID
+	EventProposalId string `json:"eventProposalId"`
+	// 话题ID
+	TopicId string `json:"topicId"`
+	// 发起人ID
+	UserId string `json:"userId"`
+}
+
+// GetEventProposalId returns CreateEventProposalGroupParam.EventProposalId, and is useful for accessing the field via an interface.
+func (v *CreateEventProposalGroupParam) GetEventProposalId() string { return v.EventProposalId }
+
+// GetTopicId returns CreateEventProposalGroupParam.TopicId, and is useful for accessing the field via an interface.
+func (v *CreateEventProposalGroupParam) GetTopicId() string { return v.TopicId }
+
+// GetUserId returns CreateEventProposalGroupParam.UserId, and is useful for accessing the field via an interface.
+func (v *CreateEventProposalGroupParam) GetUserId() string { return v.UserId }
+
+// CreateEventProposalGroupResponse is returned by CreateEventProposalGroup on success.
+type CreateEventProposalGroupResponse struct {
+	// 【群组】创建多人活动群组
+	CreateEventProposalGroup string `json:"createEventProposalGroup"`
+}
+
+// GetCreateEventProposalGroup returns CreateEventProposalGroupResponse.CreateEventProposalGroup, and is useful for accessing the field via an interface.
+func (v *CreateEventProposalGroupResponse) GetCreateEventProposalGroup() string {
+	return v.CreateEventProposalGroup
+}
+
 type CreateMotionGroupParam struct {
+	// 匹配结果ID
+	ResultId int `json:"resultId"`
+	// 话题ID
+	TopicId string `json:"topicId"`
+	// 连接发起方ID
+	FromUserId string `json:"fromUserId"`
 	// 连接发起方Motion ID
 	FromMotionId string `json:"fromMotionId"`
 	// 连接发起方ID
-	FromUserId string `json:"fromUserId"`
-	// 匹配结果ID
-	ResultId int `json:"resultId"`
+	ToUserId string `json:"toUserId"`
 	// 连接发起方Motion ID
 	ToMotionId string `json:"toMotionId"`
-	// 连接发起方ID
-	ToUserId string `json:"toUserId"`
-	// 话题ID
-	TopicId string `json:"topicId"`
 }
-
-// GetFromMotionId returns CreateMotionGroupParam.FromMotionId, and is useful for accessing the field via an interface.
-func (v *CreateMotionGroupParam) GetFromMotionId() string { return v.FromMotionId }
-
-// GetFromUserId returns CreateMotionGroupParam.FromUserId, and is useful for accessing the field via an interface.
-func (v *CreateMotionGroupParam) GetFromUserId() string { return v.FromUserId }
 
 // GetResultId returns CreateMotionGroupParam.ResultId, and is useful for accessing the field via an interface.
 func (v *CreateMotionGroupParam) GetResultId() int { return v.ResultId }
 
-// GetToMotionId returns CreateMotionGroupParam.ToMotionId, and is useful for accessing the field via an interface.
-func (v *CreateMotionGroupParam) GetToMotionId() string { return v.ToMotionId }
+// GetTopicId returns CreateMotionGroupParam.TopicId, and is useful for accessing the field via an interface.
+func (v *CreateMotionGroupParam) GetTopicId() string { return v.TopicId }
+
+// GetFromUserId returns CreateMotionGroupParam.FromUserId, and is useful for accessing the field via an interface.
+func (v *CreateMotionGroupParam) GetFromUserId() string { return v.FromUserId }
+
+// GetFromMotionId returns CreateMotionGroupParam.FromMotionId, and is useful for accessing the field via an interface.
+func (v *CreateMotionGroupParam) GetFromMotionId() string { return v.FromMotionId }
 
 // GetToUserId returns CreateMotionGroupParam.ToUserId, and is useful for accessing the field via an interface.
 func (v *CreateMotionGroupParam) GetToUserId() string { return v.ToUserId }
 
-// GetTopicId returns CreateMotionGroupParam.TopicId, and is useful for accessing the field via an interface.
-func (v *CreateMotionGroupParam) GetTopicId() string { return v.TopicId }
+// GetToMotionId returns CreateMotionGroupParam.ToMotionId, and is useful for accessing the field via an interface.
+func (v *CreateMotionGroupParam) GetToMotionId() string { return v.ToMotionId }
 
 // CreateMotionGroupResponse is returned by CreateMotionGroup on success.
 type CreateMotionGroupResponse struct {
@@ -79,21 +127,32 @@ func (v *CreateTimGroupResponse) GetCreateTimGroup() string { return v.CreateTim
 type GroupCloseReason string
 
 const (
-	GroupCloseReasonAccepttimeout GroupCloseReason = "AcceptTimeout"
-	GroupCloseReasonSystemclose   GroupCloseReason = "SystemClose"
-	GroupCloseReasonTimeout       GroupCloseReason = "Timeout"
 	GroupCloseReasonUserclose     GroupCloseReason = "UserClose"
 	GroupCloseReasonUserreject    GroupCloseReason = "UserReject"
+	GroupCloseReasonTimeout       GroupCloseReason = "Timeout"
+	GroupCloseReasonAccepttimeout GroupCloseReason = "AcceptTimeout"
+	GroupCloseReasonSystemclose   GroupCloseReason = "SystemClose"
 )
 
 // GroupMemberLeaveResponse is returned by GroupMemberLeave on success.
 type GroupMemberLeaveResponse struct {
-	// 【群组】群组成员离开
+	// 【群组】群组成员离开，用于群聊结束
 	GroupMemberLeave string `json:"groupMemberLeave"`
 }
 
 // GetGroupMemberLeave returns GroupMemberLeaveResponse.GroupMemberLeave, and is useful for accessing the field via an interface.
 func (v *GroupMemberLeaveResponse) GetGroupMemberLeave() string { return v.GroupMemberLeave }
+
+// RemoveEventProposalGroupMemberResponse is returned by RemoveEventProposalGroupMember on success.
+type RemoveEventProposalGroupMemberResponse struct {
+	// 【群组】移除群组成员
+	RemoveGroupMember string `json:"removeGroupMember"`
+}
+
+// GetRemoveGroupMember returns RemoveEventProposalGroupMemberResponse.RemoveGroupMember, and is useful for accessing the field via an interface.
+func (v *RemoveEventProposalGroupMemberResponse) GetRemoveGroupMember() string {
+	return v.RemoveGroupMember
+}
 
 // SendTextMessageResponse is returned by SendTextMessage on success.
 type SendTextMessageResponse struct {
@@ -103,6 +162,30 @@ type SendTextMessageResponse struct {
 
 // GetSendTextMessage returns SendTextMessageResponse.SendTextMessage, and is useful for accessing the field via an interface.
 func (v *SendTextMessageResponse) GetSendTextMessage() string { return v.SendTextMessage }
+
+// __AddEventProposalGroupMemberInput is used internally by genqlient
+type __AddEventProposalGroupMemberInput struct {
+	GroupId string `json:"groupId"`
+	UserId  string `json:"userId"`
+}
+
+// GetGroupId returns __AddEventProposalGroupMemberInput.GroupId, and is useful for accessing the field via an interface.
+func (v *__AddEventProposalGroupMemberInput) GetGroupId() string { return v.GroupId }
+
+// GetUserId returns __AddEventProposalGroupMemberInput.UserId, and is useful for accessing the field via an interface.
+func (v *__AddEventProposalGroupMemberInput) GetUserId() string { return v.UserId }
+
+// __CloseEventProposalGroupInput is used internally by genqlient
+type __CloseEventProposalGroupInput struct {
+	GroupId string           `json:"groupId"`
+	Reason  GroupCloseReason `json:"reason"`
+}
+
+// GetGroupId returns __CloseEventProposalGroupInput.GroupId, and is useful for accessing the field via an interface.
+func (v *__CloseEventProposalGroupInput) GetGroupId() string { return v.GroupId }
+
+// GetReason returns __CloseEventProposalGroupInput.Reason, and is useful for accessing the field via an interface.
+func (v *__CloseEventProposalGroupInput) GetReason() GroupCloseReason { return v.Reason }
 
 // __CloseGroupInput is used internally by genqlient
 type __CloseGroupInput struct {
@@ -132,6 +215,14 @@ func (v *__CreateChatGroupInput) GetTopicId() string { return v.TopicId }
 // GetMemberIds returns __CreateChatGroupInput.MemberIds, and is useful for accessing the field via an interface.
 func (v *__CreateChatGroupInput) GetMemberIds() []string { return v.MemberIds }
 
+// __CreateEventProposalGroupInput is used internally by genqlient
+type __CreateEventProposalGroupInput struct {
+	Param CreateEventProposalGroupParam `json:"param"`
+}
+
+// GetParam returns __CreateEventProposalGroupInput.Param, and is useful for accessing the field via an interface.
+func (v *__CreateEventProposalGroupInput) GetParam() CreateEventProposalGroupParam { return v.Param }
+
 // __CreateMotionGroupInput is used internally by genqlient
 type __CreateMotionGroupInput struct {
 	Param CreateMotionGroupParam `json:"param"`
@@ -160,6 +251,22 @@ func (v *__GroupMemberLeaveInput) GetGroupId() string { return v.GroupId }
 // GetUserId returns __GroupMemberLeaveInput.UserId, and is useful for accessing the field via an interface.
 func (v *__GroupMemberLeaveInput) GetUserId() string { return v.UserId }
 
+// __RemoveEventProposalGroupMemberInput is used internally by genqlient
+type __RemoveEventProposalGroupMemberInput struct {
+	GroupId   string `json:"groupId"`
+	UserId    string `json:"userId"`
+	RemovedBy string `json:"removedBy"`
+}
+
+// GetGroupId returns __RemoveEventProposalGroupMemberInput.GroupId, and is useful for accessing the field via an interface.
+func (v *__RemoveEventProposalGroupMemberInput) GetGroupId() string { return v.GroupId }
+
+// GetUserId returns __RemoveEventProposalGroupMemberInput.UserId, and is useful for accessing the field via an interface.
+func (v *__RemoveEventProposalGroupMemberInput) GetUserId() string { return v.UserId }
+
+// GetRemovedBy returns __RemoveEventProposalGroupMemberInput.RemovedBy, and is useful for accessing the field via an interface.
+func (v *__RemoveEventProposalGroupMemberInput) GetRemovedBy() string { return v.RemovedBy }
+
 // __SendTextMessageInput is used internally by genqlient
 type __SendTextMessageInput struct {
 	ChatGroupId string `json:"chatGroupId"`
@@ -175,6 +282,76 @@ func (v *__SendTextMessageInput) GetSender() string { return v.Sender }
 
 // GetText returns __SendTextMessageInput.Text, and is useful for accessing the field via an interface.
 func (v *__SendTextMessageInput) GetText() string { return v.Text }
+
+// The query or mutation executed by AddEventProposalGroupMember.
+const AddEventProposalGroupMember_Operation = `
+mutation AddEventProposalGroupMember ($groupId: String!, $userId: String!) {
+	addGroupMember(groupId: $groupId, userId: $userId)
+}
+`
+
+func AddEventProposalGroupMember(
+	ctx context.Context,
+	client graphql.Client,
+	groupId string,
+	userId string,
+) (*AddEventProposalGroupMemberResponse, error) {
+	req := &graphql.Request{
+		OpName: "AddEventProposalGroupMember",
+		Query:  AddEventProposalGroupMember_Operation,
+		Variables: &__AddEventProposalGroupMemberInput{
+			GroupId: groupId,
+			UserId:  userId,
+		},
+	}
+	var err error
+
+	var data AddEventProposalGroupMemberResponse
+	resp := &graphql.Response{Data: &data}
+
+	err = client.MakeRequest(
+		ctx,
+		req,
+		resp,
+	)
+
+	return &data, err
+}
+
+// The query or mutation executed by CloseEventProposalGroup.
+const CloseEventProposalGroup_Operation = `
+mutation CloseEventProposalGroup ($groupId: String!, $reason: GroupCloseReason!) {
+	closeGroup(groupId: $groupId, reason: $reason)
+}
+`
+
+func CloseEventProposalGroup(
+	ctx context.Context,
+	client graphql.Client,
+	groupId string,
+	reason GroupCloseReason,
+) (*CloseEventProposalGroupResponse, error) {
+	req := &graphql.Request{
+		OpName: "CloseEventProposalGroup",
+		Query:  CloseEventProposalGroup_Operation,
+		Variables: &__CloseEventProposalGroupInput{
+			GroupId: groupId,
+			Reason:  reason,
+		},
+	}
+	var err error
+
+	var data CloseEventProposalGroupResponse
+	resp := &graphql.Response{Data: &data}
+
+	err = client.MakeRequest(
+		ctx,
+		req,
+		resp,
+	)
+
+	return &data, err
+}
 
 // The query or mutation executed by CloseGroup.
 const CloseGroup_Operation = `
@@ -237,6 +414,39 @@ func CreateChatGroup(
 	var err error
 
 	var data CreateChatGroupResponse
+	resp := &graphql.Response{Data: &data}
+
+	err = client.MakeRequest(
+		ctx,
+		req,
+		resp,
+	)
+
+	return &data, err
+}
+
+// The query or mutation executed by CreateEventProposalGroup.
+const CreateEventProposalGroup_Operation = `
+mutation CreateEventProposalGroup ($param: CreateEventProposalGroupParam!) {
+	createEventProposalGroup(param: $param)
+}
+`
+
+func CreateEventProposalGroup(
+	ctx context.Context,
+	client graphql.Client,
+	param CreateEventProposalGroupParam,
+) (*CreateEventProposalGroupResponse, error) {
+	req := &graphql.Request{
+		OpName: "CreateEventProposalGroup",
+		Query:  CreateEventProposalGroup_Operation,
+		Variables: &__CreateEventProposalGroupInput{
+			Param: param,
+		},
+	}
+	var err error
+
+	var data CreateEventProposalGroupResponse
 	resp := &graphql.Response{Data: &data}
 
 	err = client.MakeRequest(
@@ -338,6 +548,43 @@ func GroupMemberLeave(
 	var err error
 
 	var data GroupMemberLeaveResponse
+	resp := &graphql.Response{Data: &data}
+
+	err = client.MakeRequest(
+		ctx,
+		req,
+		resp,
+	)
+
+	return &data, err
+}
+
+// The query or mutation executed by RemoveEventProposalGroupMember.
+const RemoveEventProposalGroupMember_Operation = `
+mutation RemoveEventProposalGroupMember ($groupId: String!, $userId: String!, $removedBy: String!) {
+	removeGroupMember(groupId: $groupId, userId: $userId, removedBy: $removedBy)
+}
+`
+
+func RemoveEventProposalGroupMember(
+	ctx context.Context,
+	client graphql.Client,
+	groupId string,
+	userId string,
+	removedBy string,
+) (*RemoveEventProposalGroupMemberResponse, error) {
+	req := &graphql.Request{
+		OpName: "RemoveEventProposalGroupMember",
+		Query:  RemoveEventProposalGroupMember_Operation,
+		Variables: &__RemoveEventProposalGroupMemberInput{
+			GroupId:   groupId,
+			UserId:    userId,
+			RemovedBy: removedBy,
+		},
+	}
+	var err error
+
+	var data RemoveEventProposalGroupMemberResponse
 	resp := &graphql.Response{Data: &data}
 
 	err = client.MakeRequest(

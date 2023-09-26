@@ -29,3 +29,19 @@ mutation SendTextMessage(
 mutation CloseGroup($groupId: String!, $reason: GroupCloseReason!) {
   closeGroup(groupId: $groupId, reason: $reason)
 }
+
+mutation CreateEventProposalGroup($param: CreateEventProposalGroupParam!) {
+  createEventProposalGroup(param: $param)
+}
+
+mutation AddEventProposalGroupMember($groupId: String!, $userId: String!) { 
+  addGroupMember(groupId: $groupId, userId: $userId)
+}
+
+mutation RemoveEventProposalGroupMember($groupId: String!, $userId: String!, $removedBy: String!) { 
+  removeGroupMember(groupId: $groupId, userId: $userId, removedBy: $removedBy)
+}
+
+mutation CloseEventProposalGroup($groupId: String!, $reason: GroupCloseReason!) { 
+  closeGroup(groupId: $groupId, reason: $reason)
+}

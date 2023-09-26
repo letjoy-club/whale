@@ -233,6 +233,10 @@ input AreaFilter {
 
 scalar AreaIDList
 
+enum BizType {
+  eventProposal
+}
+
 type Blacklist {
   """黑名单ID列表"""
   blacklistIds: [String!]
@@ -521,6 +525,21 @@ type Mutation {
     """userId 非必填，除了管理端操作时需要设置该值"""
     userId: String
   ): imageUploadUrl!
+
+  """【通用】图片处理"""
+  imagesProcess(
+    """图片URL"""
+    urls: [String!]!
+
+    """业务类型"""
+    bizType: BizType!
+
+    """
+    业务相关ID
+    例：bizType=eventProposal,bizId即为eventProposalId
+    """
+    bizId: String
+  ): [String!]!
 
   """【微信】获取微信手机号"""
   getWechatPhone(
@@ -828,7 +847,25 @@ type Mutation {
 
     """城市编码"""
     cityId: String
+
+    """邀请人，非必填"""
+    inviterId: String
+
+    """邀请渠道，非必填"""
+    channel: InviteChannel
   ): LoginResult!
+
+  """【用户】添加邀请人"""
+  addInviter(
+    """邀请人ID"""
+    inviterId: String!
+
+    """邀请渠道，非必填"""
+    channel: InviteChannel
+
+    """用户ID，管理端使用"""
+    userId: String
+  ): String
 
   """【用户】勾选协议"""
   checkAgreement: String
@@ -843,7 +880,7 @@ type Mutation {
 
     """邀请渠道，非必填"""
     channel: InviteChannel
-  ): String
+  ): String @deprecated(reason: "no longer use")
 
   """【用户】发送修改手机号短信验证码"""
   sendPhoneModifySmsVerification(

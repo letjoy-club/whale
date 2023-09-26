@@ -123,3 +123,9 @@ models:
   DurationConstraint:
     model:
       - whale/pkg/models.DurationConstraint
+  EventProposal:
+    model:
+      - whale/pkg/models.EventProposal
+  UserJoinEventProposal:
+    model:
+      - whale/pkg/models.UserJoinEventProposal

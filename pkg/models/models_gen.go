@@ -50,6 +50,20 @@ type CreateCityTopicParam struct {
 	CityID   string   `json:"cityId"`
 }
 
+type CreateEventProposalParam struct {
+	TopicID   string     `json:"topicId"`
+	CityID    string     `json:"cityId"`
+	Address   string     `json:"address"`
+	Latitude  float64    `json:"latitude"`
+	Longitude float64    `json:"longitude"`
+	Images    []string   `json:"images"`
+	MaxNum    int        `json:"maxNum"`
+	Title     string     `json:"title"`
+	Desc      string     `json:"desc"`
+	Deadline  *time.Time `json:"deadline,omitempty"`
+	StartAt   time.Time  `json:"startAt"`
+}
+
 type CreateMatchingInvitationParam struct {
 	InviteeID string   `json:"inviteeId"`
 	Remark    string   `json:"remark"`
@@ -107,6 +121,12 @@ type CreateUserJoinTopicParam struct {
 	MatchingID string `json:"matchingId"`
 }
 
+type DiscoverEventProposalFilter struct {
+	TopicIds   []string `json:"topicIds"`
+	CategoryID string   `json:"categoryId"`
+	CityID     string   `json:"cityId"`
+}
+
 type DiscoverMotionResult struct {
 	Motions   []*Motion `json:"motions"`
 	NextToken string    `json:"nextToken"`
@@ -122,6 +142,12 @@ type DiscoverTopicCategoryMotionFilter struct {
 	// 话题种类, 比如日常搭，游戏搭
 	CategoryID *string     `json:"categoryId,omitempty"`
 	Type       *MotionType `json:"type,omitempty"`
+}
+
+type EventProposalFilter struct {
+	UserID   *string  `json:"userId,omitempty"`
+	TopicIds []string `json:"topicIds,omitempty"`
+	CityID   *string  `json:"cityId,omitempty"`
 }
 
 type HotTopicsFilter struct {
@@ -545,6 +571,51 @@ func (e *InvitationConfirmState) UnmarshalGQL(v interface{}) error {
 }
 
 func (e InvitationConfirmState) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type JoinEventState string
+
+const (
+	JoinEventStateJoined    JoinEventState = "Joined"
+	JoinEventStateKickedOut JoinEventState = "KickedOut"
+	JoinEventStateLeft      JoinEventState = "Left"
+	JoinEventStateClosed    JoinEventState = "Closed"
+)
+
+var AllJoinEventState = []JoinEventState{
+	JoinEventStateJoined,
+	JoinEventStateKickedOut,
+	JoinEventStateLeft,
+	JoinEventStateClosed,
+}
+
+func (e JoinEventState) IsValid() bool {
+	switch e {
+	case JoinEventStateJoined, JoinEventStateKickedOut, JoinEventStateLeft, JoinEventStateClosed:
+		return true
+	}
+	return false
+}
+
+func (e JoinEventState) String() string {
+	return string(e)
+}
+
+func (e *JoinEventState) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = JoinEventState(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid JoinEventState", str)
+	}
+	return nil
+}
+
+func (e JoinEventState) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
